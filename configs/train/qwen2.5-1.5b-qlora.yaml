@@ -1,0 +1,57 @@
+# QLoRA fine-tune of Qwen2.5-1.5B-Instruct on a free Colab T4 (16 GB, no bf16).
+# Every choice is explained in docs/hyperparameters.md.
+run_name: qwen2.5-1.5b-qlora-r16
+base_model: Qwen/Qwen2.5-1.5B-Instruct
+hub_repo_kind: adapter           # key in configs/hub.yaml -> <user>/jobx-qwen2.5-1.5b-qlora
+
+data:
+  train: data/processed/train.jsonl
+  val: data/processed/val.jsonl
+  paraphrased: data/paraphrased/paraphrased_train.jsonl   # optional; merged into train when present
+  val_subset_for_json_f1: 96      # greedy-decoded at each eval to compute validation JSON micro F1
+
+quantization:                     # bitsandbytes 4-bit NF4 + double quantisation, fp16 compute
+  load_in_4bit: true
+  bnb_4bit_quant_type: nf4
+  bnb_4bit_use_double_quant: true
+  bnb_4bit_compute_dtype: float16
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]   # all linear projections
+  bias: none
+
+training:
+  output_dir: outputs/qwen2.5-1.5b-qlora-r16
+  num_train_epochs: 3
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 4   # effective batch 16
+  per_device_eval_batch_size: 8
+  learning_rate: 2.0e-4
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  max_grad_norm: 0.3
+  max_length: 1024
+  optim: paged_adamw_8bit
+  fp16: true
+  bf16: false
+  gradient_checkpointing: true
+  logging_steps: 10
+  eval_strategy: steps
+  eval_steps: 50
+  save_strategy: steps
+  save_steps: 50
+  save_total_limit: 2
+  load_best_model_at_end: true
+  metric_for_best_model: eval_json_f1
+  greater_is_better: true
+  early_stopping_patience: 3
+  seed: 42
+  report_to: wandb
+
+wandb:
+  project: jobx-qlora
+  log_sample_generations: 8

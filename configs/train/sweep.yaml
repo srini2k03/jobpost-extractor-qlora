@@ -1,0 +1,10 @@
+# Small sweep backing the choices in docs/hyperparameters.md. Each run = base config + overrides,
+# 1 epoch on the train split, scored by validation JSON micro F1. ~25 min per run on a T4.
+base: configs/train/qwen2.5-1.5b-qlora.yaml
+common_overrides:
+  training: {num_train_epochs: 1, eval_steps: 40, save_steps: 40, early_stopping_patience: 100}
+runs:
+  - {name: r8-lr2e-4,  lora: {r: 8,  alpha: 16}, training: {learning_rate: 2.0e-4}}
+  - {name: r16-lr2e-4, lora: {r: 16, alpha: 32}, training: {learning_rate: 2.0e-4}}
+  - {name: r32-lr2e-4, lora: {r: 32, alpha: 64}, training: {learning_rate: 2.0e-4}}
+  - {name: r16-lr1e-4, lora: {r: 16, alpha: 32}, training: {learning_rate: 1.0e-4}}

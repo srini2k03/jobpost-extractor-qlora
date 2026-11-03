@@ -1,0 +1,10 @@
+# Hugging Face Hub layout. Replace the placeholder, or set HF_USERNAME as an env var / Colab secret.
+hf_username: YOUR_HF_USERNAME
+repos:
+  artifacts: jobx-artifacts               # dataset repo: predictions, metrics, benchmarks, training logs, paraphrases
+  adapter: jobx-qwen2.5-1.5b-qlora        # model repo: LoRA adapter
+  merged: jobx-qwen2.5-1.5b-merged        # model repo: merged fp16 weights
+  awq: jobx-qwen2.5-1.5b-awq              # model repo: AWQ 4-bit
+  gguf: jobx-qwen2.5-1.5b-gguf            # model repo: GGUF Q8_0 / Q4_K_M
+  adapter_llama: jobx-llama3.2-1b-qlora   # optional second fine-tune
+  space: jobx-extractor                   # Space (Gradio demo)
