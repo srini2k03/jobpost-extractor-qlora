@@ -76,7 +76,7 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 | Llama-3.2-1B-Instruct 3-shot (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Gemini Flash (API, few-shot) | Gemini API (free tier) | 200 | 0.0 | 0.0 | 27.6 | 0.0 [0.0, 0.0] | 0.0 | 0.0 [0.0, 0.0] | measured 2026-11-03 @26bfce1 |
+| Gemini Flash (API, few-shot) | Gemini API (free tier) | - | - | - | - | - | - | - | pending API run |
 | Qwen2.5-1.5B QLoRA fine-tune (ours) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-1.5B QLoRA fine-tune + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Llama-3.2-1B QLoRA fine-tune (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
@@ -90,13 +90,12 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 | Approach | company | role | seniority | skills | min_experience_years | max_experience_years | salary | locations | work_mode | employment_type | education |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | Regex baseline (rules + alias tables) | 48.2 | 75.4 | 79.2 | 99.4 | 100.0 | 100.0 | 100.0 | 100.0 | 100.0 | 100.0 | 100.0 |
-| Gemini Flash (API, few-shot) | 16.5 | 0.0 | 46.0 | 5.5 | 17.5 | 22.5 | 40.5 | 23.5 | 40.0 | 46.0 | 45.5 |
 
 #### API usage
 
 | Approach | Split | Model | Requests | Input tokens | Output tokens | Cost (USD) |
 |---|---|---|---|---|---|---|
-| Gemini Flash (API, few-shot) | test_synth | `gemini-2.5-flash` | 200 | 0 | 0 | 0.00 |
+| Gemini Flash (API, few-shot) | - | `gemini-2.5-flash` | - | - | - | - (pending API run) |
 
 #### Size / speed / accuracy trade-off
 
