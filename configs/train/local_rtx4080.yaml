@@ -1,0 +1,21 @@
+# QLoRA profile for a laptop RTX 4080 (12 GB VRAM, Ada, bf16) under WSL2 with 32 GB system RAM.
+# Same recipe and effective batch as the T4 profile; only hardware-driven settings differ.
+inherit: configs/train/qwen2.5-1.5b-qlora.yaml
+run_name: qwen2.5-1.5b-qlora-r16-local
+
+quantization:
+  bnb_4bit_compute_dtype: bfloat16   # Ada computes in bf16 natively; same range as fp32, no loss scaling
+
+training:
+  output_dir: outputs/qwen2.5-1.5b-qlora-r16-local
+  fp16: false
+  bf16: true                         # T4 (Turing) has no bf16, the 4080 does: fewer overflow/underflow issues
+  tf32: true                         # TF32 matmuls for the fp32 parts (LoRA weights, optimizer math) on Ampere+
+  per_device_train_batch_size: 8     # 12 GB fits 8 x 1024 tokens for a 4-bit 1.5B model with checkpointing
+  gradient_accumulation_steps: 2     # 8 x 2 = 16: same effective batch, so the same lr/schedule applies
+  per_device_eval_batch_size: 16
+  max_length: 1024                   # unchanged: covers prompt + posting + JSON (see docs/hyperparameters.md)
+  gradient_checkpointing: true       # kept on: headroom for long real postings and the eval generations
+  optim: paged_adamw_8bit            # unchanged: paged states avoid OOM spikes
+  dataloader_num_workers: 2          # WSL2: a couple of workers help; more just contend with the GPU feeder
+  resume: true                       # continue from the last checkpoint-* if a run was interrupted

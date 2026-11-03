@@ -48,20 +48,20 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 | Approach | Hardware | n | JSON valid % | Schema valid % | Field EM % | Micro F1 % [95% CI] | Macro F1 % | Hallucination % [95% CI] | Status |
 |---|---|---|---|---|---|---|---|---|---|
 | Regex baseline (rules + alias tables) | CPU | - | - | - | - | - | - | - | pending (needs this split) |
-| Qwen2.5-1.5B-Instruct zero-shot | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B-Instruct zero-shot + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B-Instruct 3-shot | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B-Instruct 3-shot + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.2-1B-Instruct 3-shot (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.2-1B-Instruct 3-shot + guided JSON (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-1.5B-Instruct zero-shot | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-1.5B-Instruct zero-shot + guided JSON | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-1.5B-Instruct 3-shot | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-1.5B-Instruct 3-shot + guided JSON | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Llama-3.2-1B-Instruct 3-shot (optional) | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Llama-3.2-1B-Instruct 3-shot + guided JSON (optional) | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | GPU | - | - | - | - | - | - | - | pending GPU run |
 | GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | pending API run |
-| Qwen2.5-1.5B QLoRA fine-tune (ours) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B QLoRA fine-tune + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.2-1B QLoRA fine-tune (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, bitsandbytes 8-bit | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, AWQ 4-bit | T4 | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-1.5B QLoRA fine-tune (ours) | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-1.5B QLoRA fine-tune + guided JSON | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Llama-3.2-1B QLoRA fine-tune (optional) | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Fine-tune merged, bitsandbytes 8-bit | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Fine-tune merged, AWQ 4-bit | GPU | - | - | - | - | - | - | - | pending GPU run |
 | Fine-tune merged, GGUF Q8_0 (llama.cpp) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending GPU run |
 | Fine-tune merged, GGUF Q4_K_M (llama.cpp) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending GPU run |
 
@@ -70,20 +70,20 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 | Approach | Hardware | n | JSON valid % | Schema valid % | Field EM % | Micro F1 % [95% CI] | Macro F1 % | Hallucination % [95% CI] | Status |
 |---|---|---|---|---|---|---|---|---|---|
 | Regex baseline (rules + alias tables) | CPU | 471 | 100.0 | 100.0 | 91.1 | 93.1 [92.5, 93.8] | 90.8 | 2.5 [1.7, 3.2] | measured 2026-11-03 @902cc8a |
-| Qwen2.5-1.5B-Instruct zero-shot | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B-Instruct zero-shot + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B-Instruct 3-shot | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B-Instruct 3-shot + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.2-1B-Instruct 3-shot (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.2-1B-Instruct 3-shot + guided JSON (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-1.5B-Instruct zero-shot | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-1.5B-Instruct zero-shot + guided JSON | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-1.5B-Instruct 3-shot | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-1.5B-Instruct 3-shot + guided JSON | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Llama-3.2-1B-Instruct 3-shot (optional) | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Llama-3.2-1B-Instruct 3-shot + guided JSON (optional) | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | GPU | - | - | - | - | - | - | - | pending GPU run |
 | GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | incomplete (25/200) |
-| Qwen2.5-1.5B QLoRA fine-tune (ours) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B QLoRA fine-tune + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.2-1B QLoRA fine-tune (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, bitsandbytes 8-bit | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, AWQ 4-bit | T4 | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-1.5B QLoRA fine-tune (ours) | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-1.5B QLoRA fine-tune + guided JSON | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Llama-3.2-1B QLoRA fine-tune (optional) | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Fine-tune merged, bitsandbytes 8-bit | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Fine-tune merged, AWQ 4-bit | GPU | - | - | - | - | - | - | - | pending GPU run |
 | Fine-tune merged, GGUF Q8_0 (llama.cpp) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending GPU run |
 | Fine-tune merged, GGUF Q4_K_M (llama.cpp) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending GPU run |
 
@@ -111,9 +111,9 @@ Partial runs, or runs with more than 5% failed requests, are scored on what comp
 
 | Variant | Hardware | Size (GB) | Micro F1 % | Tokens/s | Peak memory (GB) | Status |
 |---|---|---|---|---|---|---|
-| fp16 (transformers) | T4 | - | - | - | - | pending GPU run |
-| merged 8-bit (bitsandbytes) | T4 | - | - | - | - | pending GPU run |
-| AWQ 4-bit | T4 | - | - | - | - | pending GPU run |
+| fp16 (transformers) | GPU (T4 or local) | - | - | - | - | pending GPU run |
+| merged 8-bit (bitsandbytes) | GPU (T4 or local) | - | - | - | - | pending GPU run |
+| AWQ 4-bit | GPU (T4 or local) | - | - | - | - | pending GPU run |
 | GGUF Q8_0 (llama.cpp) | CPU, GitHub Actions | - | - | - | - | pending (needs merged model) |
 | GGUF Q4_K_M (llama.cpp) | CPU, GitHub Actions | - | - | - | - | pending (needs merged model) |
 <!-- RESULTS:END -->
@@ -252,6 +252,22 @@ pytest && ruff check . && mypy
 JOBX_BACKEND=regex uvicorn jobx.serve.app:app   # API without a model (rule-based backend)
 ```
 
+### Run on your own GPU
+
+The GPU steps also run on a local NVIDIA GPU. The setup was written for an RTX 4080 Laptop GPU (12 GB, bf16)
+under Windows + WSL2, and the full walkthrough is in [`docs/local_gpu_setup.md`](docs/local_gpu_setup.md).
+
+```bash
+make local-setup && make local-check     # pinned CUDA 12.8 stack, then a PASS/FAIL environment table
+make local-paraphrase local-baselines local-train local-eval local-awq local-push   # or: make local-all
+```
+
+The make targets call the same `jobx.pipeline` functions as the notebooks, write to the same paths and push
+to the same Hub repos, using the bf16 profile in [`configs/gpu/local_rtx4080.yaml`](configs/gpu/local_rtx4080.yaml)
+and [`configs/train/local_rtx4080.yaml`](configs/train/local_rtx4080.yaml). Each step can be restarted after
+an interruption. Expect about 3–4 hours of GPU time on a 4080 laptop. The Colab notebooks below remain the
+alternative.
+
 ### Colab checklist (GPU work, in order)
 
 Secrets in Colab (key icon, with *Notebook access* on): `HF_TOKEN` (write), `HF_USERNAME`, `WANDB_API_KEY`.
@@ -285,8 +301,11 @@ src/jobx/
   eval/          metrics, bootstrap, taxonomy, results tables, curves, Pages site
   quantize/      GGUF CPU benchmark (llama-server), T4/AWQ benchmark helpers
   serve/         FastAPI app, extractor with retries, LLM backends, highlighting
+  pipeline.py    GPU steps shared by the notebooks and `python -m jobx.local` (local GPU)
+  local/         local-GPU CLI (`make local-*`) and the environment check
   verify.py      human verification CLI for the real test set
-configs/         data, approaches, hub, real data, training (+ sweep)
+configs/         data, approaches, hub, real data, training (+ sweep, local RTX 4080), GPU profiles
+requirements/    pinned local-GPU stacks (main, AWQ)
 notebooks/       01-06, Colab-ready (generated by scripts/build_notebooks.py)
 space/           Gradio app for Hugging Face Spaces
 docker/ ollama/ model_cards/ docs/ results/ data/ tests/ .github/workflows/

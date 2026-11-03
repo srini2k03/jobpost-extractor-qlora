@@ -1,0 +1,11 @@
+# Separate environment for AutoAWQ (archived upstream; needs an older transformers). Used by `make local-awq`,
+# which creates .venv-awq automatically. CUDA 12.4 wheels (driver >= 550).
+--extra-index-url https://download.pytorch.org/whl/cu124
+torch==2.6.0
+autoawq==0.2.9
+transformers==4.51.3
+accelerate==1.10.1
+bitsandbytes==0.48.1
+datasets==3.6.0
+huggingface_hub==0.35.3
+tqdm>=4.66

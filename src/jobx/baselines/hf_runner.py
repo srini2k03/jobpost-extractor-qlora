@@ -25,27 +25,48 @@ class GenOutput:
     hit_max_tokens: bool
 
 
+def resolve_dtype(dtype: str = "auto") -> Any:
+    """'auto' -> torch.bfloat16 on GPUs that support it (RTX 30xx/40xx, A100...), else torch.float16."""
+    import torch
+
+    if dtype == "auto":
+        return (
+            torch.bfloat16 if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else torch.float16
+        )
+    return getattr(torch, dtype)
+
+
+def gpu_name() -> str:
+    try:
+        import torch
+
+        return str(torch.cuda.get_device_name(0)) if torch.cuda.is_available() else "CPU"
+    except Exception:
+        return "unknown"
+
+
 def load_model(
     model_id: str,
     *,
-    quant: str | None = None,  # None (fp16) | "4bit" | "8bit"
+    quant: str | None = None,  # None (16-bit) | "4bit" | "8bit"
     adapter: str | None = None,
     merge_adapter: bool = False,
+    dtype: str = "auto",  # "auto" = bfloat16 where supported (Ampere/Ada), else float16 (T4)
 ) -> tuple[Any, Any]:
-    import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
+    tdtype = resolve_dtype(dtype)
     tok = AutoTokenizer.from_pretrained(model_id)
     tok.padding_side = "left"
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
-    kwargs: dict[str, Any] = {"torch_dtype": torch.float16, "device_map": "auto"}
+    kwargs: dict[str, Any] = {"torch_dtype": tdtype, "device_map": "auto"}
     if quant == "4bit":
         kwargs["quantization_config"] = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
             bnb_4bit_use_double_quant=True,
-            bnb_4bit_compute_dtype=torch.float16,
+            bnb_4bit_compute_dtype=tdtype,
         )
     elif quant == "8bit":
         kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit=True)

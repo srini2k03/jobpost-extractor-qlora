@@ -40,6 +40,18 @@ def push_results(paths: list[Path], root: Path = REPO_ROOT, private: bool = True
     return rid
 
 
+def is_done(metrics_path: Path, n_expected: int) -> bool:
+    """A finished run: metrics exist, cover n_expected examples and the run is complete."""
+    if not metrics_path.exists():
+        return False
+    try:
+        d = json.loads(metrics_path.read_text())
+    except json.JSONDecodeError:
+        return False
+    complete = (d.get("completion") or {}).get("status", "complete") == "complete"
+    return bool(complete and d.get("metrics", {}).get("n") == n_expected)
+
+
 def run_approach(
     model: Any,
     tok: Any,
@@ -52,12 +64,22 @@ def run_approach(
     max_examples: int | None = None,
     batch_size: int = 8,
     max_new_tokens: int = 384,
-    hardware: str = "T4",
+    hardware: str | None = None,
     push: bool = True,
+    skip_existing: bool = False,
     root: Path = REPO_ROOT,
 ) -> dict[str, Any]:
     examples = eval_subset(read_jsonl(root / SPLIT_FILES[split]), max_examples)
     pred = root / "results" / "predictions" / f"{approach}__{split}.jsonl"
+    mpath = root / "results" / "metrics" / f"{approach}__{split}.json"
+    if skip_existing and is_done(mpath, len(examples)):
+        print(f"{approach} / {split}: already done ({len(examples)} examples), skipping")
+        done: dict[str, Any] = json.loads(mpath.read_text())
+        return done
+    if hardware is None:
+        from jobx.baselines.hf_runner import gpu_name
+
+        hardware = gpu_name()
     meta = {
         "approach": approach,
         "model": model_id,
@@ -79,7 +101,6 @@ def run_approach(
     )
     res = evaluate_file(pred, root)
     res.pop("evaluated_at", None)
-    mpath = root / "results" / "metrics" / f"{approach}__{split}.json"
     mpath.parent.mkdir(parents=True, exist_ok=True)
     mpath.write_text(json.dumps(res, indent=2, ensure_ascii=False) + "\n")
     m = res["metrics"]
