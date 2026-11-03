@@ -55,8 +55,9 @@ def incomplete_label(d: dict[str, Any]) -> str:
 
 
 def short_model_names(models: list[str]) -> dict[str, str]:
-    """Drop the id tokens shared by every model in the chain: gemini-3.8-flash, gemini-3.7-flash -> 3.8, 3.7."""
-    toks = {m: m.split("-") for m in models}
+    """Drop vendor prefixes ('openai/') and id tokens shared by every model in the chain:
+    gemini-3.8-flash, gemini-3.7-flash -> 3.8, 3.7; openai/gpt-oss-120b -> gpt-oss-120b."""
+    toks = {m: m.rsplit("/", 1)[-1].split("-") for m in models}
     if len(models) > 1:
         common = set.intersection(*(set(t) for t in toks.values()))
         out = {m: "-".join(x for x in t if x not in common) or m for m, t in toks.items()}
@@ -64,7 +65,7 @@ def short_model_names(models: list[str]) -> dict[str, str]:
         out = {}
         for m, t in toks.items():
             ver = next((x for x in t if re.fullmatch(r"\d+(\.\d+)*", x)), None)
-            out[m] = ver or m
+            out[m] = ver or "-".join(t)
     return out
 
 
@@ -81,10 +82,15 @@ def model_mix_label(meta: dict[str, Any]) -> str | None:
 
 
 def display_name(a: dict[str, Any], d: dict[str, Any] | None) -> str:
-    """Row name; with `name_template` in approaches.yaml the measured model mix is filled in."""
+    """Row name. When a fallback model answered any prediction, `name_template` from approaches.yaml is
+    filled with the measured model mix, e.g. 'Llama-3.3-70B via Groq (llama-3.3-70b-versatile / gpt-oss-120b
+    fallback) (API, few-shot)'; runs answered by the primary model alone keep the plain name."""
     if d is not None and a.get("name_template"):
-        mix = model_mix_label(d.get("meta") or {})
-        if mix:
+        meta = d.get("meta") or {}
+        used = list(meta.get("models_used") or {})
+        chain = list(meta.get("model_chain") or used)
+        mix = model_mix_label(meta)
+        if mix and chain and used != [chain[0]]:
             return str(a["name_template"]).format(models=mix)
     return str(a["name"])
 

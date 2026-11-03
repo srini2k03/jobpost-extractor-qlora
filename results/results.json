@@ -42,8 +42,8 @@
         "status": "pending"
       },
       {
-        "approach": "gemini-flash_few_shot",
-        "name": "Gemini Flash (API, few-shot)",
+        "approach": "llama-3.3-70b-groq_few_shot",
+        "name": "Llama-3.3-70B via Groq (API, few-shot)",
         "status": "pending"
       },
       {
@@ -262,8 +262,8 @@
         "status": "pending"
       },
       {
-        "approach": "gemini-flash_few_shot",
-        "name": "Gemini Flash (API, few-shot)",
+        "approach": "llama-3.3-70b-groq_few_shot",
+        "name": "Llama-3.3-70B via Groq (API, few-shot)",
         "status": "pending"
       },
       {

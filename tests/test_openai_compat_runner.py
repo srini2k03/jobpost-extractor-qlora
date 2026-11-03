@@ -82,6 +82,12 @@ def test_request_uses_shared_prompt_and_json_schema():
     assert "response_format" not in oc.build_request("m", "p", [], mode="none", max_tokens=1)
     assert oc.PROVIDERS["gemini"].base_url == "https://generativelanguage.googleapis.com/v1beta/openai/"
     assert oc.PROVIDERS["gemini"].key_env == "GEMINI_API_KEY"
+    groq = oc.PROVIDERS["groq"]
+    assert oc.DEFAULT_PROVIDER == "groq" and oc.parser().parse_args([]).provider == "groq"
+    assert groq.base_url == "https://api.groq.com/openai/v1" and groq.key_env == "GROQ_API_KEY"
+    assert groq.default_model == "llama-3.3-70b-versatile" and groq.default_rpm == 25
+    assert groq.default_fallbacks == ("openai/gpt-oss-120b", "qwen/qwen3-32b")
+    assert groq.approach_prefix == "llama-3.3-70b-groq"
 
 
 def test_rate_limiter_spaces_requests():
@@ -188,11 +194,16 @@ def test_main_end_to_end_and_missing_key(tmp_path, monkeypatch, capsys):
     )
     assert asyncio.run(oc.main_async(args, client=client)) == 0
     assert len(client.calls[0]["messages"]) == 8  # system + 3 shots x 2 + posting
-    m = json.loads((root / "results/metrics/gemini-flash_few_shot__test_synth.json").read_text())
+    m = json.loads((root / "results/metrics/llama-3.3-70b-groq_few_shot__test_synth.json").read_text())
     assert m["metrics"]["micro_f1"] == pytest.approx(1.0) and m["metrics"]["n"] == 4
 
-    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
     assert asyncio.run(oc.main_async(oc.parser().parse_args(["--root", str(root)]))) == 2
+    assert "GROQ_API_KEY is not set" in capsys.readouterr().err
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    assert (
+        asyncio.run(oc.main_async(oc.parser().parse_args(["--root", str(root), "--provider", "gemini"]))) == 2
+    )
     assert "GEMINI_API_KEY is not set" in capsys.readouterr().err
 
 
@@ -250,24 +261,31 @@ def test_fallback_after_two_503s_and_404_drops_model(tmp_path):
     examples = read_jsonl("data/processed/test_synth.jsonl")[:4]
 
     def handler(kw, n):
-        if kw["model"] == "gemini-3.8-flash":
+        if kw["model"] == "llama-3.3-70b-versatile":
             raise status_error(openai.InternalServerError, 503, "model currently overloaded")
-        if kw["model"] == "gemini-3.7-flash":
+        if kw["model"] == "openai/gpt-oss-120b":
             raise status_error(openai.NotFoundError, 404, "not found")
         return completion(json.dumps(label_for(kw, examples)), model=kw["model"])
 
     client = FakeClient(handler)
-    chain = oc.ModelChain(["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.5-flash"], cooldown_s=1e9)
+    chain = oc.ModelChain(
+        ["llama-3.3-70b-versatile", "openai/gpt-oss-120b", "qwen/qwen3-32b"], cooldown_s=1e9
+    )
     pred, st = run(client, examples, tmp_path, model=chain, concurrency=1)
     tried = [c["model"] for c in client.calls]
-    assert tried[:4] == ["gemini-3.8-flash", "gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.5-flash"]
-    assert tried.count("gemini-3.8-flash") == 2  # cooled down, not retried for later examples
+    assert tried[:4] == [
+        "llama-3.3-70b-versatile",
+        "llama-3.3-70b-versatile",
+        "openai/gpt-oss-120b",
+        "qwen/qwen3-32b",
+    ]
+    assert tried.count("llama-3.3-70b-versatile") == 2  # cooled down, not retried for later examples
     rows = [json.loads(x) for x in pred.read_text().splitlines()]
-    assert {r["model"] for r in rows} == {"gemini-3.5-flash"} and st.n_errors == 0
+    assert {r["model"] for r in rows} == {"qwen/qwen3-32b"} and st.n_errors == 0
     meta = json.loads(pred.with_name(pred.name.replace(".jsonl", ".meta.json")).read_text())
-    assert meta["models_used"] == {"gemini-3.5-flash": 4}
-    assert list(meta["dropped_models"]) == ["gemini-3.7-flash"]
-    assert meta["model"] == "gemini-3.8-flash" and meta["model_chain"][0] == "gemini-3.8-flash"
+    assert meta["models_used"] == {"qwen/qwen3-32b": 4}
+    assert list(meta["dropped_models"]) == ["openai/gpt-oss-120b"]
+    assert meta["model"] == "llama-3.3-70b-versatile" and meta["model_chain"][0] == "llama-3.3-70b-versatile"
 
 
 def test_primary_comes_back_after_cooldown():
@@ -318,3 +336,60 @@ def test_all_requests_failed_writes_nothing(tmp_path):
     )
     assert pred is None and st.n_completed == 0 and st.n_errors == 3
     assert not list((tmp_path / "pred").glob("*.jsonl"))
+
+
+def test_groq_rate_limit_headers():
+    assert oc.parse_duration("7") == 7 and oc.parse_duration("350ms") == pytest.approx(0.35)
+    assert oc.parse_duration("2m59.56s") == pytest.approx(179.56) and oc.parse_duration("1h2m") == 3720
+    assert oc.parse_duration("soon") is None
+    slept: list[float] = []
+
+    async def sleep(d: float) -> None:
+        slept.append(d)
+
+    err = openai.RateLimitError(
+        "429",
+        response=httpx.Response(429, headers={"x-ratelimit-reset-requests": "2.5s"}, request=REQ),
+        body=None,
+    )
+    errs = [err]
+
+    async def create(**kw):
+        if errs:
+            raise errs.pop(0)
+        return "ok"
+
+    lim = oc.RateLimiter(0, sleep=no_sleep)
+    assert asyncio.run(oc.call_with_retries(create, {}, limiter=lim, sleep=sleep)) == "ok"
+    assert 2.5 <= slept[0] < 3.5
+
+
+def test_preset_defaults_resolve_rpm_and_prefix(tmp_path, capsys):
+    root = tmp_path / "root"
+    (root / "data/processed").mkdir(parents=True)
+    for f in ("train.jsonl", "test_synth.jsonl"):
+        shutil.copy(Path("data/processed") / f, root / "data/processed" / f)
+    examples = read_jsonl(root / "data/processed/test_synth.jsonl")
+    client = FakeClient(lambda kw, n: completion(json.dumps(label_for(kw, examples)), model=kw["model"]))
+    args = oc.parser().parse_args(
+        ["--root", str(root), "--max-examples", "2", "--cache-dir", str(tmp_path / "c")]
+    )
+    assert args.rpm is None and args.approach_prefix is None
+    # the limiter would wait 2.4 s between requests at 25 RPM; patch it out to keep the test fast
+    orig = oc.RateLimiter.__init__
+
+    def fast(self, rpm, **kw):
+        assert rpm == 25.0
+        orig(self, 0, **kw)
+
+    oc.RateLimiter.__init__ = fast  # type: ignore[method-assign]
+    try:
+        assert asyncio.run(oc.main_async(args, client=client)) == 0
+    finally:
+        oc.RateLimiter.__init__ = orig  # type: ignore[method-assign]
+    out = capsys.readouterr().out
+    assert "llama-3.3-70b-versatile -> openai/gpt-oss-120b -> qwen/qwen3-32b" in out
+    meta = json.loads(
+        (root / "results/predictions/llama-3.3-70b-groq_few_shot__test_synth.meta.json").read_text()
+    )
+    assert meta["models_used"] == {"llama-3.3-70b-versatile": 2} and meta["provider"] == "groq"

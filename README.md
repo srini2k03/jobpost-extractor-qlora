@@ -4,7 +4,7 @@
 
 Messy Indian job postings in, one strict JSON object out. A small open model (Qwen2.5-1.5B-Instruct) is
 fine-tuned with QLoRA on a free Colab T4, then measured against prompting baselines, two upper bounds
-(Gemini Flash on the free API tier and an open 7B model), guided JSON decoding and a rule-based baseline. The model is quantised to GGUF for CPU serving (FastAPI,
+(Llama-3.3-70B via Groq's free API tier and an open 7B model), guided JSON decoding and a rule-based baseline. The model is quantised to GGUF for CPU serving (FastAPI,
 Ollama, a Gradio Space).
 
 > **Status.** Everything that runs on CPU is built and measured here: data generation, validation, dedup,
@@ -55,7 +55,7 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 | Llama-3.2-1B-Instruct 3-shot (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Gemini Flash (API, few-shot) | Gemini API (free tier) | - | - | - | - | - | - | - | pending API run |
+| Llama-3.3-70B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | pending API run |
 | Qwen2.5-1.5B QLoRA fine-tune (ours) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-1.5B QLoRA fine-tune + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Llama-3.2-1B QLoRA fine-tune (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
@@ -76,7 +76,7 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 | Llama-3.2-1B-Instruct 3-shot (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Gemini Flash (API, few-shot) | Gemini API (free tier) | - | - | - | - | - | - | - | pending API run |
+| Llama-3.3-70B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | pending API run |
 | Qwen2.5-1.5B QLoRA fine-tune (ours) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-1.5B QLoRA fine-tune + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Llama-3.2-1B QLoRA fine-tune (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
@@ -95,7 +95,7 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 
 | Approach | Split | Model | Requests | Input tokens | Output tokens | Cost (USD) |
 |---|---|---|---|---|---|---|
-| Gemini Flash (API, few-shot) | - | `gemini-3.8-flash` | - | - | - | - (pending API run) |
+| Llama-3.3-70B via Groq (API, few-shot) | - | `llama-3.3-70b-versatile` | - | - | - | - (pending API run) |
 
 #### Size / speed / accuracy trade-off
 
@@ -152,29 +152,32 @@ this repo and the image appears here:
 with free decoding and with guided JSON decoding (lm-format-enforcer).
 
 **Upper bounds.** There are two:
-- **Hosted API model:** Gemini Flash on the free Gemini API tier, 3-shot
+- **Larger API model:** Llama-3.3-70B via Groq's free tier, 3-shot
   ([`openai_compat_runner.py`](src/jobx/baselines/openai_compat_runner.py), run by
-  [`api_baseline.yml`](.github/workflows/api_baseline.yml)). It calls Gemini's OpenAI-compatible endpoint
-  with the `JobPosting` JSON Schema as `response_format`. If the provider rejects that, it falls back to
-  JSON mode, then to prompt-only; the evaluator parses the output either way.
-  - Models: `gemini-3.8-flash`, falling back to `gemini-3.7-flash`, then `gemini-3.5-flash`.
+  [`api_baseline.yml`](.github/workflows/api_baseline.yml)). It calls Groq's OpenAI-compatible endpoint with
+  the `JobPosting` JSON Schema as `response_format`. If the model rejects that, it falls back to JSON mode,
+  then to prompt-only; the evaluator parses the output either way.
+  - Models: `llama-3.3-70b-versatile`, falling back to `openai/gpt-oss-120b`, then `qwen/qwen3-32b`. The
+    workflow first lists the models the key can use.
     - After 2 consecutive 503s ("overloaded"), the runner moves to the next model and lets the overloaded
       one cool down.
     - A 403/404 drops a model from the chain. The run aborts only when no model is usable, or on a 401 (bad
       key), and then writes nothing.
-    - Each prediction records the model that answered. The row name shows the actual mix, e.g.
-      "Gemini Flash (3.8 / 3.7 fallback)".
-  - Free-tier handling: client-side rate limiting (10 requests/min by default), backoff on 429, and resumable
-    runs. The on-disk response cache stores successful completions only. When the daily quota runs out, the
-    workflow commits what it has and the next dispatch continues.
+    - Each prediction records the model that answered. If a fallback answered any of them, the row name shows
+      the mix, e.g. "Llama-3.3-70B via Groq (llama-3.3-70b-versatile / gpt-oss-120b fallback) (API, few-shot)".
+  - Free-tier handling: client-side rate limiting (25 requests/min, under Groq's free limit), and on 429 a
+    wait for the time given in `Retry-After` or `x-ratelimit-reset-*`. The on-disk response cache stores
+    successful completions only, and runs are resumable: when a daily quota runs out, the workflow commits
+    what it has and the next dispatch continues.
   - Failed runs are never shown as results.
     - A predictions file with no completed request is not scored.
     - A partial run, or one where more than 5% of requests failed, is listed as "incomplete (k/N)" in a
       separate table, outside the comparison.
   - Accounting: token counts are recorded per request, and the cost is $0 on the free tier (see "API usage"
     in the results).
-  - Other providers: the same runner works with Groq or OpenRouter (`--provider`, or
-    `--base-url/--key-env/--model`).
+  - Other providers: the same runner works with the Gemini or OpenRouter presets (`--provider gemini`, or
+    `--base-url/--key-env/--model`). Gemini's free tier was tried first, but its tiny daily quotas and
+    frequent 503s made it unusable in CI.
   - Anthropic (optional): an Anthropic-API runner
     ([`anthropic_runner.py`](src/jobx/baselines/anthropic_runner.py)) is available with a cost estimate
     and a hard USD budget.
@@ -254,7 +257,7 @@ under your Hugging Face account (the `jobx-artifacts` dataset repo is private). 
 | 6 | `05_awq_benchmark` | T4, ~45 min | HF_TOKEN, HF_USERNAME | AWQ model, T4 benchmark rows (fp16 / 8-bit / AWQ) |
 | 7 | `06_error_analysis` | CPU, ~1 min | (HF_TOKEN to pull) | taxonomy table, chart, worked examples |
 | 8 | Actions → `deploy-space` | ~5 min | HF_TOKEN | Gradio Space running the Q4 GGUF |
-| 9 | Actions → `api-baseline` (any time; rerun after `test_real` lands) | ~45–70 min at 10 RPM, $0 (free tier) | repo secret GEMINI_API_KEY | Gemini Flash 3-shot predictions, token counts, metrics and table, committed (resumable) |
+| 9 | Actions → `api-baseline` (any time; rerun after `test_real` lands) | ~20–30 min at 25 RPM, $0 (free tier) | repo secret GROQ_API_KEY | Llama-3.3-70B (Groq) 3-shot predictions, token counts, metrics and table, committed (resumable) |
 
 ## Repository layout
 
