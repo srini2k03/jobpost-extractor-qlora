@@ -1,0 +1,13 @@
+{
+  "approach": "qwen2.5-1.5b-cpu_zero_shot",
+  "model": "Qwen/Qwen2.5-1.5B-Instruct (GGUF Q8_0, llama.cpp)",
+  "gguf": "qwen2.5-1.5b-instruct-Q8_0.gguf",
+  "decoding": "free",
+  "system_prompt": "full",
+  "n_shots": 0,
+  "shot_ids": [],
+  "hardware": "CPU (AMD EPYC 9V45 96-Core Processor, 4 threads, GitHub Actions)",
+  "date": "2026-11-03",
+  "commit": "971e1dc",
+  "n_examples": 471
+}
