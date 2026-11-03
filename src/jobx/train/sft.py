@@ -47,7 +47,7 @@ def build_datasets(cfg: dict[str, Any]) -> tuple[Any, Any, list[dict[str, Any]]]
 
 
 def make_json_f1_callback(
-    val_examples: list[dict[str, Any]], tokenizer: Any, n_log: int, use_wandb: bool
+    val_examples: list[dict[str, Any]], tokenizer: Any, n_log: int, use_wandb: bool, system: str = "full"
 ) -> Any:
     import torch
     from transformers import TrainerCallback
@@ -77,7 +77,7 @@ def make_json_f1_callback(
                 chunk = val_examples[i : i + bs]
                 texts = [
                     tokenizer.apply_chat_template(
-                        prompts.messages(e["text"]), tokenize=False, add_generation_prompt=True
+                        prompts.messages(e["text"], system=system), tokenize=False, add_generation_prompt=True
                     )
                     for e in chunk
                 ]

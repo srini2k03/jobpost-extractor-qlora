@@ -7,6 +7,51 @@
         "status": "pending"
       },
       {
+        "approach": "qwen2.5-0.5b-cpu_zero_shot",
+        "name": "Qwen2.5-0.5B-Instruct zero-shot",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-0.5b-cpu_zero_shot_guided",
+        "name": "Qwen2.5-0.5B-Instruct zero-shot + guided JSON",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-0.5b-cpu_few_shot",
+        "name": "Qwen2.5-0.5B-Instruct 3-shot",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-0.5b-cpu_few_shot_guided",
+        "name": "Qwen2.5-0.5B-Instruct 3-shot + guided JSON",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b-cpu_zero_shot",
+        "name": "Qwen2.5-1.5B-Instruct zero-shot",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b-cpu_few_shot",
+        "name": "Qwen2.5-1.5B-Instruct 3-shot",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-0.5b-lora-cpu_f16",
+        "name": "Qwen2.5-0.5B LoRA fine-tune (ours), GGUF F16",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-0.5b-lora-cpu_q8_0",
+        "name": "Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q8_0",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-0.5b-lora-cpu_q4_k_m",
+        "name": "Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo)",
+        "status": "pending"
+      },
+      {
         "approach": "qwen2.5-1.5b_zero_shot",
         "name": "Qwen2.5-1.5B-Instruct zero-shot",
         "status": "pending"
@@ -230,6 +275,51 @@
           "date": "2026-11-03",
           "commit": "902cc8a"
         }
+      },
+      {
+        "approach": "qwen2.5-0.5b-cpu_zero_shot",
+        "name": "Qwen2.5-0.5B-Instruct zero-shot",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-0.5b-cpu_zero_shot_guided",
+        "name": "Qwen2.5-0.5B-Instruct zero-shot + guided JSON",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-0.5b-cpu_few_shot",
+        "name": "Qwen2.5-0.5B-Instruct 3-shot",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-0.5b-cpu_few_shot_guided",
+        "name": "Qwen2.5-0.5B-Instruct 3-shot + guided JSON",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b-cpu_zero_shot",
+        "name": "Qwen2.5-1.5B-Instruct zero-shot",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b-cpu_few_shot",
+        "name": "Qwen2.5-1.5B-Instruct 3-shot",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-0.5b-lora-cpu_f16",
+        "name": "Qwen2.5-0.5B LoRA fine-tune (ours), GGUF F16",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-0.5b-lora-cpu_q8_0",
+        "name": "Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q8_0",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-0.5b-lora-cpu_q4_k_m",
+        "name": "Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo)",
+        "status": "pending"
       },
       {
         "approach": "qwen2.5-1.5b_zero_shot",

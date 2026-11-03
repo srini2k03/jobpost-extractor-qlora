@@ -19,10 +19,16 @@ def merge(base: str, adapter: str, out: str | Path) -> Path:
     from peft import PeftModel
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    device_map = "auto" if torch.cuda.is_available() else {"": "cpu"}
-    model = AutoModelForCausalLM.from_pretrained(base, torch_dtype=torch.float16, device_map=device_map)
+    cuda = torch.cuda.is_available()
+    device_map = "auto" if cuda else {"": "cpu"}
+    # On CPU, merge in fp32 (half-precision matmuls are slow/partial there) and save in fp16.
+    model = AutoModelForCausalLM.from_pretrained(
+        base, torch_dtype=torch.float16 if cuda else torch.float32, device_map=device_map
+    )
     model = PeftModel.from_pretrained(model, adapter)
     model = model.merge_and_unload()
+    if not cuda:
+        model = model.to(torch.float16)
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     model.save_pretrained(out, safe_serialization=True, max_shard_size="2GB")

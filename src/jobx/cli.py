@@ -130,12 +130,34 @@ def taxonomy(
     typer.echo(json.dumps(res, indent=2))
 
 
+@app.command("charts")
+def charts(out: Path = Path("results/charts")) -> None:
+    """Micro-F1 and size/speed/accuracy charts from results/results.json (needs matplotlib)."""
+    from jobx.eval.charts import draw_charts
+
+    try:
+        written = draw_charts(".", out)
+    except ImportError:  # matplotlib not installed: charts are optional
+        typer.echo("matplotlib not installed; skipping charts")
+        return
+    for p in written:
+        typer.echo(f"wrote {p}")
+
+
+@app.command("model-card")
+def model_card(out: Path = Path("MODEL_CARD.md")) -> None:
+    """Render MODEL_CARD.md for the CPU-route release (model-v1) from measured results."""
+    from jobx.cpu.card import write_model_card
+
+    typer.echo(f"wrote {write_model_card('.', out)}")
+
+
 @app.command("site")
-def site(out: Path = Path("site")) -> None:
-    """Build the static GitHub Pages results page."""
+def site(out: Path = Path("site"), model_dir: Path | None = None) -> None:
+    """Build the GitHub Pages site: results, charts and (if model parts are given) the in-browser demo."""
     from jobx.eval.site import build_site
 
-    typer.echo(f"wrote {build_site('.', out)}")
+    typer.echo(f"wrote {build_site('.', out, model_dir=model_dir)}")
 
 
 @app.command("curves")

@@ -1,0 +1,93 @@
+name: cpu-baselines
+# No-account CPU route, step 1: prompting baselines on free GitHub-hosted runners. Base models
+# (Qwen2.5-0.5B / 1.5B-Instruct, public on the HF Hub, no token) are converted to GGUF Q8_0 and served by
+# llama.cpp; zero-shot / 3-shot, free and JSON-schema-guided decoding. Settings: configs/cpu/route.yaml.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: cpu-baselines
+  cancel-in-progress: false
+
+env:
+  LLAMA_CPP_REF: b6000
+  HF_HUB_DISABLE_TELEMETRY: "1"
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+      splits: ${{ steps.m.outputs.splits }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -e .
+      - id: m
+        run: |
+          echo "matrix=$(python -m jobx.cpu.matrix baselines)" >> "$GITHUB_OUTPUT"
+          echo "splits=$(python -m jobx.cpu.matrix splits)" >> "$GITHUB_OUTPUT"
+
+  run:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - uses: actions/cache@v4
+        with:
+          path: llama.cpp
+          key: llama-cpp-${{ env.LLAMA_CPP_REF }}-avx2-v1
+      - name: Build llama.cpp (portable AVX2)
+        run: scripts/build_llama_cpp.sh "$LLAMA_CPP_REF" llama.cpp
+      - name: Install
+        run: pip install -r requirements/cpu-train.txt -e ".[serve]"
+      - name: Download + convert ${{ matrix.model }} to GGUF ${{ matrix.quant }}
+        run: |
+          python -c "from huggingface_hub import snapshot_download as s; s('${{ matrix.model }}', local_dir='hf/${{ matrix.slug }}')"
+          scripts/gguf_convert.sh llama.cpp "hf/${{ matrix.slug }}" gguf "${{ matrix.slug }}" "${{ matrix.quant }}"
+      - name: Predict (${{ matrix.approach }})
+        run: |
+          for SPLIT in $(echo "${{ needs.plan.outputs.splits }}" | tr ',' ' '); do
+            ARGS=(--server-bin llama.cpp/build/bin/llama-server --model "gguf/${{ matrix.slug }}-${{ matrix.quant }}.gguf"
+                  --approach "${{ matrix.approach }}" --split "$SPLIT" --max-examples "${{ matrix.max_examples }}"
+                  --shots "${{ matrix.shots }}" --system full --threads "$(nproc)"
+                  --model-label "${{ matrix.model }} (GGUF ${{ matrix.quant }}, llama.cpp)")
+            if [ "${{ matrix.guided }}" = "true" ]; then ARGS+=(--guided); fi
+            python -m jobx.quantize.benchmark "${ARGS[@]}"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pred-${{ matrix.approach }}
+          path: results/predictions/${{ matrix.approach }}__*
+
+  collect:
+    needs: run
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -e . matplotlib
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: pred-*
+          merge-multiple: true
+          path: results/predictions
+      - name: Score, tables, commit
+        run: scripts/commit_results.sh "CPU baselines (llama.cpp, GitHub Actions)" results/predictions
+      - name: Refresh the Pages site
+        run: gh workflow run pages.yml --ref "$GITHUB_REF_NAME" || true

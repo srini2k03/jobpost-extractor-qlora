@@ -1,0 +1,132 @@
+name: cpu-eval-release
+# No-account CPU route, step 3 (dispatched automatically by cpu_finetune when training is done):
+# merge the LoRA adapter, convert to GGUF F16 / Q8_0 / Q4_K_M with llama.cpp, evaluate each quantisation
+# on the test splits (tokens/s, peak RAM, size, accuracy), commit the results, publish the GitHub Release
+# `model-v1` (adapter, merged safetensors, GGUF files; notes = MODEL_CARD.md) and refresh the Pages demo.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: cpu-eval-release
+  cancel-in-progress: false
+
+env:
+  LLAMA_CPP_REF: b6000
+  STATE_TAG: cpu-train-state
+  BASE: Qwen/Qwen2.5-0.5B-Instruct
+  NAME: jobx-qwen2.5-0.5b
+  HF_HUB_DISABLE_TELEMETRY: "1"
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+      splits: ${{ steps.m.outputs.splits }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -e .
+      - name: Adapter must exist
+        run: gh release download "$STATE_TAG" -p adapter.tar.gz -D /tmp || { echo "::error::no trained adapter in the $STATE_TAG release; run cpu-finetune first"; exit 1; }
+      - id: m
+        run: |
+          echo "matrix=$(python -m jobx.cpu.matrix eval)" >> "$GITHUB_OUTPUT"
+          echo "splits=$(python -m jobx.cpu.matrix splits)" >> "$GITHUB_OUTPUT"
+
+  eval:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - uses: actions/cache@v4
+        with:
+          path: llama.cpp
+          key: llama-cpp-${{ env.LLAMA_CPP_REF }}-avx2-v1
+      - run: scripts/build_llama_cpp.sh "$LLAMA_CPP_REF" llama.cpp
+      - run: pip install -r requirements/cpu-train.txt -e ".[serve]"
+      - name: Merge adapter + convert to GGUF ${{ matrix.quant }}
+        run: |
+          gh release download "$STATE_TAG" -p adapter.tar.gz -D /tmp
+          mkdir -p outputs/cpu-lora && tar xzf /tmp/adapter.tar.gz -C outputs/cpu-lora
+          python -m jobx.train.merge --base "$BASE" --adapter outputs/cpu-lora/final --out outputs/merged
+          scripts/gguf_convert.sh llama.cpp outputs/merged gguf "$NAME" "${{ matrix.quant }}"
+      - name: Evaluate + benchmark (${{ matrix.approach }})
+        run: |
+          Q_LOWER=$(echo "${{ matrix.quant }}" | tr 'A-Z' 'a-z')
+          FIRST=1
+          for SPLIT in $(echo "${{ needs.plan.outputs.splits }}" | tr ',' ' '); do
+            ARGS=(--server-bin llama.cpp/build/bin/llama-server --model "gguf/$NAME-${{ matrix.quant }}.gguf"
+                  --approach "${{ matrix.approach }}" --split "$SPLIT" --max-examples 0 --system compact
+                  --threads "$(nproc)" --model-label "$NAME-lora (GGUF ${{ matrix.quant }}, llama.cpp)")
+            # one benchmark row per quantisation (on the first split); other splits are predictions only
+            if [ $FIRST -eq 1 ]; then ARGS+=(--variant "${{ matrix.variant }}" --out-bench "results/benchmarks/cpu_lora_$Q_LOWER.json"); fi
+            python -m jobx.quantize.benchmark "${ARGS[@]}"
+            FIRST=0
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eval-${{ matrix.approach }}
+          path: |
+            results/predictions/${{ matrix.approach }}__*
+            results/benchmarks/cpu_lora_*.json
+
+  release:
+    needs: [plan, eval]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - uses: actions/cache@v4
+        with:
+          path: llama.cpp
+          key: llama-cpp-${{ env.LLAMA_CPP_REF }}-avx2-v1
+      - run: scripts/build_llama_cpp.sh "$LLAMA_CPP_REF" llama.cpp
+      - run: pip install -r requirements/cpu-train.txt -e .
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: eval-*
+          merge-multiple: true
+          path: results
+      - name: "Score, tables, charts, model card; commit"
+        run: |
+          scripts/commit_results.sh "CPU fine-tune evaluation + benchmark (GGUF F16/Q8_0/Q4_K_M)" results MODEL_CARD.md
+      - name: Build release files
+        run: |
+          gh release download "$STATE_TAG" -p adapter.tar.gz -D /tmp
+          mkdir -p outputs/cpu-lora release && tar xzf /tmp/adapter.tar.gz -C outputs/cpu-lora
+          python -m jobx.train.merge --base "$BASE" --adapter outputs/cpu-lora/final --out outputs/merged
+          scripts/gguf_convert.sh llama.cpp outputs/merged release "$NAME" Q8_0 Q4_K_M
+          tar czf "release/$NAME-lora-adapter.tar.gz" -C outputs/cpu-lora final
+          tar czf "release/$NAME-merged.tar.gz" -C outputs merged
+          jobx model-card
+          ls -lh release
+          for f in release/*; do
+            SIZE=$(stat -c %s "$f"); if [ "$SIZE" -ge 2000000000 ]; then echo "::error::$f is >= 2 GB"; exit 1; fi
+          done
+      - name: Publish GitHub Release model-v1
+        run: |
+          if gh release view model-v1 > /dev/null 2>&1; then
+            gh release upload model-v1 release/* --clobber
+            gh release edit model-v1 --notes-file MODEL_CARD.md
+          else
+            gh release create model-v1 release/* --title "jobx-qwen2.5-0.5b-lora v1 (CPU-trained)" \
+              --notes-file MODEL_CARD.md --target "$GITHUB_SHA"
+          fi
+      - name: Refresh the Pages demo
+        run: gh workflow run pages.yml --ref "$GITHUB_REF_NAME"

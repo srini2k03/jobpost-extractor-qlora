@@ -1,30 +1,66 @@
 name: pages
-# Static results page (tables + training curves) published to the gh-pages branch.
+# GitHub Pages site: results table + charts + the in-browser demo. The demo serves the released Q4_K_M GGUF
+# from the gh-pages branch itself, split into < 95 MB parts (release asset downloads have no reliable CORS).
+# A Playwright check loads the model in headless Chromium and extracts valid JSON before publishing.
 on:
   push:
     branches: [main]
-    paths: ["results/**", "src/jobx/eval/**", ".github/workflows/pages.yml"]
+    paths: ["results/**", "src/jobx/eval/**", "src/jobx/web/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  LLAMA_CPP_REF: b6000
+  GH_TOKEN: ${{ github.token }}
+
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -e . matplotlib
+      - name: Fetch the released Q4_K_M model
+        run: |
+          if gh release view model-v1 > /dev/null 2>&1 && gh release download model-v1 -p '*-Q4_K_M.gguf' -D gguf; then
+            echo "HAVE_MODEL=1" >> "$GITHUB_ENV"
+          else
+            echo "no model-v1 release yet: the site shows a 'demo pending' note"
+          fi
+      - uses: actions/cache@v4
+        if: env.HAVE_MODEL == '1'
         with:
-          python-version: "3.12"
-          cache: pip
-      - run: pip install -e .
-      - name: Build site
+          path: llama.cpp
+          key: llama-cpp-${{ env.LLAMA_CPP_REF }}-avx2-v1
+      - name: Split the model into < 95 MB parts
+        if: env.HAVE_MODEL == '1'
+        run: |
+          scripts/build_llama_cpp.sh "$LLAMA_CPP_REF" llama.cpp llama-gguf-split
+          mkdir -p model_parts
+          llama.cpp/build/bin/llama-gguf-split --split --split-max-size 90M gguf/*-Q4_K_M.gguf model_parts/jobx-q4km
+          ls -lh model_parts
+      - name: Build the site
         run: |
           jobx results-table
-          jobx site --out site
+          jobx charts
+          if [ "${HAVE_MODEL:-0}" = "1" ]; then jobx site --out site --model-dir model_parts; else jobx site --out site; fi
+      - name: Playwright check (model loads, valid JSON for one example)
+        if: env.HAVE_MODEL == '1'
+        run: |
+          pip install playwright==1.55.0
+          python -m playwright install --with-deps chromium
+          python scripts/check_demo.py site --timeout-min 25
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./site
           publish_branch: gh-pages
+          force_orphan: true   # one commit on gh-pages: no history of model parts, no push races

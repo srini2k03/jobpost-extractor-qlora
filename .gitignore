@@ -20,3 +20,8 @@ data/real/raw_postings.jsonl
 data/real/*.progress.json
 # API response cache (resumable API baseline runs)
 .cache/
+gguf/
+hf/
+model_parts/
+release/
+llama.cpp/

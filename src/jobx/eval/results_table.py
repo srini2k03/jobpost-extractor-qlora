@@ -132,8 +132,8 @@ def build_tables(root: str | Path = ".") -> tuple[str, dict[str, Any]]:
         has_any = any(k[1] == split for k in metrics)
         if split == "test_real" and not has_any:
             md.append(
-                "_The real test set is pending: it needs the fetch + draft-label notebook and a human "
-                "pass with `jobx verify` (see the Colab checklist below)._"
+                "_The real test set is pending: it needs real postings fetched, draft labels and a human "
+                "pass with `jobx verify` (see `docs/real_dataset.md`)._"
             )
             md.append("")
         md.append(
@@ -142,13 +142,17 @@ def build_tables(root: str | Path = ".") -> tuple[str, dict[str, Any]]:
         )
         md.append("|---|---|---|---|---|---|---|---|---|---|")
         rows = []
+        not_run: list[str] = []
         for a in approaches:
             d = metrics.get((a["id"], split))
             if d is None:
+                rows.append({"approach": a["id"], "name": a["name"], "status": "pending"})
+                if a.get("route") == "gpu":
+                    not_run.append(a["name"])
+                    continue
                 md.append(
                     f"| {a['name']} | {a['hardware']} | - | - | - | - | - | - | - | {pending_label(a)} |"
                 )
-                rows.append({"approach": a["id"], "name": a["name"], "status": "pending"})
                 continue
             name = display_name(a, d)
             if not is_complete(d):
@@ -197,6 +201,12 @@ def build_tables(root: str | Path = ".") -> tuple[str, dict[str, Any]]:
                 }
             )
         data["splits"][split] = rows
+        if not_run:
+            md.append("")
+            md.append(
+                f"_{len(not_run)} optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus "
+                "Hugging Face and W&B accounts) were not run; see `docs/gpu_route.md`._"
+            )
         md.append("")
     # per-field table for every measured approach on the first split that has data
     for split in cfg["splits"]:
@@ -234,7 +244,7 @@ def build_tables(root: str | Path = ".") -> tuple[str, dict[str, Any]]:
             )
         md.append("")
     md += api_usage_table(approaches, metrics, cfg["splits"])
-    md += benchmark_table(root, data)
+    md += benchmark_table(root, data, cfg.get("benchmarks"))
     return "\n".join(md).rstrip() + "\n", data
 
 
@@ -279,13 +289,11 @@ def api_usage_table(
     return md
 
 
-def benchmark_table(root: Path, data: dict[str, Any]) -> list[str]:
-    planned = [
-        ("fp16 (transformers)", "GPU (T4 or local)"),
-        ("merged 8-bit (bitsandbytes)", "GPU (T4 or local)"),
-        ("AWQ 4-bit", "GPU (T4 or local)"),
-        ("GGUF Q8_0 (llama.cpp)", "CPU, GitHub Actions"),
-        ("GGUF Q4_K_M (llama.cpp)", "CPU, GitHub Actions"),
+def benchmark_table(
+    root: Path, data: dict[str, Any], planned_cfg: list[dict[str, Any]] | None = None
+) -> list[str]:
+    planned_cfg = planned_cfg or [
+        {"variant": "LoRA 0.5B GGUF Q4_K_M (llama.cpp)", "hardware": "CPU, GitHub Actions", "route": "cpu"}
     ]
     rows: dict[str, dict[str, Any]] = {}
     for p in sorted((root / "results/benchmarks").glob("*.json")):
@@ -298,12 +306,12 @@ def benchmark_table(root: Path, data: dict[str, Any]) -> list[str]:
         "| Variant | Hardware | Size (GB) | Micro F1 % | Tokens/s | Peak memory (GB) | Status |",
         "|---|---|---|---|---|---|---|",
     ]
-    for variant, hw in planned:
+    for plan in planned_cfg:
+        variant, hw = plan["variant"], plan["hardware"]
         r = rows.get(variant)
         if r is None:
-            md.append(
-                f"| {variant} | {hw} | - | - | - | - | {PENDING if 'GPU' in hw else 'pending (needs merged model)'} |"
-            )
+            if plan.get("route") != "gpu":  # optional GPU-route rows appear only once measured
+                md.append(f"| {variant} | {hw} | - | - | - | - | pending CPU run |")
             continue
         mem = r.get("peak_ram_gb") or r.get("peak_vram_gb")
         md.append(

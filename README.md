@@ -2,15 +2,22 @@
 
 [![CI](https://github.com/srini2k03/jobpost-extractor-qlora/actions/workflows/ci.yml/badge.svg)](https://github.com/srini2k03/jobpost-extractor-qlora/actions/workflows/ci.yml)
 
-Messy Indian job postings in, one strict JSON object out. A small open model (Qwen2.5-1.5B-Instruct) is
-fine-tuned with QLoRA on a free Colab T4, then measured against prompting baselines, two upper bounds
-(GPT-OSS-120B via Groq's free API tier and an open 7B model), guided JSON decoding and a rule-based baseline. The model is quantised to GGUF for CPU serving (FastAPI,
-Ollama, a Gradio Space).
+Messy Indian job postings in, one strict JSON object out.
 
-> **Status.** Everything that runs on CPU is built and measured here: data generation, validation, dedup,
-> the leakage-safe split, the data card, the evaluation stack, the regex baseline, the API and the demo.
-> **GPU rows are pending** until the Colab notebooks are run (checklist below). No GPU number in this README
-> is estimated or invented; empty cells mean "not run yet".
+**Headline route:** a LoRA fine-tune of Qwen2.5-0.5B-Instruct, trained on CPU in GitHub Actions.
+- Everything runs on free GitHub-hosted runners: data, baselines, training, quantisation, evaluation,
+  release and demo. It needs no GPU and no accounts beyond GitHub.
+- It is compared with prompting baselines (0.5B and 1.5B, zero/3-shot, free and JSON-grammar decoding), a
+  rule-based baseline and a larger API model, GPT-OSS-120B via Groq.
+- The model is published as a [GitHub Release](https://github.com/srini2k03/jobpost-extractor-qlora/releases/tag/model-v1)
+  (adapter, merged weights, GGUF) and runs in your browser in the
+  **[live demo](https://srini2k03.github.io/jobpost-extractor-qlora/)**.
+
+A QLoRA 1.5B GPU path (Colab or a local GPU) is provided but **not run**; see
+[`docs/gpu_route.md`](docs/gpu_route.md).
+
+> **Status.** Rows marked "pending CPU run" fill in as the workflows below run; nothing in this README is
+> estimated. Model card: [`MODEL_CARD.md`](MODEL_CARD.md).
 
 ```text
 🔥 Hiring!! Sr. Python Developer @ Kaveri Analytics Pvt Ltd
@@ -30,9 +37,10 @@ Target output (what the model is trained to produce):
  "locations": ["Bengaluru", "Pune"], "work_mode": "hybrid", "employment_type": null, "education": "b.tech"}
 ```
 
-Fields the posting does not state are `null` (or `[]`), never guessed; here no employment type is stated. The phone number and the ₹500 kit are
-distractors. Schema: [`src/jobx/schema/models.py`](src/jobx/schema/models.py), exported as
-[`schema/jobposting.schema.json`](schema/jobposting.schema.json).
+- Fields the posting does not state are `null` (or `[]`), never guessed; here no employment type is stated.
+- The phone number and the ₹500 kit are distractors.
+- Schema: [`src/jobx/schema/models.py`](src/jobx/schema/models.py), exported as
+  [`schema/jobposting.schema.json`](schema/jobposting.schema.json).
 
 ## Results
 
@@ -43,49 +51,41 @@ resamples of examples).
 <!-- RESULTS:START -->
 #### Real postings (`test_real`, headline)
 
-_The real test set is pending: it needs the fetch + draft-label notebook and a human pass with `jobx verify` (see the Colab checklist below)._
+_The real test set is pending: it needs real postings fetched, draft labels and a human pass with `jobx verify` (see `docs/real_dataset.md`)._
 
 | Approach | Hardware | n | JSON valid % | Schema valid % | Field EM % | Micro F1 % [95% CI] | Macro F1 % | Hallucination % [95% CI] | Status |
 |---|---|---|---|---|---|---|---|---|---|
 | Regex baseline (rules + alias tables) | CPU | - | - | - | - | - | - | - | pending (needs this split) |
-| Qwen2.5-1.5B-Instruct zero-shot | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B-Instruct zero-shot + guided JSON | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B-Instruct 3-shot | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B-Instruct 3-shot + guided JSON | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.2-1B-Instruct 3-shot (optional) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.2-1B-Instruct 3-shot + guided JSON (optional) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-0.5B-Instruct zero-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B-Instruct zero-shot + guided JSON | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B-Instruct 3-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B-Instruct 3-shot + guided JSON | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-1.5B-Instruct zero-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-1.5B-Instruct 3-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF F16 | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q8_0 | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
 | GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | pending API run |
-| Qwen2.5-1.5B QLoRA fine-tune (ours) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B QLoRA fine-tune + guided JSON | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.2-1B QLoRA fine-tune (optional) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, bitsandbytes 8-bit | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, AWQ 4-bit | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, GGUF Q8_0 (llama.cpp) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, GGUF Q4_K_M (llama.cpp) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending GPU run |
+
+_15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus Hugging Face and W&B accounts) were not run; see `docs/gpu_route.md`._
 
 #### Synthetic held-out families and companies (`test_synth`)
 
 | Approach | Hardware | n | JSON valid % | Schema valid % | Field EM % | Micro F1 % [95% CI] | Macro F1 % | Hallucination % [95% CI] | Status |
 |---|---|---|---|---|---|---|---|---|---|
 | Regex baseline (rules + alias tables) | CPU | 471 | 100.0 | 100.0 | 91.1 | 93.1 [92.5, 93.8] | 90.8 | 2.5 [1.7, 3.2] | measured 2026-11-03 @902cc8a |
-| Qwen2.5-1.5B-Instruct zero-shot | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B-Instruct zero-shot + guided JSON | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B-Instruct 3-shot | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B-Instruct 3-shot + guided JSON | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.2-1B-Instruct 3-shot (optional) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.2-1B-Instruct 3-shot + guided JSON (optional) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-0.5B-Instruct zero-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B-Instruct zero-shot + guided JSON | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B-Instruct 3-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B-Instruct 3-shot + guided JSON | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-1.5B-Instruct zero-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-1.5B-Instruct 3-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF F16 | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q8_0 | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
 | GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | incomplete (25/200) |
-| Qwen2.5-1.5B QLoRA fine-tune (ours) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B QLoRA fine-tune + guided JSON | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.2-1B QLoRA fine-tune (optional) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, bitsandbytes 8-bit | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, AWQ 4-bit | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, GGUF Q8_0 (llama.cpp) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, GGUF Q4_K_M (llama.cpp) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending GPU run |
+
+_15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus Hugging Face and W&B accounts) were not run; see `docs/gpu_route.md`._
 
 #### Per-field exact match % (`test_synth`)
 
@@ -111,11 +111,9 @@ Partial runs, or runs with more than 5% failed requests, are scored on what comp
 
 | Variant | Hardware | Size (GB) | Micro F1 % | Tokens/s | Peak memory (GB) | Status |
 |---|---|---|---|---|---|---|
-| fp16 (transformers) | GPU (T4 or local) | - | - | - | - | pending GPU run |
-| merged 8-bit (bitsandbytes) | GPU (T4 or local) | - | - | - | - | pending GPU run |
-| AWQ 4-bit | GPU (T4 or local) | - | - | - | - | pending GPU run |
-| GGUF Q8_0 (llama.cpp) | CPU, GitHub Actions | - | - | - | - | pending (needs merged model) |
-| GGUF Q4_K_M (llama.cpp) | CPU, GitHub Actions | - | - | - | - | pending (needs merged model) |
+| LoRA 0.5B GGUF F16 (llama.cpp) | CPU, GitHub Actions | - | - | - | - | pending CPU run |
+| LoRA 0.5B GGUF Q8_0 (llama.cpp) | CPU, GitHub Actions | - | - | - | - | pending CPU run |
+| LoRA 0.5B GGUF Q4_K_M (llama.cpp) | CPU, GitHub Actions | - | - | - | - | pending CPU run |
 <!-- RESULTS:END -->
 
 **About the regex baseline.** It is a real CPU run, but read it as a sanity check of the evaluation stack
@@ -124,12 +122,23 @@ held-out families), and it shares alias tables and salary/experience parsers wit
 `test_synth` flatters it. Company and role, the fields its patterns can't pin down, are where it fails
 (see `notebooks/06_error_analysis.ipynb`). The real-postings split is the honest comparison.
 
-### Training curves
+**About the regex baseline.** It is a real CPU run, but read it as a sanity check of the evaluation stack
+rather than a competitor. Its patterns were written with all synthetic templates in view (including the
+held-out families), and it shares alias tables and salary/experience parsers with the generator. So
+`test_synth` flatters it. Company and role, the fields its patterns can't pin down, are where it fails
+(see `notebooks/06_error_analysis.ipynb`). The real-postings split is the honest comparison.
 
-_Pending GPU run._ `notebooks/03_train_qlora.ipynb` exports the Trainer log history and
-`results/training/curves.png` (train/validation loss, validation JSON micro F1, learning rate), and the W&B
-run holds the same curves plus sample generations per evaluation. After the run, `jobx pull` brings them into
-this repo and the image appears here:
+### Charts and training curves
+
+_These images appear after the first CPU-route runs; `jobx charts` draws them from `results/results.json`._
+
+![micro F1 by approach](results/charts/micro_f1_by_approach.png)
+
+![size / speed / accuracy](results/charts/quant_tradeoff.png)
+
+The CPU fine-tune writes its curves (train/validation loss, learning rate, validation JSON micro F1) to
+[`results/training/qwen2.5-0.5b-lora-cpu/`](results/training/qwen2.5-0.5b-lora-cpu/) as PNG and JSON after
+every job. This replaces W&B.
 
 ![training curves](results/training/curves.png)
 
@@ -148,66 +157,78 @@ this repo and the image appears here:
    with the same parsers the evaluator uses. Paraphrases must also introduce nothing new. An optional NLI
    hook adds an entailment check per field. On the current set it rejects 0 of 3,000 generated postings,
    after it caught a real template bug during development.
-3. *LLM paraphrase pass* (Qwen2.5-7B 4-bit, notebook 01), filtered by the checker. The filter rate goes into
-   the data card. Pending GPU run.
+3. *LLM paraphrase pass* (7B teacher): part of the optional GPU route, not run. The checker and filter are
+   in place for it.
 4. *MinHash near-duplicate removal* (word 3-gram shingles, 128 permutations, LSH 32×4, exact-Jaccard
    confirmation). It keeps the test copy when a train item collides with it.
 5. *Leakage-safe split*: template families **and** companies are disjoint across train / val / test_synth.
    This is verified in the build and in the tests.
-6. *Real postings* (~200, from a permissively licensed HF dataset) drafted by the 7B model and checked by a
+6. *Real postings* (~200, from a permissively licensed HF dataset) with drafted labels checked by a
    human with `jobx verify`. This **real-only test split is the headline evaluation**. Pending; see
    [`docs/real_dataset.md`](docs/real_dataset.md).
 
 **Baselines** (notebook 02): Qwen2.5-1.5B zero-shot and 3-shot and an optional Llama-3.2-1B. Each runs
 with free decoding and with guided JSON decoding (lm-format-enforcer).
 
-**Upper bounds.** There are two:
-- **Larger API model:** GPT-OSS-120B via Groq's free tier, 3-shot. GPT-OSS-120B is OpenAI's open-weight
-  model, a mixture-of-experts with about 117B parameters. The plan was Llama-3.3-70B, but that model was not
-  available to the project's Groq key (404, and it is not in the key's model list).
-  ([`openai_compat_runner.py`](src/jobx/baselines/openai_compat_runner.py), run by
-  [`api_baseline.yml`](.github/workflows/api_baseline.yml)). It calls Groq's OpenAI-compatible endpoint with
-  the `JobPosting` JSON Schema as `response_format`. If the model rejects that, it falls back to JSON mode,
-  then to prompt-only; the evaluator parses the output either way.
-  - Models: `openai/gpt-oss-120b`, falling back to `qwen/qwen3.8-27b`. The workflow first lists the models
-    the key can use.
-    - After 2 consecutive 503s ("overloaded"), the runner moves to the next model and lets the overloaded
-      one cool down.
-    - A 403/404 drops a model from the chain. The run aborts only when no model is usable, or on a 401 (bad
-      key), and then writes nothing.
-    - Each prediction records the model that answered. If a fallback answered any of them, the row name shows
-      the mix, e.g. "GPT-OSS-120B via Groq (gpt-oss-120b / qwen3.8-27b fallback) (API, few-shot)".
-  - Free-tier handling: client-side rate limiting (25 requests/min, under Groq's free limit), and on 429 a
-    wait for the time given in `Retry-After` or `x-ratelimit-reset-*`. The on-disk response cache stores
-    successful completions only, and runs are resumable: when a daily quota runs out, the workflow commits
-    what it has. A daily schedule (03:23 UTC) resumes the run and exits without committing once every
-    planned prediction exists.
-  - Failed runs are never shown as results.
-    - A predictions file with no completed request is not scored.
-    - A partial run, or one where more than 5% of requests failed, is listed as "incomplete (k/N)" in a
-      separate table, outside the comparison.
-  - Accounting: token counts are recorded per request, and the cost is $0 on the free tier (see "API usage"
-    in the results).
-  - Other providers: the same runner works with the Gemini or OpenRouter presets (`--provider gemini`, or
-    `--base-url/--key-env/--model`). Gemini's free tier was tried first, but its tiny daily quotas and
-    frequent 503s made it unusable in CI.
-  - Anthropic (optional): an Anthropic-API runner
-    ([`anthropic_runner.py`](src/jobx/baselines/anthropic_runner.py)) is available with a cost estimate
-    and a hard USD budget.
-  - The row reads "pending API run" until the workflow has run.
-- **Open 7B model:** Qwen2.5-7B-Instruct 3-shot in 4-bit on the T4 (free and guided decoding). It is the
-  model you could run yourself.
+**Baselines (CPU route)** ([`cpu_baselines.yml`](.github/workflows/cpu_baselines.yml), settings in
+[`configs/cpu/route.yaml`](configs/cpu/route.yaml)):
+- Models: Qwen2.5-0.5B- and 1.5B-Instruct, downloaded from the public Hugging Face Hub with no token,
+  converted to GGUF Q8_0 and served by llama.cpp on the runner's CPU.
+- Settings: zero-shot and 3-shot, with the full instruction prompt. The 0.5B model also runs with
+  **JSON-schema grammar** decoding ("guided"), on the same evenly spaced 200-posting subset the GPU route uses.
+- Each (model, setting) is its own parallel job. llama.cpp's prompt cache reuses the shared system-prompt
+  (and few-shot) prefix.
 
-All approaches use the same system prompt and schema as the fine-tune
-([`src/jobx/prompts.py`](src/jobx/prompts.py)).
+**Larger API model.** GPT-OSS-120B via Groq's free tier, 3-shot
+([`openai_compat_runner.py`](src/jobx/baselines/openai_compat_runner.py),
+[`api_baseline.yml`](.github/workflows/api_baseline.yml), secret `GROQ_API_KEY`).
+- GPT-OSS-120B is OpenAI's open-weight model, a mixture-of-experts with about 117B parameters. Llama-3.3-70B
+  was not available to the project's Groq key.
+- The JSON Schema is sent as `response_format`, with a fallback to JSON mode and then to prompt-only.
+- Free-tier handling:
+  - client-side rate limiting at 25 requests/min;
+  - 429 waits from `Retry-After` / `x-ratelimit-reset-*`;
+  - a success-only response cache and resumable runs, with a daily schedule;
+  - a model fallback chain;
+  - token counts in the "API usage" table.
+- Partial runs are shown as "incomplete (k/N)", never as results.
 
-**Fine-tuning** (notebook 03, [`src/jobx/train/sft.py`](src/jobx/train/sft.py)): the recipe is QLoRA
-(4-bit NF4 with double quantisation, fp16 compute because the T4 has no bf16) with TRL `SFTTrainer`.
-The loss covers completion tokens only, and LoRA r=16/α=32 is applied to all linear projections, with
-gradient checkpointing and paged 8-bit AdamW. The learning rate is 2e-4 with a cosine schedule and 3%
-warmup, and the effective batch is 16. Early stopping uses validation JSON micro F1, computed by greedy
-decoding at each evaluation. Weights & Biases logging is on. The choices are explained in
-[`docs/hyperparameters.md`](docs/hyperparameters.md), and a small r/lr sweep is included.
+**LoRA fine-tune on CPU** ([`src/jobx/cpu/train.py`](src/jobx/cpu/train.py),
+[`cpu_finetune.yml`](.github/workflows/cpu_finetune.yml)).
+- **Recipe:** PEFT LoRA r=16/α=32 on all linear projections, TRL `SFTTrainer` with completion-only loss,
+  effective batch 16, cosine LR 3e-4. Precision is fp32, or bf16 if the runner's CPU has AVX512-BF16/AMX.
+  Torch uses all cores.
+- **Short prompt:** the fine-tune uses a short system prompt (it learns the conventions from the data). That
+  halves the sequence length:
+  - estimated from character counts at about 330 tokens median and 420 at p99, so `max_length` is 512;
+  - the first CI job measures the real lengths with the tokenizer, and records them in `plan.json`;
+  - over-long examples are dropped, never truncated.
+- **Planning:** the first job measures seconds per optimiser step on the runner. A planner then picks 2
+  epochs, 1 epoch or a stratified subset so training fits ≤ 3 chained 5-hour jobs. The plan and its reason
+  are committed to `results/training/qwen2.5-0.5b-lora-cpu/plan.json`.
+- **Chaining:**
+  - Each job stops at its time limit and checkpoints. It stores the state as an asset of the prerelease
+    `cpu-train-state`, then dispatches the next job (a 6-hourly schedule resumes if a dispatch is lost).
+  - Validation loss and JSON-F1 (greedy decoding on a val subset) are logged four times per run.
+  - When training is done, the job dispatches the release workflow.
+- Details: [`docs/hyperparameters.md`](docs/hyperparameters.md#cpu-route).
+
+**Merge, quantise, evaluate, publish** ([`cpu_eval_release.yml`](.github/workflows/cpu_eval_release.yml)).
+- The adapter is merged (fp16 safetensors) and converted with llama.cpp to GGUF F16, Q8_0 and Q4_K_M.
+- Each quantisation is evaluated on every test split. A CPU benchmark records tokens/s, peak RAM, size and
+  accuracy (the "size / speed / accuracy" table).
+- Results are committed.
+- The adapter, merged weights and GGUF files are published as the GitHub Release `model-v1`, with
+  [`MODEL_CARD.md`](MODEL_CARD.md) as the notes.
+
+**Live demo** ([`pages.yml`](.github/workflows/pages.yml)).
+- The released Q4_K_M GGUF is split into < 95 MB parts and served from the `gh-pages` branch, because
+  release downloads lack CORS.
+- It runs in the visitor's browser with [wllama](https://github.com/ngxson/wllama) 3.8.1 (llama.cpp → WASM)
+  and the JSON-schema grammar.
+- The page has examples, a box to paste your own posting, the JSON output and field highlighting, next to the
+  results table and charts.
+- A Playwright check loads the model in headless Chromium and extracts valid JSON before every publish.
 
 **Evaluation** ([`src/jobx/eval`](src/jobx/eval), CPU only, runs in CI on saved predictions)
 - JSON validity (a parseable object), schema validity (validates against `JobPosting` exactly).
@@ -223,23 +244,30 @@ decoding at each evaluation. Weights & Biases logging is on. The choices are exp
   truncation, schema-invalid, wrong salary unit, missed/spurious skill, hallucinated field, location
   confusion, seniority mismatch, experience/role/company errors.
 
-**Optimisation**: the merged model is converted to GGUF Q8_0 and Q4_K_M, with llama.cpp built inside
-GitHub Actions ([`quantize_benchmark.yml`](.github/workflows/quantize_benchmark.yml)), and benchmarked on the
-runner's CPU: tokens/s, peak RAM and accuracy. AWQ 4-bit and bitsandbytes 8-bit are benchmarked on the
-T4 (notebook 05).
-
-**Serving**
-- FastAPI `POST /extract` ([`src/jobx/serve/app.py`](src/jobx/serve/app.py)) uses llama-cpp-python (GGUF,
-  CPU), validates against the schema and re-prompts on invalid output. It also offers optional
-  grammar-guided decoding. Dockerfile in [`docker/`](docker/Dockerfile).
-- Ollama: [`ollama/Modelfile`](ollama/Modelfile), generated from the same prompt.
-- Gradio Space ([`space/`](space/)) with examples, a JSON view and field highlighting. It is deployed from
-  Actions with an `HF_TOKEN` secret.
-- Model cards for the adapter, merged, GGUF and AWQ repos: [`model_cards/`](model_cards/).
+**Serving** without the browser:
+- FastAPI `POST /extract` ([`src/jobx/serve/app.py`](src/jobx/serve/app.py)) uses llama-cpp-python on any of
+  the released GGUF files: `JOBX_GGUF_PATH=jobx-qwen2.5-0.5b-Q4_K_M.gguf uvicorn jobx.serve.app:app`. It
+  validates against the schema and retries on invalid output.
+- There is a Dockerfile in [`docker/`](docker/Dockerfile).
+- Ollama: [`ollama/Modelfile`](ollama/Modelfile).
+- Use the short prompt (`prompts.COMPACT_SYSTEM_PROMPT`) with the CPU fine-tune.
 
 ## Run it
 
-CPU (everything in this README that is not a GPU row):
+Everything below runs in GitHub Actions (Actions tab → workflow → *Run workflow*). It needs no secrets
+except `GROQ_API_KEY` for the API row. Dispatch in this order:
+
+| # | Workflow | Runs | Produces |
+|---|---|---|---|
+| 1 | `cpu-baselines` | ~1–3 h (parallel jobs) | 0.5B/1.5B baseline predictions + metrics, committed |
+| 2 | `cpu-finetune` | 1–3 chained ~5 h jobs, automatic | plan, checkpoints (prerelease `cpu-train-state`), curves; then dispatches 3 |
+| 3 | `cpu-eval-release` | ~1–2 h, dispatched by 2 | fine-tune rows (F16/Q8_0/Q4_K_M), benchmark, Release `model-v1`, `MODEL_CARD.md`; then dispatches 4 |
+| 4 | `pages` | ~15–30 min, dispatched by 1 and 3 | the live demo + results site on GitHub Pages (branch `gh-pages`) |
+| - | `api-baseline` | ~20–30 min/day until done | GPT-OSS-120B rows (resumes daily) |
+
+To turn on Pages, go to Settings → Pages → *Deploy from a branch* → `gh-pages` / root (once).
+
+Locally, on CPU:
 
 ```bash
 pip install -e ".[dev,serve]"
@@ -247,46 +275,8 @@ jobx build-data          # 3,000 synthetic postings -> validate -> split -> dedu
 jobx regex-baseline      # predictions for the regex baseline
 jobx eval                # metrics + bootstrap CIs for every predictions file
 jobx results-table       # tables above + results/results.json
-jobx taxonomy            # error taxonomy counts
 pytest && ruff check . && mypy
-JOBX_BACKEND=regex uvicorn jobx.serve.app:app   # API without a model (rule-based backend)
 ```
-
-### Run on your own GPU
-
-The GPU steps also run on a local NVIDIA GPU. The setup was written for an RTX 4080 Laptop GPU (12 GB, bf16)
-under Windows + WSL2, and the full walkthrough is in [`docs/local_gpu_setup.md`](docs/local_gpu_setup.md).
-
-```bash
-make local-setup && make local-check     # pinned CUDA 12.8 stack, then a PASS/FAIL environment table
-make local-paraphrase local-baselines local-train local-eval local-awq local-push   # or: make local-all
-```
-
-The make targets call the same `jobx.pipeline` functions as the notebooks, write to the same paths and push
-to the same Hub repos, using the bf16 profile in [`configs/gpu/local_rtx4080.yaml`](configs/gpu/local_rtx4080.yaml)
-and [`configs/train/local_rtx4080.yaml`](configs/train/local_rtx4080.yaml). Each step can be restarted after
-an interruption. Expect about 3–4 hours of GPU time on a 4080 laptop. The Colab notebooks below remain the
-alternative.
-
-### Colab checklist (GPU work, in order)
-
-Secrets in Colab (key icon, with *Notebook access* on): `HF_TOKEN` (write), `HF_USERNAME`, `WANDB_API_KEY`.
-Each notebook opens with an *Open in Colab* badge and run-all instructions, and pushes its outputs to repos
-under your Hugging Face account (the `jobx-artifacts` dataset repo is private). Afterwards, `jobx pull` downloads them into this repo, and
-`jobx eval && jobx results-table` updates the tables.
-
-| # | Notebook | Runtime | Secrets | Produces |
-|---|---|---|---|---|
-| 1 | `01_paraphrase_7b` | T4, ~1.5 h | HF_TOKEN, HF_USERNAME | validated paraphrases + filter stats; real-postings drafts |
-| - | `jobx pull && jobx verify` (your machine) | ~30 min | HF_TOKEN | `data/real/test_real.jsonl` (human-verified) |
-| 2 | `02_baselines` | T4, ~2–2.5 h (can be split) | HF_TOKEN, HF_USERNAME | zero/few-shot (+guided) predictions and metrics, 1.5B and 7B |
-| 3 | `03_train_qlora` | T4, ~1–1.5 h | HF_TOKEN, HF_USERNAME, WANDB_API_KEY | LoRA adapter on the Hub, W&B run, log history + curves |
-| 4 | `04_eval_predict` | T4, ~45–60 min | HF_TOKEN, HF_USERNAME | fine-tune predictions (+guided), merged fp16 model on the Hub |
-| 5 | Actions → `quantize-benchmark` | CPU runner, ~1–2 h | repo secret HF_TOKEN, variable HF_USERNAME | GGUF Q8_0/Q4_K_M on the Hub, CPU benchmark + predictions committed |
-| 6 | `05_awq_benchmark` | T4, ~45 min | HF_TOKEN, HF_USERNAME | AWQ model, T4 benchmark rows (fp16 / 8-bit / AWQ) |
-| 7 | `06_error_analysis` | CPU, ~1 min | (HF_TOKEN to pull) | taxonomy table, chart, worked examples |
-| 8 | Actions → `deploy-space` | ~5 min | HF_TOKEN | Gradio Space running the Q4 GGUF |
-| 9 | Actions → `api-baseline` (any time; rerun after `test_real` lands) | ~20–30 min at 25 RPM, $0 (free tier); resumes daily when the quota runs out | repo secret GROQ_API_KEY | GPT-OSS-120B (Groq) 3-shot predictions, token counts, metrics and table, committed (resumable) |
 
 ## Repository layout
 
@@ -296,19 +286,20 @@ src/jobx/
   vocab.py       skills / cities / degrees / enums with aliases, salary bands (shared by generator and evaluator)
   normalize/     salary -> INR p.a., experience parser, skill/city canonicalisation, field normalisers
   data/          generate, surface forms, templates, noise, validate, paraphrase, dedup, split, build, datacard, fetch_real
-  baselines/     regex extractor, HF runner (free + guided decoding), notebook orchestration
-  train/         sft.py (TRL SFTTrainer, QLoRA), merge.py, config loading
-  eval/          metrics, bootstrap, taxonomy, results tables, curves, Pages site
-  quantize/      GGUF CPU benchmark (llama-server), T4/AWQ benchmark helpers
+  cpu/           CPU route: training planner, resumable CPU LoRA training, job matrices, model card
+  baselines/     regex extractor, API runners (Groq/Gemini/Anthropic), HF runner (GPU route)
+  eval/          metrics, bootstrap, taxonomy, results tables, charts, curves, Pages site
+  quantize/      llama.cpp (llama-server) CPU evaluation + benchmark, GPU/AWQ helpers
+  web/           in-browser demo (wllama)
   serve/         FastAPI app, extractor with retries, LLM backends, highlighting
-  pipeline.py    GPU steps shared by the notebooks and `python -m jobx.local` (local GPU)
-  local/         local-GPU CLI (`make local-*`) and the environment check
+  train/         merge.py; sft.py + config loading (GPU route)
+  pipeline.py, local/   GPU route steps (notebooks, local GPU)
   verify.py      human verification CLI for the real test set
-configs/         data, approaches, hub, real data, training (+ sweep, local RTX 4080), GPU profiles
-requirements/    pinned local-GPU stacks (main, AWQ)
-notebooks/       01-06, Colab-ready (generated by scripts/build_notebooks.py)
-space/           Gradio app for Hugging Face Spaces
-docker/ ollama/ model_cards/ docs/ results/ data/ tests/ .github/workflows/
+configs/         cpu/route.yaml (CPU route), data, approaches, hub, real data, training (GPU route), GPU profiles
+requirements/    cpu-train.txt (CPU route), local GPU stacks (GPU route)
+notebooks/       01-06 (GPU route, Colab-ready; 06 runs on CPU)
+scripts/         llama.cpp build / GGUF conversion, rebase-safe result commits, demo check, notebook builder
+space/ docker/ ollama/ model_cards/ docs/ results/ data/ tests/ .github/workflows/
 ```
 
 ## Limitations
@@ -327,10 +318,15 @@ docker/ ollama/ model_cards/ docs/ results/ data/ tests/ .github/workflows/
   split; `n` is in the table), so its CIs are wider than those of rows that score the full split. The exact
   model id and the `response_format` that was accepted are recorded in the meta file. Free-tier models and
   quotas change, so check the model id when re-running.
-- **Free-tier serving.** The Space and CPU benchmarks run on shared CPUs, so latency varies between runs.
+- **Shared runners.** CPU benchmarks run on shared GitHub-hosted runners, so tokens/s varies between runs and
+  CPU models; the CPU model is recorded with each row.
+- **A 0.5B model.** The CPU route trades accuracy for being trainable on CPU and small enough for a browser.
+  The 1.5B/7B GPU route would likely score higher but is not run.
+- **Browser demo speed.** GitHub Pages cannot send the COOP/COEP headers multi-threaded WASM needs, so the
+  demo runs single-threaded.
 - **Licence of real postings** is a TODO until a human confirms the source dataset's terms.
 
 ## Licence
 
-Code and synthetic data: MIT. Base models and real-postings data keep their own licences (Qwen2.5:
-Apache-2.0; Llama 3.2: Llama 3.2 Community License).
+Code and synthetic data: MIT. Base models keep their own licences (Qwen2.5: Apache-2.0). Real-postings data
+keeps its source dataset's licence.

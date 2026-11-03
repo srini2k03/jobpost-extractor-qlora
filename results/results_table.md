@@ -1,48 +1,40 @@
 #### Real postings (`test_real`, headline)
 
-_The real test set is pending: it needs the fetch + draft-label notebook and a human pass with `jobx verify` (see the Colab checklist below)._
+_The real test set is pending: it needs real postings fetched, draft labels and a human pass with `jobx verify` (see `docs/real_dataset.md`)._
 
 | Approach | Hardware | n | JSON valid % | Schema valid % | Field EM % | Micro F1 % [95% CI] | Macro F1 % | Hallucination % [95% CI] | Status |
 |---|---|---|---|---|---|---|---|---|---|
 | Regex baseline (rules + alias tables) | CPU | - | - | - | - | - | - | - | pending (needs this split) |
-| Qwen2.5-1.5B-Instruct zero-shot | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B-Instruct zero-shot + guided JSON | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B-Instruct 3-shot | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B-Instruct 3-shot + guided JSON | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.2-1B-Instruct 3-shot (optional) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.2-1B-Instruct 3-shot + guided JSON (optional) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-0.5B-Instruct zero-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B-Instruct zero-shot + guided JSON | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B-Instruct 3-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B-Instruct 3-shot + guided JSON | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-1.5B-Instruct zero-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-1.5B-Instruct 3-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF F16 | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q8_0 | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
 | GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | pending API run |
-| Qwen2.5-1.5B QLoRA fine-tune (ours) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B QLoRA fine-tune + guided JSON | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.2-1B QLoRA fine-tune (optional) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, bitsandbytes 8-bit | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, AWQ 4-bit | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, GGUF Q8_0 (llama.cpp) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, GGUF Q4_K_M (llama.cpp) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending GPU run |
+
+_15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus Hugging Face and W&B accounts) were not run; see `docs/gpu_route.md`._
 
 #### Synthetic held-out families and companies (`test_synth`)
 
 | Approach | Hardware | n | JSON valid % | Schema valid % | Field EM % | Micro F1 % [95% CI] | Macro F1 % | Hallucination % [95% CI] | Status |
 |---|---|---|---|---|---|---|---|---|---|
 | Regex baseline (rules + alias tables) | CPU | 471 | 100.0 | 100.0 | 91.1 | 93.1 [92.5, 93.8] | 90.8 | 2.5 [1.7, 3.2] | measured 2026-11-03 @902cc8a |
-| Qwen2.5-1.5B-Instruct zero-shot | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B-Instruct zero-shot + guided JSON | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B-Instruct 3-shot | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B-Instruct 3-shot + guided JSON | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.2-1B-Instruct 3-shot (optional) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.2-1B-Instruct 3-shot + guided JSON (optional) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | GPU | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-0.5B-Instruct zero-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B-Instruct zero-shot + guided JSON | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B-Instruct 3-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B-Instruct 3-shot + guided JSON | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-1.5B-Instruct zero-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-1.5B-Instruct 3-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF F16 | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q8_0 | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
 | GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | incomplete (25/200) |
-| Qwen2.5-1.5B QLoRA fine-tune (ours) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-1.5B QLoRA fine-tune + guided JSON | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.2-1B QLoRA fine-tune (optional) | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, bitsandbytes 8-bit | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, AWQ 4-bit | GPU | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, GGUF Q8_0 (llama.cpp) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending GPU run |
-| Fine-tune merged, GGUF Q4_K_M (llama.cpp) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending GPU run |
+
+_15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus Hugging Face and W&B accounts) were not run; see `docs/gpu_route.md`._
 
 #### Per-field exact match % (`test_synth`)
 
@@ -68,8 +60,6 @@ Partial runs, or runs with more than 5% failed requests, are scored on what comp
 
 | Variant | Hardware | Size (GB) | Micro F1 % | Tokens/s | Peak memory (GB) | Status |
 |---|---|---|---|---|---|---|
-| fp16 (transformers) | GPU (T4 or local) | - | - | - | - | pending GPU run |
-| merged 8-bit (bitsandbytes) | GPU (T4 or local) | - | - | - | - | pending GPU run |
-| AWQ 4-bit | GPU (T4 or local) | - | - | - | - | pending GPU run |
-| GGUF Q8_0 (llama.cpp) | CPU, GitHub Actions | - | - | - | - | pending (needs merged model) |
-| GGUF Q4_K_M (llama.cpp) | CPU, GitHub Actions | - | - | - | - | pending (needs merged model) |
+| LoRA 0.5B GGUF F16 (llama.cpp) | CPU, GitHub Actions | - | - | - | - | pending CPU run |
+| LoRA 0.5B GGUF Q8_0 (llama.cpp) | CPU, GitHub Actions | - | - | - | - | pending CPU run |
+| LoRA 0.5B GGUF Q4_K_M (llama.cpp) | CPU, GitHub Actions | - | - | - | - | pending CPU run |
