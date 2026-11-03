@@ -11,7 +11,7 @@ name: api-baseline
 # the daily schedule resumes it and stops (without committing) once every planned prediction exists.
 on:
   schedule:
-    - cron: "23 3 * * *"
+    - cron: "11 * * * *"  # hourly: resumes until done; exits early when complete or quota is spent
   workflow_dispatch:
     inputs:
       provider:
