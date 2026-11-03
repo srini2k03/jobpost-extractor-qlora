@@ -12,7 +12,7 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 | Llama-3.2-1B-Instruct 3-shot (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Gemini Flash (API, few-shot) | Gemini API (free tier) | - | - | - | - | - | - | - | pending API run |
+| Llama-3.3-70B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | pending API run |
 | Qwen2.5-1.5B QLoRA fine-tune (ours) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-1.5B QLoRA fine-tune + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Llama-3.2-1B QLoRA fine-tune (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
@@ -33,7 +33,7 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 | Llama-3.2-1B-Instruct 3-shot (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Gemini Flash (API, few-shot) | Gemini API (free tier) | - | - | - | - | - | - | - | pending API run |
+| Llama-3.3-70B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | pending API run |
 | Qwen2.5-1.5B QLoRA fine-tune (ours) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-1.5B QLoRA fine-tune + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Llama-3.2-1B QLoRA fine-tune (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
@@ -52,7 +52,7 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 
 | Approach | Split | Model | Requests | Input tokens | Output tokens | Cost (USD) |
 |---|---|---|---|---|---|---|
-| Gemini Flash (API, few-shot) | - | `gemini-3.8-flash` | - | - | - | - (pending API run) |
+| Llama-3.3-70B via Groq (API, few-shot) | - | `llama-3.3-70b-versatile` | - | - | - | - (pending API run) |
 
 #### Size / speed / accuracy trade-off
 

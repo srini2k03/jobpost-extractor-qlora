@@ -1,10 +1,10 @@
-"""Hosted API baseline over any OpenAI-compatible endpoint (default: the free Gemini API tier).
+"""Hosted API baseline over any OpenAI-compatible endpoint (default: Llama-3.3-70B on Groq's free tier).
 
 * same system prompt, user template, few-shot exemplars and JSON schema as every other approach;
 * structured output when the provider supports it: ``json_schema`` -> ``json_object`` -> plain prompt,
   downgrading automatically on a 400 that rejects ``response_format``; the output is parsed by the normal
   evaluator either way;
-* free-tier friendly: client-side rate limiting (default 10 requests/minute), backoff on 429/5xx that
+* free-tier friendly: client-side rate limiting (preset default: 25 requests/minute on Groq), backoff on 429/5xx that
   honours ``retry-after``, an on-disk response cache keyed by the exact request, and resumable runs
   (finished ids in the predictions file are skipped). Repeated 429s are treated as quota exhaustion: the
   run stops cleanly and the next invocation resumes;
@@ -13,8 +13,8 @@
 
 Providers are presets of (base_url, key env var, default model); ``--base-url/--key-env/--model`` override:
 
-    python -m jobx.baselines.openai_compat_runner --provider gemini --shots 3
-    python -m jobx.baselines.openai_compat_runner --provider groq --model llama-3.3-70b-versatile
+    python -m jobx.baselines.openai_compat_runner --provider groq --shots 3      # default
+    python -m jobx.baselines.openai_compat_runner --provider gemini --model gemini-3.8-flash
 
 The key is read from the environment variable and never printed or written.
 """
@@ -27,6 +27,7 @@ import hashlib
 import json
 import os
 import random
+import re
 import sys
 import time
 from collections.abc import Awaitable, Callable, Sequence
@@ -50,21 +51,39 @@ class Provider:
     price_in: float = 0.0  # USD per million tokens
     price_out: float = 0.0
     default_fallbacks: tuple[str, ...] = ()
+    default_rpm: float = 10.0
+    approach_prefix: str = "api"
 
 
 # Default model ids are the providers' free-tier models at the time of writing; override with --model.
+# Groq is the default: a 70B model on a free tier that is usable from CI (Gemini's free tier had tiny daily
+# quotas and frequent 503s there).
 PROVIDERS: dict[str, Provider] = {
+    "groq": Provider(
+        "https://api.groq.com/openai/v1",
+        "GROQ_API_KEY",
+        "llama-3.3-70b-versatile",
+        default_fallbacks=("openai/gpt-oss-120b", "qwen/qwen3-32b"),
+        default_rpm=25.0,
+        approach_prefix="llama-3.3-70b-groq",
+    ),
     "gemini": Provider(
         "https://generativelanguage.googleapis.com/v1beta/openai/",
         "GEMINI_API_KEY",
         "gemini-3.8-flash",
         default_fallbacks=("gemini-3.7-flash", "gemini-3.5-flash"),
+        default_rpm=10.0,
+        approach_prefix="gemini-flash",
     ),
-    "groq": Provider("https://api.groq.com/openai/v1", "GROQ_API_KEY", "llama-3.3-70b-versatile"),
     "openrouter": Provider(
-        "https://openrouter.ai/api/v1", "OPENROUTER_API_KEY", "meta-llama/llama-3.3-70b-instruct:free"
+        "https://openrouter.ai/api/v1",
+        "OPENROUTER_API_KEY",
+        "meta-llama/llama-3.3-70b-instruct:free",
+        default_rpm=10.0,
+        approach_prefix="openrouter",
     ),
 }
+DEFAULT_PROVIDER = "groq"
 RESPONSE_FORMATS: tuple[str, ...] = ("json_schema", "json_object", "none")
 SHOT_NAMES = {0: "zero_shot"}
 
@@ -257,15 +276,32 @@ def _msg(err: Any) -> str:
     return str(getattr(err, "message", "") or err)[:300]
 
 
+def parse_duration(v: str) -> float | None:
+    """'7', '1.5', '350ms', '2m59.56s', '1h2m' -> seconds (Groq's x-ratelimit-reset-* format)."""
+    v = v.strip()
+    try:
+        return float(v)
+    except ValueError:
+        pass
+    parts = re.findall(r"(\d+(?:\.\d+)?)(ms|h|m|s)", v)
+    if not parts or "".join(n + u for n, u in parts) != v:
+        return None
+    scale = {"ms": 0.001, "s": 1.0, "m": 60.0, "h": 3600.0}
+    return sum(float(n) * scale[u] for n, u in parts)
+
+
 def _retry_after(err: Any) -> float | None:
+    """Seconds to wait from Retry-After, else Groq's x-ratelimit-reset-requests/-tokens headers."""
     headers = getattr(getattr(err, "response", None), "headers", None)
     if headers is None:
         return None
-    try:
-        v = headers.get("retry-after")
-        return float(v) if v is not None else None
-    except (TypeError, ValueError):
-        return None
+    for name in ("retry-after", "x-ratelimit-reset-requests", "x-ratelimit-reset-tokens"):
+        v = headers.get(name)
+        if v is not None:
+            d = parse_duration(str(v))
+            if d is not None:
+                return d
+    return None
 
 
 async def call_with_retries(
@@ -543,7 +579,9 @@ async def main_async(a: argparse.Namespace, client: Any = None) -> int:
     shots_list = [int(x) for x in str(a.shots).split(",") if x.strip()]
     splits = [s for s in a.splits.split(",") if s.strip() and (root / SPLIT_FILES[s.strip()]).exists()]
     train = read_jsonl(root / SPLIT_FILES["train"])
-    limiter = RateLimiter(a.rpm)
+    rpm = a.rpm if a.rpm is not None else (prov.default_rpm if prov else 10.0)
+    prefix = a.approach_prefix or (prov.approach_prefix if prov else "api")
+    limiter = RateLimiter(rpm)
     cache = ResponseCache(a.cache_dir)
     n_planned = sum(
         min(len(read_jsonl(root / SPLIT_FILES[s])), a.max_examples or 10**9) for s in splits
@@ -557,8 +595,8 @@ async def main_async(a: argparse.Namespace, client: Any = None) -> int:
                 "splits": splits,
                 "shots": shots_list,
                 "max_requests": n_planned,
-                "rpm": a.rpm,
-                "est_minutes_at_rpm": round(n_planned / a.rpm, 1) if a.rpm else None,
+                "rpm": rpm,
+                "est_minutes_at_rpm": round(n_planned / rpm, 1) if rpm else None,
                 "price_per_mtok": {"input": price_in, "output": price_out},
             },
             indent=2,
@@ -587,7 +625,7 @@ async def main_async(a: argparse.Namespace, client: Any = None) -> int:
                     examples,
                     base_url=base_url,
                     model=chain,
-                    approach_prefix=a.approach_prefix,
+                    approach_prefix=prefix,
                     shots=shots,
                     split=split,
                     out_dir=root / "results" / "predictions",
@@ -625,7 +663,7 @@ async def main_async(a: argparse.Namespace, client: Any = None) -> int:
 
 def parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--provider", default="gemini", help=f"preset: {', '.join(PROVIDERS)}")
+    ap.add_argument("--provider", default=DEFAULT_PROVIDER, help=f"preset: {', '.join(PROVIDERS)}")
     ap.add_argument("--base-url", default=None)
     ap.add_argument("--key-env", default=None, help="name of the env var holding the API key")
     ap.add_argument("--model", default=None)
@@ -639,15 +677,17 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument("--cooldown", type=float, default=300.0, help="seconds an overloaded model is skipped")
     ap.add_argument(
         "--approach-prefix",
-        default="gemini-flash",
-        help="results row id prefix, e.g. gemini-flash -> gemini-flash_few_shot",
+        default=None,
+        help="results row id prefix (default: the preset's, e.g. llama-3.3-70b-groq -> llama-3.3-70b-groq_few_shot)",
     )
     ap.add_argument("--splits", default="test_synth,test_real")
     ap.add_argument("--shots", default="3")
     ap.add_argument("--max-examples", type=int, default=200)
     ap.add_argument("--response-format", default="json_schema", choices=RESPONSE_FORMATS)
-    ap.add_argument("--max-tokens", type=int, default=1024)
-    ap.add_argument("--rpm", type=float, default=10.0, help="client-side requests per minute")
+    ap.add_argument("--max-tokens", type=int, default=2048, help="room for reasoning-model fallbacks")
+    ap.add_argument(
+        "--rpm", type=float, default=None, help="client-side requests per minute (default: preset)"
+    )
     ap.add_argument("--concurrency", type=int, default=2)
     ap.add_argument("--cache-dir", default=".cache/jobx-api")
     ap.add_argument("--price-in", type=float, default=None, help="USD per million input tokens")

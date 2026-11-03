@@ -1,26 +1,28 @@
 name: api-baseline
-# Hosted-API upper bound: the project prompt + JSON schema on an API model. Default: the free Gemini API tier
-# through its OpenAI-compatible endpoint (secret GEMINI_API_KEY). Also works with groq / openrouter
-# (secrets GROQ_API_KEY / OPENROUTER_API_KEY) and, optionally, the Anthropic API (secret ANTHROPIC_API_KEY,
-# with a cost estimate and a hard USD budget).
-# Runs on test_synth, and on test_real when it exists. Free-tier friendly: client-side rate limit, backoff
-# on 429, an on-disk response cache (kept between runs with actions/cache) and resumable runs. When the
-# daily quota runs out, progress is committed and the next dispatch continues where it stopped.
+# Hosted-API upper bound: the project prompt + JSON schema on a larger API model. Default: Llama-3.3-70B on
+# Groq's free tier (secret GROQ_API_KEY) through its OpenAI-compatible endpoint, falling back to
+# openai/gpt-oss-120b and qwen/qwen3-32b when a model is overloaded or unavailable. Other presets: gemini
+# (GEMINI_API_KEY), openrouter (OPENROUTER_API_KEY) and, optionally, anthropic (ANTHROPIC_API_KEY, with a
+# cost estimate and a hard USD budget).
+# Runs on test_synth, and on test_real when it exists. Free-tier friendly: client-side rate limit, 429
+# backoff that honours Retry-After / x-ratelimit-reset-*, an on-disk cache of successful responses (kept
+# between runs with actions/cache) and resumable runs: when a daily quota runs out, progress is committed and
+# the next dispatch continues where it stopped.
 on:
   workflow_dispatch:
     inputs:
       provider:
-        description: "gemini | groq | openrouter | anthropic"
+        description: "groq | gemini | openrouter | anthropic"
         required: true
-        default: "gemini"
+        default: "groq"
       model:
-        description: "model id (Gemini free tier: gemini-3.8-flash; change it for other providers, blank = preset)"
-        required: false
-        default: "gemini-3.8-flash"
+        description: "model id ('preset' = the provider's default; e.g. gemini-3.8-flash for gemini)"
+        required: true
+        default: "llama-3.3-70b-versatile"
       model_fallbacks:
-        description: "comma list used after 2 consecutive 503s (or a 403/404) on the model; blank for none"
+        description: "comma list used after 2 consecutive 503s (or a 403/404); 'preset' = provider default, blank = none"
         required: false
-        default: "gemini-3.7-flash,gemini-3.5-flash"
+        default: "openai/gpt-oss-120b,qwen/qwen3-32b"
       splits:
         description: "comma list; splits missing from the repo are skipped"
         required: true
@@ -34,13 +36,13 @@ on:
         required: true
         default: "200"
       rpm:
-        description: "client-side requests per minute (free tiers: ~10)"
+        description: "client-side requests per minute (Groq free tier: 25 is under its 30 RPM limit)"
         required: true
-        default: "10"
+        default: "25"
       approach_prefix:
-        description: "results row id prefix (gemini-flash -> 'Gemini Flash (API, few-shot)')"
-        required: true
-        default: "gemini-flash"
+        description: "results row id prefix (blank = preset: llama-3.3-70b-groq -> 'Llama-3.3-70B via Groq (API, few-shot)')"
+        required: false
+        default: ""
       budget_usd:
         description: "anthropic only: hard USD cap"
         required: true
@@ -77,6 +79,12 @@ jobs:
             echo "::error::Repository secret $KEY_NAME is empty or missing (Settings -> Secrets and variables -> Actions)."
             exit 1
           fi
+      - name: List Groq models
+        if: inputs.provider == 'groq'
+        run: |
+          # The key goes in the Authorization header only (never in the URL or the log).
+          curl -sS --fail -H "Authorization: Bearer ${GROQ_API_KEY}" https://api.groq.com/openai/v1/models \
+            | jq -r '.data[] | "\(.id)\t\(.owned_by)\tctx=\(.context_window)"' | sort
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
@@ -97,14 +105,17 @@ jobs:
           if [ "$PROVIDER" = "anthropic" ]; then
             ARGS=(--splits "${{ inputs.splits }}" --shots "${{ inputs.shots }}"
                   --max-examples "${{ inputs.max_examples }}" --budget-usd "${{ inputs.budget_usd }}")
-            if [ -n "${{ inputs.model }}" ]; then ARGS+=(--model "${{ inputs.model }}"); fi
+            if [ -n "${{ inputs.model }}" ] && [ "${{ inputs.model }}" != "preset" ] && [ "${{ inputs.model }}" != "llama-3.3-70b-versatile" ]; then
+              ARGS+=(--model "${{ inputs.model }}")
+            fi
             python -m jobx.baselines.anthropic_runner "${ARGS[@]}"
           else
             ARGS=(--provider "$PROVIDER" --splits "${{ inputs.splits }}" --shots "${{ inputs.shots }}"
-                  --max-examples "${{ inputs.max_examples }}" --rpm "${{ inputs.rpm }}"
-                  --approach-prefix "${{ inputs.approach_prefix }}"
-                  --model-fallbacks "${{ inputs.model_fallbacks }}")
-            if [ -n "${{ inputs.model }}" ]; then ARGS+=(--model "${{ inputs.model }}"); fi
+                  --max-examples "${{ inputs.max_examples }}" --rpm "${{ inputs.rpm }}")
+            MODEL="${{ inputs.model }}"; FALLBACKS="${{ inputs.model_fallbacks }}"; PREFIX="${{ inputs.approach_prefix }}"
+            if [ -n "$MODEL" ] && [ "$MODEL" != "preset" ]; then ARGS+=(--model "$MODEL"); fi
+            if [ "$FALLBACKS" != "preset" ]; then ARGS+=(--model-fallbacks "$FALLBACKS"); fi
+            if [ -n "$PREFIX" ]; then ARGS+=(--approach-prefix "$PREFIX"); fi
             python -m jobx.baselines.openai_compat_runner "${ARGS[@]}"
           fi
           CODE=$?
