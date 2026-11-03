@@ -86,7 +86,11 @@ def make_json_f1_callback(
                 )
                 with torch.inference_mode():
                     gen = model.generate(
-                        **enc, max_new_tokens=320, do_sample=False, pad_token_id=tokenizer.pad_token_id
+                        input_ids=enc["input_ids"],
+                        attention_mask=enc["attention_mask"],  # some tokenizers add token_type_ids
+                        max_new_tokens=320,
+                        do_sample=False,
+                        pad_token_id=tokenizer.pad_token_id,
                     )
                 outs += tokenizer.batch_decode(gen[:, enc["input_ids"].shape[1] :], skip_special_tokens=True)
             model.config.use_cache = use_cache

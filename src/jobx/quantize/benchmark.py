@@ -73,12 +73,11 @@ def run(a: argparse.Namespace) -> dict[str, Any]:
     )
     response_format = None
     if a.guided:
-        from jobx.baselines.guided import inline_refs
-        from jobx.schema import json_schema
+        from jobx.baselines.guided import guided_schema
 
         response_format = {
             "type": "json_schema",
-            "json_schema": {"name": "JobPosting", "schema": inline_refs(json_schema())},
+            "json_schema": {"name": "JobPosting", "schema": guided_schema()},
         }
     port = a.port
     cmd = [

@@ -335,3 +335,14 @@ def test_workflows_static():
     )
     sh = Path("scripts/commit_results.sh").read_text()
     assert "reset -q --hard" in sh and "for i in 1 2 3 4 5" in sh
+
+
+def test_guided_schema_requires_every_key():
+    from jobx.baselines.guided import guided_schema, require_all
+
+    s = guided_schema()
+    assert set(s["required"]) == set(s["properties"]) and s["additionalProperties"] is False
+    assert "$ref" not in json.dumps(s) and "$defs" not in s
+    sal = next(x for x in s["properties"]["salary"]["anyOf"] if x.get("type") == "object")
+    assert set(sal["required"]) == {"min", "max", "currency", "period"}
+    assert require_all({"type": "string"}) == {"type": "string"}

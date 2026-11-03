@@ -10,3 +10,8 @@ datasets==4.1.1
 safetensors>=0.4
 sentencepiece>=0.2
 matplotlib>=3.8
+# llama.cpp's convert_hf_to_gguf.py imports these at module level (its own requirements file pins an old torch,
+# so we install only what it needs on top of this stack)
+mistral-common>=1.8.3
+protobuf>=4.21,<5
+httpx>=0.27

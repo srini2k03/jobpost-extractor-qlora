@@ -115,8 +115,7 @@ def write_demo_assets(
     import json
 
     from jobx import prompts, vocab
-    from jobx.baselines.guided import inline_refs
-    from jobx.schema import json_schema
+    from jobx.baselines.guided import guided_schema
 
     parts = sorted(p for p in Path(model_dir).glob("*.gguf"))
     if not parts:
@@ -142,7 +141,7 @@ def write_demo_assets(
             {"system": prompts.COMPACT_SYSTEM_PROMPT, "user_template": prompts.USER_TEMPLATE}, indent=2
         )
     )
-    (ddir / "schema.json").write_text(json.dumps(inline_refs(json_schema())))
+    (ddir / "schema.json").write_text(json.dumps(guided_schema()))
     aliases = {
         "skills": vocab.SKILL_ALIASES,
         "locations": vocab.CITY_ALIASES,
