@@ -33,12 +33,22 @@
       },
       {
         "approach": "qwen2.5-7b_few_shot",
-        "name": "Qwen2.5-7B-Instruct 3-shot, 4-bit (upper bound)",
+        "name": "Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound)",
         "status": "pending"
       },
       {
         "approach": "qwen2.5-7b_few_shot_guided",
-        "name": "Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON",
+        "name": "Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound)",
+        "status": "pending"
+      },
+      {
+        "approach": "claude-opus-5-5_zero_shot",
+        "name": "Claude Opus 5.5 zero-shot, structured outputs (API upper bound)",
+        "status": "pending"
+      },
+      {
+        "approach": "claude-opus-5-5_few_shot",
+        "name": "Claude Opus 5.5 3-shot, structured outputs (API upper bound)",
         "status": "pending"
       },
       {
@@ -248,12 +258,22 @@
       },
       {
         "approach": "qwen2.5-7b_few_shot",
-        "name": "Qwen2.5-7B-Instruct 3-shot, 4-bit (upper bound)",
+        "name": "Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound)",
         "status": "pending"
       },
       {
         "approach": "qwen2.5-7b_few_shot_guided",
-        "name": "Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON",
+        "name": "Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound)",
+        "status": "pending"
+      },
+      {
+        "approach": "claude-opus-5-5_zero_shot",
+        "name": "Claude Opus 5.5 zero-shot, structured outputs (API upper bound)",
+        "status": "pending"
+      },
+      {
+        "approach": "claude-opus-5-5_few_shot",
+        "name": "Claude Opus 5.5 3-shot, structured outputs (API upper bound)",
         "status": "pending"
       },
       {
