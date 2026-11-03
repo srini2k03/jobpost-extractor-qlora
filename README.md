@@ -4,7 +4,7 @@
 
 Messy Indian job postings in, one strict JSON object out. A small open model (Qwen2.5-1.5B-Instruct) is
 fine-tuned with QLoRA on a free Colab T4, then measured against prompting baselines, two upper bounds
-(a hosted API model and an open 7B model), guided JSON decoding and a rule-based baseline. The model is quantised to GGUF for CPU serving (FastAPI,
+(Gemini Flash on the free API tier and an open 7B model), guided JSON decoding and a rule-based baseline. The model is quantised to GGUF for CPU serving (FastAPI,
 Ollama, a Gradio Space).
 
 > **Status.** Everything that runs on CPU is built and measured here: data generation, validation, dedup,
@@ -55,8 +55,7 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 | Llama-3.2-1B-Instruct 3-shot (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Claude Opus 5.5 zero-shot, structured outputs (API upper bound) | Anthropic API | - | - | - | - | - | - | - | pending API run |
-| Claude Opus 5.5 3-shot, structured outputs (API upper bound) | Anthropic API | - | - | - | - | - | - | - | pending API run |
+| Gemini Flash (API, few-shot) | Gemini API (free tier) | - | - | - | - | - | - | - | pending API run |
 | Qwen2.5-1.5B QLoRA fine-tune (ours) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-1.5B QLoRA fine-tune + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Llama-3.2-1B QLoRA fine-tune (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
@@ -77,8 +76,7 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 | Llama-3.2-1B-Instruct 3-shot (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Claude Opus 5.5 zero-shot, structured outputs (API upper bound) | Anthropic API | - | - | - | - | - | - | - | pending API run |
-| Claude Opus 5.5 3-shot, structured outputs (API upper bound) | Anthropic API | - | - | - | - | - | - | - | pending API run |
+| Gemini Flash (API, few-shot) | Gemini API (free tier) | - | - | - | - | - | - | - | pending API run |
 | Qwen2.5-1.5B QLoRA fine-tune (ours) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-1.5B QLoRA fine-tune + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Llama-3.2-1B QLoRA fine-tune (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
@@ -92,6 +90,12 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 | Approach | company | role | seniority | skills | min_experience_years | max_experience_years | salary | locations | work_mode | employment_type | education |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | Regex baseline (rules + alias tables) | 48.2 | 75.4 | 79.2 | 99.4 | 100.0 | 100.0 | 100.0 | 100.0 | 100.0 | 100.0 | 100.0 |
+
+#### API usage
+
+| Approach | Split | Model | Requests | Input tokens | Output tokens | Cost (USD) |
+|---|---|---|---|---|---|---|
+| Gemini Flash (API, few-shot) | - | `gemini-2.5-flash` | - | - | - | - (pending API run) |
 
 #### Size / speed / accuracy trade-off
 
@@ -148,15 +152,22 @@ this repo and the image appears here:
 with free decoding and with guided JSON decoding (lm-format-enforcer).
 
 **Upper bounds.** There are two:
-- **Hosted API model:** Claude Opus 5.5, zero-shot and 3-shot
-  ([`anthropic_runner.py`](src/jobx/baselines/anthropic_runner.py), run by
-  [`api_baseline.yml`](.github/workflows/api_baseline.yml)). It uses structured outputs (the `JobPosting`
-  JSON Schema in `output_config.format`) at effort `low`, with server-side refusal fallbacks on. Rows show
-  "pending API run" until the workflow has run.
-  - The runner prices the run with `count_tokens` before sending anything.
-  - It shrinks the evenly spaced test subset to fit a $2 budget, and stops starting requests if actual
-    spend would pass it.
-  - It records tokens and cost per posting.
+- **Hosted API model:** Gemini Flash on the free Gemini API tier, 3-shot
+  ([`openai_compat_runner.py`](src/jobx/baselines/openai_compat_runner.py), run by
+  [`api_baseline.yml`](.github/workflows/api_baseline.yml)). It calls Gemini's OpenAI-compatible endpoint
+  with the `JobPosting` JSON Schema as `response_format`. If the provider rejects that, it falls back to
+  JSON mode, then to prompt-only; the evaluator parses the output either way.
+  - Free-tier handling: client-side rate limiting (10 requests/min by default), backoff on 429, an on-disk
+    response cache and resumable runs. When the daily quota runs out, the workflow commits what it has and
+    the next dispatch continues.
+  - Accounting: token counts are recorded per request, and the cost is $0 on the free tier (see "API usage"
+    in the results).
+  - Other providers: the same runner works with Groq or OpenRouter (`--provider`, or
+    `--base-url/--key-env/--model`).
+  - Anthropic (optional): an Anthropic-API runner
+    ([`anthropic_runner.py`](src/jobx/baselines/anthropic_runner.py)) is available with a cost estimate
+    and a hard USD budget.
+  - The row reads "pending API run" until the workflow has run.
 - **Open 7B model:** Qwen2.5-7B-Instruct 3-shot in 4-bit on the T4 (free and guided decoding). It is the
   model you could run yourself.
 
@@ -232,7 +243,7 @@ under your Hugging Face account (the `jobx-artifacts` dataset repo is private). 
 | 6 | `05_awq_benchmark` | T4, ~45 min | HF_TOKEN, HF_USERNAME | AWQ model, T4 benchmark rows (fp16 / 8-bit / AWQ) |
 | 7 | `06_error_analysis` | CPU, ~1 min | (HF_TOKEN to pull) | taxonomy table, chart, worked examples |
 | 8 | Actions → `deploy-space` | ~5 min | HF_TOKEN | Gradio Space running the Q4 GGUF |
-| 9 | Actions → `api-baseline` (any time; rerun after `test_real` lands) | ~10 min, ≤ $2 | repo secret ANTHROPIC_API_KEY | Claude Opus 5.5 zero/3-shot predictions, metrics and table, committed |
+| 9 | Actions → `api-baseline` (any time; rerun after `test_real` lands) | ~45–70 min at 10 RPM, $0 (free tier) | repo secret GEMINI_API_KEY | Gemini Flash 3-shot predictions, token counts, metrics and table, committed (resumable) |
 
 ## Repository layout
 
@@ -266,8 +277,10 @@ docker/ ollama/ model_cards/ docs/ results/ data/ tests/ .github/workflows/
   words. Skills named in the title count as skills. Salary conversion uses fixed constants. A model that
   follows different but reasonable conventions is penalised.
 - **The regex baseline is optimistic on synthetic data** (see above).
-- **The API upper bound runs on a budget.** To stay under ~$2 per run, it uses effort `low` and an evenly
-  spaced subset (its `n` is in the table). So its CIs are wider than those of rows that score the full split.
+- **The API upper bound runs on a free tier.** It uses an evenly spaced subset (up to 200 postings per
+  split; `n` is in the table), so its CIs are wider than those of rows that score the full split. The exact
+  model id and the `response_format` that was accepted are recorded in the meta file. Free-tier models and
+  quotas change, so check the model id when re-running.
 - **Free-tier serving.** The Space and CPU benchmarks run on shared CPUs, so latency varies between runs.
 - **Licence of real postings** is a TODO until a human confirms the source dataset's terms.
 

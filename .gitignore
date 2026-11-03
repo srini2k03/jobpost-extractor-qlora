@@ -18,3 +18,5 @@ wandb/
 # raw real postings stay out of git until the licence check is done (see docs/real_dataset.md)
 data/real/raw_postings.jsonl
 data/real/*.progress.json
+# API response cache (resumable API baseline runs)
+.cache/

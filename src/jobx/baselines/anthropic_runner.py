@@ -1,4 +1,5 @@
-"""Hosted API baseline (upper bound): the same prompt and schema, sent to an Anthropic model.
+"""Optional hosted-API baseline on the Anthropic API (the default API row uses the free Gemini tier
+through :mod:`jobx.baselines.openai_compat_runner`): the same prompt and schema, sent to an Anthropic model.
 
 * zero-shot and few-shot runs use :func:`jobx.prompts.messages` exactly like the open-model baselines;
 * structured outputs (``output_config.format`` with the ``JobPosting`` JSON Schema) constrain the reply
@@ -31,7 +32,7 @@ from typing import Any
 
 from jobx import REPO_ROOT, prompts
 from jobx.data.build import read_jsonl
-from jobx.eval.run import SPLIT_FILES, eval_subset, evaluate_file, git_commit
+from jobx.eval.run import SPLIT_FILES, eval_subset, git_commit, write_metrics
 from jobx.schema import JobPosting
 
 DEFAULT_MODEL = "claude-opus-5-5"
@@ -363,16 +364,6 @@ async def estimate_cost(
     }
 
 
-def _write_metrics(pred: Path, root: Path) -> dict[str, Any]:
-    res = evaluate_file(pred, root)
-    res.pop("evaluated_at", None)
-    dest = root / "results" / "metrics" / (pred.name.removesuffix(".jsonl") + ".json")
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(json.dumps(res, indent=2, ensure_ascii=False) + "\n")
-    m: dict[str, Any] = res["metrics"]
-    return m
-
-
 async def main_async(a: argparse.Namespace, client: Any = None) -> int:
     root = Path(a.root)
     if client is None:
@@ -436,7 +427,7 @@ async def main_async(a: argparse.Namespace, client: Any = None) -> int:
             use_fallbacks=not a.no_fallbacks,
             meta_extra=meta_extra,
         )
-        m = _write_metrics(pred, root) if s.n_done else {}
+        m = write_metrics(pred, root) if s.n_done else {}
         print(
             f"{s.approach}/{split}: done {s.n_done}/{s.n_requested}, errors {s.n_errors}, refusals "
             f"{s.n_refusals}, budget-skipped {s.skipped_budget}, cost ${s.cost_usd:.4f}, "

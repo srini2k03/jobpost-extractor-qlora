@@ -9,9 +9,9 @@ approaches:
   - {id: llama3.2-1b_few_shot, name: "Llama-3.2-1B-Instruct 3-shot (optional)", model: meta-llama/Llama-3.2-1B-Instruct, decoding: free, hardware: "T4", produced_by: "notebooks/02_baselines"}
   - {id: qwen2.5-7b_few_shot, name: "Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound)", model: Qwen/Qwen2.5-7B-Instruct, decoding: free, hardware: "T4", produced_by: "notebooks/02_baselines"}
   - {id: qwen2.5-7b_few_shot_guided, name: "Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound)", model: Qwen/Qwen2.5-7B-Instruct, decoding: guided, hardware: "T4", produced_by: "notebooks/02_baselines"}
-  # Hosted API upper bound (same prompt + schema, structured outputs). Runs in .github/workflows/api_baseline.yml.
-  - {id: claude-opus-5-5_zero_shot, name: "Claude Opus 5.5 zero-shot, structured outputs (API upper bound)", model: claude-opus-5-5, decoding: "json_schema", hardware: "Anthropic API", produced_by: ".github/workflows/api_baseline.yml", pending: "pending API run"}
-  - {id: claude-opus-5-5_few_shot, name: "Claude Opus 5.5 3-shot, structured outputs (API upper bound)", model: claude-opus-5-5, decoding: "json_schema", hardware: "Anthropic API", produced_by: ".github/workflows/api_baseline.yml", pending: "pending API run"}
+  # Hosted API upper bound: same prompt + schema on the free Gemini API (OpenAI-compatible endpoint).
+  # Runs in .github/workflows/api_baseline.yml. The Anthropic runner is optional; its rows appear when run.
+  - {id: gemini-flash_few_shot, name: "Gemini Flash (API, few-shot)", model: gemini-2.5-flash, decoding: "json_schema", hardware: "Gemini API (free tier)", produced_by: ".github/workflows/api_baseline.yml", pending: "pending API run"}
   - {id: qwen2.5-1.5b_qlora, name: "Qwen2.5-1.5B QLoRA fine-tune (ours)", model: "jobx-qwen2.5-1.5b-qlora", decoding: free, hardware: "T4", produced_by: "notebooks/04_eval_predict"}
   - {id: qwen2.5-1.5b_qlora_guided, name: "Qwen2.5-1.5B QLoRA fine-tune + guided JSON", model: "jobx-qwen2.5-1.5b-qlora", decoding: guided, hardware: "T4", produced_by: "notebooks/04_eval_predict"}
   - {id: llama3.2-1b_qlora, name: "Llama-3.2-1B QLoRA fine-tune (optional)", model: "jobx-llama3.2-1b-qlora", decoding: free, hardware: "T4", produced_by: "notebooks/04_eval_predict"}

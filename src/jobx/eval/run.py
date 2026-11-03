@@ -126,3 +126,14 @@ def evaluate_all(
         dest.write_text(json.dumps(res, indent=2, ensure_ascii=False) + "\n")
         written.append(dest)
     return written
+
+
+def write_metrics(pred_path: str | Path, root: str | Path = ".", *, n_boot: int = 1000) -> dict[str, Any]:
+    """Score one predictions file into results/metrics/<stem>.json; returns the metrics dict."""
+    res = evaluate_file(pred_path, root, n_boot=n_boot)
+    res.pop("evaluated_at", None)
+    dest = Path(root) / "results" / "metrics" / (Path(pred_path).name.removesuffix(".jsonl") + ".json")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps(res, indent=2, ensure_ascii=False) + "\n")
+    m: dict[str, Any] = res["metrics"]
+    return m

@@ -1,39 +1,46 @@
 name: api-baseline
-# Hosted-API upper bound: the project prompt + JSON schema sent to an Anthropic model (structured outputs),
-# zero-shot and few-shot, on test_synth and on test_real when it exists. The runner prints a cost estimate
-# (count_tokens) before any request, shrinks the evenly spaced subset to fit the budget, and stops starting
-# requests if actual spend would pass it. Needs the repository secret ANTHROPIC_API_KEY.
+# Hosted-API upper bound: the project prompt + JSON schema on an API model. Default: the free Gemini API tier
+# through its OpenAI-compatible endpoint (secret GEMINI_API_KEY). Also works with groq / openrouter
+# (secrets GROQ_API_KEY / OPENROUTER_API_KEY) and, optionally, the Anthropic API (secret ANTHROPIC_API_KEY,
+# with a cost estimate and a hard USD budget).
+# Runs on test_synth, and on test_real when it exists. Free-tier friendly: client-side rate limit, backoff
+# on 429, an on-disk response cache (kept between runs with actions/cache) and resumable runs. When the
+# daily quota runs out, progress is committed and the next dispatch continues where it stopped.
 on:
   workflow_dispatch:
     inputs:
-      model:
-        description: "Anthropic model id"
+      provider:
+        description: "gemini | groq | openrouter | anthropic"
         required: true
-        default: "claude-opus-5-5"
+        default: "gemini"
+      model:
+        description: "model id (blank = provider default; gemini default is gemini-2.5-flash)"
+        required: false
+        default: ""
       splits:
         description: "comma list; splits missing from the repo are skipped"
         required: true
         default: "test_synth,test_real"
       shots:
-        description: "comma list of shot counts (0 = zero-shot, 3 = the shared 3-shot exemplars)"
+        description: "comma list of shot counts (3 = the shared 3-shot exemplars, 0 = zero-shot)"
         required: true
-        default: "0,3"
+        default: "3"
       max_examples:
-        description: "max examples per split and shot setting (reduced automatically to fit the budget)"
+        description: "max examples per split and shot setting (evenly spaced subset)"
         required: true
-        default: "100"
-      effort:
-        description: "output_config.effort"
+        default: "200"
+      rpm:
+        description: "client-side requests per minute (free tiers: ~10)"
         required: true
-        default: "low"
+        default: "10"
+      approach_prefix:
+        description: "results row id prefix (gemini-flash -> 'Gemini Flash (API, few-shot)')"
+        required: true
+        default: "gemini-flash"
       budget_usd:
-        description: "hard cap for this run, USD"
+        description: "anthropic only: hard USD cap"
         required: true
         default: "2.0"
-      estimate_only:
-        description: "only print the cost estimate"
-        type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -45,14 +52,25 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 150
     env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      PROVIDER: ${{ inputs.provider }}
     steps:
       - name: Check the API key secret
         run: |
-          if [ -z "${ANTHROPIC_API_KEY}" ]; then
-            echo "::error::Repository secret ANTHROPIC_API_KEY is empty or missing (Settings -> Secrets and variables -> Actions)."
+          case "$PROVIDER" in
+            gemini) KEY_NAME=GEMINI_API_KEY ;;
+            groq) KEY_NAME=GROQ_API_KEY ;;
+            openrouter) KEY_NAME=OPENROUTER_API_KEY ;;
+            anthropic) KEY_NAME=ANTHROPIC_API_KEY ;;
+            *) echo "::error::unknown provider '$PROVIDER'"; exit 1 ;;
+          esac
+          if [ -z "${!KEY_NAME}" ]; then
+            echo "::error::Repository secret $KEY_NAME is empty or missing (Settings -> Secrets and variables -> Actions)."
             exit 1
           fi
       - uses: actions/checkout@v4
@@ -62,30 +80,48 @@ jobs:
           cache: pip
       - name: Install
         run: pip install -e ".[api]"
-      - name: Estimate cost, then run
+      - name: Restore API response cache
+        uses: actions/cache@v4
+        with:
+          path: .cache/jobx-api
+          key: api-cache-${{ inputs.provider }}-${{ github.run_id }}
+          restore-keys: api-cache-${{ inputs.provider }}-
+      - name: Run (resumable)
+        id: run
         run: |
-          ARGS=(--model "${{ inputs.model }}" --splits "${{ inputs.splits }}" --shots "${{ inputs.shots }}"
-                --max-examples "${{ inputs.max_examples }}" --effort "${{ inputs.effort }}"
-                --budget-usd "${{ inputs.budget_usd }}")
-          if [ "${{ inputs.estimate_only }}" = "true" ]; then ARGS+=(--estimate-only); fi
-          python -m jobx.baselines.anthropic_runner "${ARGS[@]}"
+          set +e
+          if [ "$PROVIDER" = "anthropic" ]; then
+            ARGS=(--splits "${{ inputs.splits }}" --shots "${{ inputs.shots }}"
+                  --max-examples "${{ inputs.max_examples }}" --budget-usd "${{ inputs.budget_usd }}")
+            if [ -n "${{ inputs.model }}" ]; then ARGS+=(--model "${{ inputs.model }}"); fi
+            python -m jobx.baselines.anthropic_runner "${ARGS[@]}"
+          else
+            ARGS=(--provider "$PROVIDER" --splits "${{ inputs.splits }}" --shots "${{ inputs.shots }}"
+                  --max-examples "${{ inputs.max_examples }}" --rpm "${{ inputs.rpm }}"
+                  --approach-prefix "${{ inputs.approach_prefix }}")
+            if [ -n "${{ inputs.model }}" ]; then ARGS+=(--model "${{ inputs.model }}"); fi
+            python -m jobx.baselines.openai_compat_runner "${ARGS[@]}"
+          fi
+          CODE=$?
+          if [ $CODE -eq 4 ]; then
+            echo "::warning::Free-tier quota exhausted; partial progress will be committed. Re-run later to resume."
+            exit 0
+          fi
+          exit $CODE
       - name: Metrics + results table
-        if: ${{ !inputs.estimate_only }}
         run: |
           jobx eval
           jobx results-table
       - uses: actions/upload-artifact@v4
-        if: ${{ !inputs.estimate_only }}
         with:
           name: api-baseline
           path: |
-            results/predictions/${{ inputs.model }}_*
-            results/metrics/${{ inputs.model }}_*
+            results/predictions/*.meta.json
+            results/metrics/*.json
       - name: Commit results
-        if: ${{ !inputs.estimate_only }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add results README.md
-          git diff --cached --quiet || git commit -m "API baseline: ${{ inputs.model }} (shots ${{ inputs.shots }})"
+          git diff --cached --quiet || git commit -m "API baseline: ${{ inputs.provider }} ${{ inputs.model }} (shots ${{ inputs.shots }})"
           git push
