@@ -58,17 +58,22 @@ AVX2).
 | `max_length` | 512 (from measured p99) | The first job tokenises every training example and picks 512 if p99 fits, else p99 rounded up to 64 (cap 768). Longer examples are **dropped, not truncated**: cutting the prompt changes the task, and cutting the completion teaches broken JSON. The count is recorded in `plan.json` and the model card. |
 | LoRA | r=16, α=32, dropout 0.05, all linear projections | Same as the GPU route, so the two are comparable (see above for why). |
 | Precision | fp32 (bf16 only with AVX512-BF16/AMX) | Without native bf16 instructions, bf16 on CPU is emulated and slower than fp32. The planner detects the CPU flags. |
-| Batch | 8 × 2 accumulation = 16 | Same effective batch as the GPU route. 8 sequences of ≤ 512 tokens fit easily in 16 GB in fp32. |
+| Batch | 2 × 8 accumulation = 16 | Same effective batch as the GPU route. In a local test on a 4-core, 16 GB machine with the same architecture, a micro-batch of 8 × 360 tokens was OOM-killed at ~14 GB RSS, and 4 × 360 peaked at ~10.6 GB. The fp32 logits over Qwen's 152k-token vocabulary dominate memory. A micro-batch of 2 leaves headroom on the runner's 16 GB, at almost the same speed per example. |
 | Learning rate | 3e-4, cosine, 5% warmup | Slightly higher than the GPU route's 2e-4: the run has fewer optimiser steps (~130–270) and a smaller model, which tolerates it. Warmup is a bit longer for the same reason. |
 | Gradient checkpointing | off | RAM is not the constraint at 0.5B. Checkpointing would cost ~30% more compute. |
 | Epochs / data | planned from a measured benchmark | The first job times 4 optimiser steps (the first is discarded) and picks 2 epochs, else 1 epoch, else a **stratified subset** (proportional over template family × domain) that fits 3 chained jobs × 300 min × 85% (the rest is evals and saves). The choice and its reason are written to `results/training/qwen2.5-0.5b-lora-cpu/plan.json`. |
 | Evaluation | 4 times per run: loss on 64 val examples, JSON-F1 on 24 | Greedy generation on CPU is slow, so the JSON-F1 subset is small. It is a trend signal; the real evaluation is the full test split in `cpu_eval_release`. |
 | Threads | all cores (`torch.set_num_threads(nproc)`) | |
 
-**Expected cost before measuring.** The forward + backward pass of a 0.5B model is about 4 × 0.5e9 ×
-330 ≈ 0.7 TFLOP per example. At an effective ~100–200 GFLOPS of fp32 on 4 cores, that is ~3.5–7 s per
-example, or ~55–110 s per optimiser step of 16.
-- One epoch over ~2.2k examples is ~2–4 h.
-- The planner will most likely choose 2 epochs over all data in 2 chained jobs, or 1 epoch in 1 job on a
-  slower runner.
-- The measured numbers replace this estimate in `plan.json`.
+**Measured locally before the first CI run.** I ran a timing test with the exact Qwen2.5-0.5B architecture
+(494M parameters, random weights: speed and memory only) and LoRA r=16 on all linear layers, in fp32. The
+machine had 4 threads (Intel Xeon @ 2.8 GHz) and 16 GB RAM, the same size as a GitHub runner. With
+micro-batches of 2 × 360 tokens and 8 accumulation steps:
+- **~108 s per optimiser step of 16** (~13.5 s per micro-batch, ~6.7 s per example);
+- peak RSS ~9.9 GB.
+
+Implications:
+- One epoch over ~2.2k examples is ~137 steps ≈ 4.1 h. Two epochs, ~8.2 h, fit the 12.75 h budget, so the
+  planner should pick **2 epochs over all data in 2–3 chained jobs** (each job trains ~4.25 h).
+- A slower runner gets 1 epoch or a subset instead.
+- The first CI job re-measures on the runner's own CPU, and `plan.json` records what was actually used.

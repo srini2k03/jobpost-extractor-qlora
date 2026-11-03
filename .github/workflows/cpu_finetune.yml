@@ -35,6 +35,7 @@ env:
   HF_HUB_DISABLE_TELEMETRY: "1"
   GH_TOKEN: ${{ github.token }}
   MAX_CHAIN: "8"
+  MALLOC_ARENA_MAX: "2"   # limit glibc arena growth: CPU training peaks near 10 GB of the runner's 16 GB
 
 jobs:
   train:
