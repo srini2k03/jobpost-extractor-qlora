@@ -1,0 +1,197 @@
+{
+  "approach": "llama-3.3-70b-groq_few_shot",
+  "split": "test_synth",
+  "n_gold": 471,
+  "n_pred": 6,
+  "unknown_ids": 0,
+  "coverage": 0.0127,
+  "mean_latency_s": 19.8253,
+  "completion": {
+    "n_completed": 6,
+    "n_expected": 200,
+    "n_errors": 0,
+    "error_rate": 0.0,
+    "status": "incomplete"
+  },
+  "meta": {
+    "approach": "llama-3.3-70b-groq_few_shot",
+    "model": "llama-3.3-70b-versatile",
+    "base_url": "https://api.groq.com/openai/v1",
+    "hardware": "API",
+    "decoding": "greedy (temperature 0), response_format=json_schema",
+    "response_format": "json_schema",
+    "split": "test_synth",
+    "n_shots": 3,
+    "shot_ids": [
+      "syn-00007",
+      "syn-00006",
+      "syn-00014"
+    ],
+    "date": "2026-11-03",
+    "n_examples": 200,
+    "n_completed": 6,
+    "complete": false,
+    "usage": {
+      "requests": 6,
+      "prompt_tokens": 10774,
+      "completion_tokens": 3098
+    },
+    "price_per_mtok": {
+      "input": 0.0,
+      "output": 0.0
+    },
+    "cost_usd": 0.0,
+    "format_downgrades": [],
+    "model_chain": [
+      "llama-3.3-70b-versatile",
+      "openai/gpt-oss-120b",
+      "qwen/qwen3-32b"
+    ],
+    "models_used": {
+      "openai/gpt-oss-120b": 6
+    },
+    "dropped_models": {
+      "llama-3.3-70b-versatile": "HTTP 404 (NotFoundError): Error code: 404 - The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."
+    },
+    "model_switches": [],
+    "commit": "946c8b0",
+    "provider": "groq"
+  },
+  "metrics": {
+    "n": 6,
+    "json_validity": 1.0,
+    "schema_validity": 1.0,
+    "field_em_mean": 0.9696969696969698,
+    "record_exact_match": 0.6666666666666666,
+    "micro_precision": 0.9857142857142858,
+    "micro_recall": 0.971830985915493,
+    "micro_f1": 0.9787234042553191,
+    "macro_f1": 0.9664502164502164,
+    "hallucination_rate": 0.0,
+    "per_field": {
+      "company": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": null,
+        "support_gold_stated": 6
+      },
+      "role": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": null,
+        "support_gold_stated": 6
+      },
+      "seniority": {
+        "em": 0.8333333333333334,
+        "precision": 1.0,
+        "recall": 0.5,
+        "f1": 0.6666666666666666,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 2
+      },
+      "skills": {
+        "em": 0.8333333333333334,
+        "precision": 0.9642857142857143,
+        "recall": 0.9642857142857143,
+        "f1": 0.9642857142857143,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 28
+      },
+      "min_experience_years": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": null,
+        "support_gold_stated": 6
+      },
+      "max_experience_years": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 4
+      },
+      "salary": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 3
+      },
+      "locations": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 4
+      },
+      "work_mode": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 3
+      },
+      "employment_type": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 4
+      },
+      "education": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 5
+      }
+    },
+    "ci95": {
+      "micro_f1": [
+        0.9481286549707603,
+        1.0
+      ],
+      "macro_f1": [
+        0.898989898989899,
+        1.0
+      ],
+      "field_em_mean": [
+        0.9393939393939393,
+        1.0
+      ],
+      "json_validity": [
+        1.0,
+        1.0
+      ],
+      "schema_validity": [
+        1.0,
+        1.0
+      ],
+      "hallucination_rate": [
+        0.0,
+        0.0
+      ],
+      "record_exact_match": [
+        0.3333333333333333,
+        1.0
+      ]
+    },
+    "bootstrap": {
+      "n_boot": 1000,
+      "seed": 0,
+      "method": "percentile, resampling examples"
+    }
+  }
+}
