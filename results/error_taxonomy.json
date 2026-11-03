@@ -1,0 +1,34 @@
+{
+  "regex_baseline__test_synth": {
+    "invalid_json": 0,
+    "truncation": 0,
+    "schema_invalid": 0,
+    "wrong_salary_unit": 0,
+    "salary_wrong_value": 0,
+    "missed_skill": 0,
+    "spurious_skill": 3,
+    "hallucinated_field": 36,
+    "location_confusion": 0,
+    "seniority_mismatch": 0,
+    "experience_wrong": 0,
+    "role_or_company_wrong": 230,
+    "other_field_wrong": 0,
+    "n_examples": 471
+  },
+  "regex_baseline__val": {
+    "invalid_json": 0,
+    "truncation": 0,
+    "schema_invalid": 0,
+    "wrong_salary_unit": 0,
+    "salary_wrong_value": 0,
+    "missed_skill": 0,
+    "spurious_skill": 0,
+    "hallucinated_field": 0,
+    "location_confusion": 0,
+    "seniority_mismatch": 0,
+    "experience_wrong": 0,
+    "role_or_company_wrong": 107,
+    "other_field_wrong": 0,
+    "n_examples": 352
+  }
+}

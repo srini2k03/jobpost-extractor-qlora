@@ -1,0 +1,297 @@
+{
+  "splits": {
+    "test_real": [
+      {
+        "approach": "regex_baseline",
+        "name": "Regex baseline (rules + alias tables)",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_zero_shot",
+        "name": "Qwen2.5-1.5B-Instruct zero-shot",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_zero_shot_guided",
+        "name": "Qwen2.5-1.5B-Instruct zero-shot + guided JSON",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_few_shot",
+        "name": "Qwen2.5-1.5B-Instruct 3-shot",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_few_shot_guided",
+        "name": "Qwen2.5-1.5B-Instruct 3-shot + guided JSON",
+        "status": "pending"
+      },
+      {
+        "approach": "llama3.2-1b_few_shot",
+        "name": "Llama-3.2-1B-Instruct 3-shot (optional)",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-7b_few_shot",
+        "name": "Qwen2.5-7B-Instruct 3-shot, 4-bit (upper bound)",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-7b_few_shot_guided",
+        "name": "Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_qlora",
+        "name": "Qwen2.5-1.5B QLoRA fine-tune (ours)",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_qlora_guided",
+        "name": "Qwen2.5-1.5B QLoRA fine-tune + guided JSON",
+        "status": "pending"
+      },
+      {
+        "approach": "llama3.2-1b_qlora",
+        "name": "Llama-3.2-1B QLoRA fine-tune (optional)",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_merged_int8",
+        "name": "Fine-tune merged, bitsandbytes 8-bit",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_awq",
+        "name": "Fine-tune merged, AWQ 4-bit",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_gguf_q8_0",
+        "name": "Fine-tune merged, GGUF Q8_0 (llama.cpp)",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_gguf_q4_k_m",
+        "name": "Fine-tune merged, GGUF Q4_K_M (llama.cpp)",
+        "status": "pending"
+      }
+    ],
+    "test_synth": [
+      {
+        "approach": "regex_baseline",
+        "name": "Regex baseline (rules + alias tables)",
+        "status": "measured",
+        "n": 471,
+        "metrics": {
+          "json_validity": 1.0,
+          "schema_validity": 1.0,
+          "field_em_mean": 0.9110210384095736,
+          "micro_f1": 0.9311922322845673,
+          "macro_f1": 0.9079577826352765,
+          "hallucination_rate": 0.02467443454420836,
+          "record_exact_match": 0.3885350318471338
+        },
+        "ci95": {
+          "micro_f1": [
+            0.9249463388540552,
+            0.9378374960611638
+          ],
+          "macro_f1": [
+            0.8987688628734217,
+            0.9169836854195693
+          ],
+          "field_em_mean": [
+            0.9032956958116193,
+            0.9189345686160973
+          ],
+          "json_validity": [
+            1.0,
+            1.0
+          ],
+          "schema_validity": [
+            1.0,
+            1.0
+          ],
+          "hallucination_rate": [
+            0.01744791479740157,
+            0.031916026958413925
+          ],
+          "record_exact_match": [
+            0.34394904458598724,
+            0.43524416135881105
+          ]
+        },
+        "per_field": {
+          "company": {
+            "em": 0.4819532908704883,
+            "precision": 0.4881889763779528,
+            "recall": 0.4696969696969697,
+            "f1": 0.47876447876447875,
+            "hallucination_rate": 0.4533333333333333,
+            "support_gold_stated": 396
+          },
+          "role": {
+            "em": 0.7537154989384289,
+            "precision": 0.7553191489361702,
+            "recall": 0.7537154989384289,
+            "f1": 0.7545164718384697,
+            "hallucination_rate": null,
+            "support_gold_stated": 471
+          },
+          "seniority": {
+            "em": 0.7919320594479831,
+            "precision": 0.9869281045751634,
+            "recall": 0.611336032388664,
+            "f1": 0.755,
+            "hallucination_rate": 0.008928571428571428,
+            "support_gold_stated": 247
+          },
+          "skills": {
+            "em": 0.9936305732484076,
+            "precision": 0.9985104270109235,
+            "recall": 1.0,
+            "f1": 0.9992546583850932,
+            "hallucination_rate": 0.0,
+            "support_gold_stated": 2011
+          },
+          "min_experience_years": {
+            "em": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "hallucination_rate": 0.0,
+            "support_gold_stated": 394
+          },
+          "max_experience_years": {
+            "em": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "hallucination_rate": 0.0,
+            "support_gold_stated": 368
+          },
+          "salary": {
+            "em": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "hallucination_rate": 0.0,
+            "support_gold_stated": 272
+          },
+          "locations": {
+            "em": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "hallucination_rate": 0.0,
+            "support_gold_stated": 483
+          },
+          "work_mode": {
+            "em": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "hallucination_rate": 0.0,
+            "support_gold_stated": 274
+          },
+          "employment_type": {
+            "em": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "hallucination_rate": 0.0,
+            "support_gold_stated": 256
+          },
+          "education": {
+            "em": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "hallucination_rate": 0.0,
+            "support_gold_stated": 237
+          }
+        },
+        "meta": {
+          "approach": "regex_baseline",
+          "model": "rules",
+          "decoding": "-",
+          "hardware": "CPU",
+          "date": "2026-11-03",
+          "commit": "902cc8a"
+        }
+      },
+      {
+        "approach": "qwen2.5-1.5b_zero_shot",
+        "name": "Qwen2.5-1.5B-Instruct zero-shot",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_zero_shot_guided",
+        "name": "Qwen2.5-1.5B-Instruct zero-shot + guided JSON",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_few_shot",
+        "name": "Qwen2.5-1.5B-Instruct 3-shot",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_few_shot_guided",
+        "name": "Qwen2.5-1.5B-Instruct 3-shot + guided JSON",
+        "status": "pending"
+      },
+      {
+        "approach": "llama3.2-1b_few_shot",
+        "name": "Llama-3.2-1B-Instruct 3-shot (optional)",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-7b_few_shot",
+        "name": "Qwen2.5-7B-Instruct 3-shot, 4-bit (upper bound)",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-7b_few_shot_guided",
+        "name": "Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_qlora",
+        "name": "Qwen2.5-1.5B QLoRA fine-tune (ours)",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_qlora_guided",
+        "name": "Qwen2.5-1.5B QLoRA fine-tune + guided JSON",
+        "status": "pending"
+      },
+      {
+        "approach": "llama3.2-1b_qlora",
+        "name": "Llama-3.2-1B QLoRA fine-tune (optional)",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_merged_int8",
+        "name": "Fine-tune merged, bitsandbytes 8-bit",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_awq",
+        "name": "Fine-tune merged, AWQ 4-bit",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_gguf_q8_0",
+        "name": "Fine-tune merged, GGUF Q8_0 (llama.cpp)",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-1.5b_gguf_q4_k_m",
+        "name": "Fine-tune merged, GGUF Q4_K_M (llama.cpp)",
+        "status": "pending"
+      }
+    ]
+  },
+  "benchmarks": []
+}
