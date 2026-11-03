@@ -34,13 +34,13 @@ decoding (temperature 0). To guarantee valid output, add the JSON-schema grammar
 
 ## Training
 
-- **Data:** ? synthetic postings with labels known by construction, split leakage-safe by template
-  family and company (`DATA_CARD.md`). Postings longer than ? tokens were dropped, not truncated:
-  ? of them.
+- **Data:** 2177 synthetic postings with labels known by construction, split leakage-safe by template
+  family and company (`DATA_CARD.md`). Postings longer than 512 tokens were dropped, not truncated:
+  0 of them.
 - **Recipe:** LoRA r=16/alpha=32, dropout 0.05, lr 0.0003 with a cosine
   schedule, effective batch 16, completion-only loss (TRL SFTTrainer), fp32 on CPU.
-- **Run:** ? epoch(s), ? optimiser steps. Measured ? s/step on
-  `?` (? threads). Plan: pending.
+- **Run:** 2 epoch(s), 273 optimiser steps. Measured 64.92 s/step on
+  `INTEL(R) XEON(R) PLATINUM 8573C` (4 threads). Plan: 2 epoch(s) over all 2177 training examples fit the budget.
 - **Curves:** `results/training/qwen2.5-0.5b-lora-cpu/` (loss, learning rate, validation JSON-F1).
 
 ## Evaluation
