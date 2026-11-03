@@ -14,9 +14,9 @@ on:
         required: true
         default: "b6000"
       split:
-        description: "test split (test_real if it exists in the repo, else test_synth)"
+        description: "test split; 'auto' = test_real if it exists in the repo, else test_synth"
         required: true
-        default: "test_synth"
+        default: "auto"
       max_examples:
         description: "examples per quantisation (evenly spaced subset)"
         required: true
@@ -48,6 +48,16 @@ jobs:
           cache: pip
       - name: Install jobx
         run: pip install -e ".[hub,serve]"
+      - name: Resolve the test split
+        env:
+          SPLIT_INPUT: ${{ inputs.split }}
+        run: |
+          SPLIT="$SPLIT_INPUT"
+          if [ -z "$SPLIT" ] || [ "$SPLIT" = "auto" ]; then
+            if [ -f data/real/test_real.jsonl ]; then SPLIT=test_real; else SPLIT=test_synth; fi
+          fi
+          echo "SPLIT=$SPLIT" >> "$GITHUB_ENV"
+          echo "benchmark split: $SPLIT"
       - name: Build llama.cpp
         run: |
           git clone --depth 1 --branch "${{ inputs.llama_cpp_ref }}" https://github.com/ggml-org/llama.cpp.git
@@ -66,13 +76,13 @@ jobs:
         run: |
           python -m jobx.quantize.benchmark --server-bin llama.cpp/build/bin/llama-server \
             --model gguf/jobx-qwen2.5-1.5b-Q8_0.gguf --variant "GGUF Q8_0 (llama.cpp)" \
-            --approach qwen2.5-1.5b_gguf_q8_0 --split "${{ inputs.split }}" --max-examples "${{ inputs.max_examples }}" \
+            --approach qwen2.5-1.5b_gguf_q8_0 --split "$SPLIT" --max-examples "${{ inputs.max_examples }}" \
             --threads "$(nproc)"
       - name: Benchmark Q4_K_M
         run: |
           python -m jobx.quantize.benchmark --server-bin llama.cpp/build/bin/llama-server \
             --model gguf/jobx-qwen2.5-1.5b-Q4_K_M.gguf --variant "GGUF Q4_K_M (llama.cpp)" \
-            --approach qwen2.5-1.5b_gguf_q4_k_m --split "${{ inputs.split }}" --max-examples "${{ inputs.max_examples }}" \
+            --approach qwen2.5-1.5b_gguf_q4_k_m --split "$SPLIT" --max-examples "${{ inputs.max_examples }}" \
             --threads "$(nproc)"
       - name: Metrics + tables
         run: |
@@ -115,5 +125,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add results README.md
-          git diff --cached --quiet || git commit -m "GGUF CPU benchmark (llama.cpp ${{ inputs.llama_cpp_ref }})"
-          git push
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "GGUF CPU benchmark (llama.cpp ${{ inputs.llama_cpp_ref }})"
+          # The job runs for hours; rebase onto anything pushed meanwhile instead of failing the push.
+          for i in 1 2 3; do
+            if git pull --rebase origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME"; then exit 0; fi
+            git rebase --abort 2>/dev/null || true
+            sleep $((i * 15))
+          done
+          echo "::error::could not push the results after 3 attempts (see the rebase output above)"
+          exit 1
