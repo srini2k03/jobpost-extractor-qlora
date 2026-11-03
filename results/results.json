@@ -263,8 +263,15 @@
       },
       {
         "approach": "llama-3.3-70b-groq_few_shot",
-        "name": "Llama-3.3-70B via Groq (API, few-shot)",
-        "status": "pending"
+        "name": "Llama-3.3-70B via Groq (gpt-oss-120b fallback) (API, few-shot)",
+        "status": "incomplete",
+        "completion": {
+          "n_completed": 6,
+          "n_expected": 200,
+          "n_errors": 0,
+          "error_rate": 0.0,
+          "status": "incomplete"
+        }
       },
       {
         "approach": "qwen2.5-1.5b_qlora",
