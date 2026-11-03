@@ -45,6 +45,12 @@ def load_metrics(metrics_dir: str | Path) -> dict[tuple[str, str], dict[str, Any
     return out
 
 
+def hardware_label(a: dict[str, Any], d: dict[str, Any]) -> str:
+    """GPU rows run on a Colab T4 or a local GPU: show the device the run actually used."""
+    hw = (d.get("meta") or {}).get("hardware")
+    return str(hw) if a.get("hardware") == "GPU" and hw else str(a.get("hardware"))
+
+
 def is_complete(d: dict[str, Any]) -> bool:
     return (d.get("completion") or {}).get("status", "complete") == "complete"
 
@@ -163,7 +169,7 @@ def build_tables(root: str | Path = ".") -> tuple[str, dict[str, Any]]:
             commit = (d.get("meta") or {}).get("commit", "")
             status = "measured" + (f" {date}" if date else "") + (f" @{commit}" if commit else "")
             md.append(
-                f"| {name} | {a['hardware']} | {m['n']} | {_pct(m['json_validity'])} | "
+                f"| {name} | {hardware_label(a, d)} | {m['n']} | {_pct(m['json_validity'])} | "
                 f"{_pct(m['schema_validity'])} | {_pct(m['field_em_mean'])} | {_ci(m, 'micro_f1')} | "
                 f"{_pct(m['macro_f1'])} | {_ci(m, 'hallucination_rate')} | {status} |"
             )
@@ -275,9 +281,9 @@ def api_usage_table(
 
 def benchmark_table(root: Path, data: dict[str, Any]) -> list[str]:
     planned = [
-        ("fp16 (transformers)", "T4"),
-        ("merged 8-bit (bitsandbytes)", "T4"),
-        ("AWQ 4-bit", "T4"),
+        ("fp16 (transformers)", "GPU (T4 or local)"),
+        ("merged 8-bit (bitsandbytes)", "GPU (T4 or local)"),
+        ("AWQ 4-bit", "GPU (T4 or local)"),
         ("GGUF Q8_0 (llama.cpp)", "CPU, GitHub Actions"),
         ("GGUF Q4_K_M (llama.cpp)", "CPU, GitHub Actions"),
     ]
@@ -296,7 +302,7 @@ def benchmark_table(root: Path, data: dict[str, Any]) -> list[str]:
         r = rows.get(variant)
         if r is None:
             md.append(
-                f"| {variant} | {hw} | - | - | - | - | {PENDING if 'T4' in hw else 'pending (needs merged model)'} |"
+                f"| {variant} | {hw} | - | - | - | - | {PENDING if 'GPU' in hw else 'pending (needs merged model)'} |"
             )
             continue
         mem = r.get("peak_ram_gb") or r.get("peak_vram_gb")

@@ -53,7 +53,7 @@ def bench_transformers(
     agg = aggregate(scores, n_boot=0)
     return {
         "variant": variant,
-        "hardware": f"T4 ({torch.cuda.get_device_name(0)})",
+        "hardware": str(torch.cuda.get_device_name(0)),
         "size_gb": size_gb,
         "micro_f1": agg["micro_f1"],
         "json_validity": agg["json_validity"],

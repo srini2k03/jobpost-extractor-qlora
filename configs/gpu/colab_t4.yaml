@@ -1,0 +1,8 @@
+# GPU step settings for a free Colab T4 (16 GB, fp16 only). Used by the notebooks.
+name: colab_t4
+dtype: auto                 # resolves to float16 on a T4
+train_config: configs/train/qwen2.5-1.5b-qlora.yaml
+paraphrase: {n: 600, batch: 8, teacher: Qwen/Qwen2.5-7B-Instruct, nli_model: cross-encoder/nli-deberta-v3-small}
+baselines: {batch_small: 16, batch_7b: 8, guided_max: 200, free_max: null}
+eval: {batch: 16, guided_max: 200}
+awq: {n_bench: 150}

@@ -153,7 +153,7 @@ def train(cfg: dict[str, Any]) -> Path:
     model = AutoModelForCausalLM.from_pretrained(
         cfg["base_model"],
         quantization_config=bnb,
-        torch_dtype=torch.float16,
+        torch_dtype=torch.bfloat16 if t.get("bf16") else torch.float16,
         device_map={"": 0},
         attn_implementation="sdpa",
     )
@@ -183,6 +183,8 @@ def train(cfg: dict[str, Any]) -> Path:
         optim=t["optim"],
         fp16=t["fp16"],
         bf16=t["bf16"],
+        tf32=t.get("tf32"),
+        dataloader_num_workers=int(t.get("dataloader_num_workers", 0)),
         gradient_checkpointing=t["gradient_checkpointing"],
         gradient_checkpointing_kwargs={"use_reentrant": False},
         logging_steps=t["logging_steps"],
@@ -216,7 +218,10 @@ def train(cfg: dict[str, Any]) -> Path:
         callbacks=callbacks,
     )
     trainer.model.print_trainable_parameters()
-    trainer.train()
+    resume = bool(t.get("resume", True)) and any(Path(t["output_dir"]).glob("checkpoint-*"))
+    if resume:
+        print(f"resuming from the last checkpoint in {t['output_dir']}")
+    trainer.train(resume_from_checkpoint=True if resume else None)
     final = Path(t["output_dir"]) / "final"
     trainer.save_model(str(final))
     tok.save_pretrained(str(final))

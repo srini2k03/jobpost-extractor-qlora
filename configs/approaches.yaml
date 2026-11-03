@@ -2,24 +2,24 @@
 # id must match the <approach> part of results/predictions/<approach>__<split>.jsonl.
 approaches:
   - {id: regex_baseline, name: "Regex baseline (rules + alias tables)", model: "-", decoding: "-", hardware: "CPU", produced_by: "jobx regex-baseline"}
-  - {id: qwen2.5-1.5b_zero_shot, name: "Qwen2.5-1.5B-Instruct zero-shot", model: Qwen/Qwen2.5-1.5B-Instruct, decoding: free, hardware: "T4", produced_by: "notebooks/02_baselines"}
-  - {id: qwen2.5-1.5b_zero_shot_guided, name: "Qwen2.5-1.5B-Instruct zero-shot + guided JSON", model: Qwen/Qwen2.5-1.5B-Instruct, decoding: guided, hardware: "T4", produced_by: "notebooks/02_baselines"}
-  - {id: qwen2.5-1.5b_few_shot, name: "Qwen2.5-1.5B-Instruct 3-shot", model: Qwen/Qwen2.5-1.5B-Instruct, decoding: free, hardware: "T4", produced_by: "notebooks/02_baselines"}
-  - {id: qwen2.5-1.5b_few_shot_guided, name: "Qwen2.5-1.5B-Instruct 3-shot + guided JSON", model: Qwen/Qwen2.5-1.5B-Instruct, decoding: guided, hardware: "T4", produced_by: "notebooks/02_baselines"}
-  - {id: llama3.2-1b_few_shot, name: "Llama-3.2-1B-Instruct 3-shot (optional)", model: meta-llama/Llama-3.2-1B-Instruct, decoding: free, hardware: "T4", produced_by: "notebooks/02_baselines"}
-  - {id: llama3.2-1b_few_shot_guided, name: "Llama-3.2-1B-Instruct 3-shot + guided JSON (optional)", model: meta-llama/Llama-3.2-1B-Instruct, decoding: guided, hardware: "T4", produced_by: "notebooks/02_baselines"}
-  - {id: qwen2.5-7b_few_shot, name: "Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound)", model: Qwen/Qwen2.5-7B-Instruct, decoding: free, hardware: "T4", produced_by: "notebooks/02_baselines"}
-  - {id: qwen2.5-7b_few_shot_guided, name: "Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound)", model: Qwen/Qwen2.5-7B-Instruct, decoding: guided, hardware: "T4", produced_by: "notebooks/02_baselines"}
+  - {id: qwen2.5-1.5b_zero_shot, name: "Qwen2.5-1.5B-Instruct zero-shot", model: Qwen/Qwen2.5-1.5B-Instruct, decoding: free, hardware: "GPU", produced_by: "notebooks/02_baselines"}
+  - {id: qwen2.5-1.5b_zero_shot_guided, name: "Qwen2.5-1.5B-Instruct zero-shot + guided JSON", model: Qwen/Qwen2.5-1.5B-Instruct, decoding: guided, hardware: "GPU", produced_by: "notebooks/02_baselines"}
+  - {id: qwen2.5-1.5b_few_shot, name: "Qwen2.5-1.5B-Instruct 3-shot", model: Qwen/Qwen2.5-1.5B-Instruct, decoding: free, hardware: "GPU", produced_by: "notebooks/02_baselines"}
+  - {id: qwen2.5-1.5b_few_shot_guided, name: "Qwen2.5-1.5B-Instruct 3-shot + guided JSON", model: Qwen/Qwen2.5-1.5B-Instruct, decoding: guided, hardware: "GPU", produced_by: "notebooks/02_baselines"}
+  - {id: llama3.2-1b_few_shot, name: "Llama-3.2-1B-Instruct 3-shot (optional)", model: meta-llama/Llama-3.2-1B-Instruct, decoding: free, hardware: "GPU", produced_by: "notebooks/02_baselines"}
+  - {id: llama3.2-1b_few_shot_guided, name: "Llama-3.2-1B-Instruct 3-shot + guided JSON (optional)", model: meta-llama/Llama-3.2-1B-Instruct, decoding: guided, hardware: "GPU", produced_by: "notebooks/02_baselines"}
+  - {id: qwen2.5-7b_few_shot, name: "Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound)", model: Qwen/Qwen2.5-7B-Instruct, decoding: free, hardware: "GPU", produced_by: "notebooks/02_baselines"}
+  - {id: qwen2.5-7b_few_shot_guided, name: "Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound)", model: Qwen/Qwen2.5-7B-Instruct, decoding: guided, hardware: "GPU", produced_by: "notebooks/02_baselines"}
   # Larger-model API upper bound: same prompt + schema on GPT-OSS-120B (OpenAI open-weight, ~117B MoE) via
   # Groq's free tier (OpenAI-compatible endpoint, fallback qwen/qwen3.8-27b). Llama-3.3-70B was not available
   # to the project's Groq key. Runs in .github/workflows/api_baseline.yml (daily schedule resumes it).
   # Gemini / OpenRouter / Anthropic runs are optional; their rows appear automatically when run.
   - {id: gpt-oss-120b-groq_few_shot, name: "GPT-OSS-120B via Groq (API, few-shot)", name_template: "GPT-OSS-120B via Groq ({models}) (API, few-shot)", model: openai/gpt-oss-120b, decoding: "json_schema / json_object", hardware: "Groq API (free tier)", produced_by: ".github/workflows/api_baseline.yml", pending: "pending API run"}
-  - {id: qwen2.5-1.5b_qlora, name: "Qwen2.5-1.5B QLoRA fine-tune (ours)", model: "jobx-qwen2.5-1.5b-qlora", decoding: free, hardware: "T4", produced_by: "notebooks/04_eval_predict"}
-  - {id: qwen2.5-1.5b_qlora_guided, name: "Qwen2.5-1.5B QLoRA fine-tune + guided JSON", model: "jobx-qwen2.5-1.5b-qlora", decoding: guided, hardware: "T4", produced_by: "notebooks/04_eval_predict"}
-  - {id: llama3.2-1b_qlora, name: "Llama-3.2-1B QLoRA fine-tune (optional)", model: "jobx-llama3.2-1b-qlora", decoding: free, hardware: "T4", produced_by: "notebooks/04_eval_predict"}
-  - {id: qwen2.5-1.5b_merged_int8, name: "Fine-tune merged, bitsandbytes 8-bit", model: "jobx-qwen2.5-1.5b-merged", decoding: free, hardware: "T4", produced_by: "notebooks/05_awq_benchmark"}
-  - {id: qwen2.5-1.5b_awq, name: "Fine-tune merged, AWQ 4-bit", model: "jobx-qwen2.5-1.5b-awq", decoding: free, hardware: "T4", produced_by: "notebooks/05_awq_benchmark"}
+  - {id: qwen2.5-1.5b_qlora, name: "Qwen2.5-1.5B QLoRA fine-tune (ours)", model: "jobx-qwen2.5-1.5b-qlora", decoding: free, hardware: "GPU", produced_by: "notebooks/04_eval_predict"}
+  - {id: qwen2.5-1.5b_qlora_guided, name: "Qwen2.5-1.5B QLoRA fine-tune + guided JSON", model: "jobx-qwen2.5-1.5b-qlora", decoding: guided, hardware: "GPU", produced_by: "notebooks/04_eval_predict"}
+  - {id: llama3.2-1b_qlora, name: "Llama-3.2-1B QLoRA fine-tune (optional)", model: "jobx-llama3.2-1b-qlora", decoding: free, hardware: "GPU", produced_by: "notebooks/04_eval_predict"}
+  - {id: qwen2.5-1.5b_merged_int8, name: "Fine-tune merged, bitsandbytes 8-bit", model: "jobx-qwen2.5-1.5b-merged", decoding: free, hardware: "GPU", produced_by: "notebooks/05_awq_benchmark"}
+  - {id: qwen2.5-1.5b_awq, name: "Fine-tune merged, AWQ 4-bit", model: "jobx-qwen2.5-1.5b-awq", decoding: free, hardware: "GPU", produced_by: "notebooks/05_awq_benchmark"}
   - {id: qwen2.5-1.5b_gguf_q8_0, name: "Fine-tune merged, GGUF Q8_0 (llama.cpp)", model: "jobx-qwen2.5-1.5b-gguf", decoding: "free", hardware: "CPU (GitHub Actions)", produced_by: ".github/workflows/quantize_benchmark.yml"}
   - {id: qwen2.5-1.5b_gguf_q4_k_m, name: "Fine-tune merged, GGUF Q4_K_M (llama.cpp)", model: "jobx-qwen2.5-1.5b-gguf", decoding: "free", hardware: "CPU (GitHub Actions)", produced_by: ".github/workflows/quantize_benchmark.yml"}
 splits: [test_real, test_synth]

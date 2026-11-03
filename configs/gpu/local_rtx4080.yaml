@@ -1,0 +1,10 @@
+# GPU step settings for a laptop RTX 4080 (12 GB VRAM, bf16) under WSL2. Used by `make local-*`.
+# Batches are sized for 12 GB: less VRAM than a T4 but a much faster GPU, so 1.5B runs get bigger
+# batches (it is compute- not memory-bound at this size) while the 7B 4-bit stays at 8.
+name: local_rtx4080
+dtype: auto                 # resolves to bfloat16 on Ada
+train_config: configs/train/local_rtx4080.yaml
+paraphrase: {n: 600, batch: 12, teacher: Qwen/Qwen2.5-7B-Instruct, nli_model: cross-encoder/nli-deberta-v3-small}
+baselines: {batch_small: 32, batch_7b: 8, guided_max: 200, free_max: null}
+eval: {batch: 32, guided_max: 200}
+awq: {n_bench: 150}

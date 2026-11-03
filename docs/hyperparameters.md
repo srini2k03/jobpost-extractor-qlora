@@ -26,3 +26,21 @@ reasons below are priors from the QLoRA literature and the T4 memory budget, not
 Each sweep run trains for 1 epoch and reports the best validation JSON micro F1 (`results/training/sweep_summary.json`).
 Pick the smallest r within the noise of the best. If 1e-4 matches 2e-4, prefer it for stability. Record the
 outcome here when it exists, replacing this sentence.
+
+## Local RTX 4080 profile
+
+The profile in [`configs/train/local_rtx4080.yaml`](../configs/train/local_rtx4080.yaml) inherits everything
+above and changes only what the hardware calls for. The recipe and the effective batch are unchanged, so
+runs are comparable.
+
+| Setting | T4 (Colab) | RTX 4080 Laptop | Why |
+|---|---|---|---|
+| Compute dtype | fp16 | **bf16** | Ada supports bf16. It has fp32's exponent range, so there is no loss scaling and no fp16 overflow in attention or logits. The T4 (Turing) has no bf16. |
+| `tf32` | off | **on** | TF32 tensor cores speed up the fp32 parts (LoRA weights, optimiser maths) on Ampere and newer, with negligible accuracy cost. |
+| Batch × accumulation | 4 × 4 | **8 × 2** | 12 GB holds 8 × 1,024 tokens for a 4-bit 1.5B model with checkpointing. Larger micro-batches use the faster GPU better, and the effective batch stays 16, so the learning rate and schedule still apply. |
+| Eval batch | 8 | 16 | Same reasoning, for the loss-only evaluation pass. |
+| `dataloader_num_workers` | 0 | **2** | Under WSL2 a couple of workers keep tokenised batches ready. More just compete with the GPU feeder for CPU and RAM. |
+| Sequence length | 1,024 | 1,024 | Unchanged. |
+| Gradient checkpointing | on | on | Kept for headroom with long real postings and the in-loop generations used for JSON-F1. |
+| Optimiser | paged AdamW 8-bit | paged AdamW 8-bit | Unchanged. Paged states avoid OOM spikes on 12 GB. |
+| Resume | - | `resume: true` | Continues from the last `checkpoint-*` after an interruption. Laptops sleep. |
