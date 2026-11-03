@@ -1,0 +1,32 @@
+{
+  "approach": "gemini-flash_few_shot",
+  "model": "gemini-2.5-flash",
+  "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+  "hardware": "API",
+  "decoding": "greedy (temperature 0), response_format=json_schema",
+  "response_format": "json_schema",
+  "split": "test_synth",
+  "n_shots": 3,
+  "shot_ids": [
+    "syn-00007",
+    "syn-00006",
+    "syn-00014"
+  ],
+  "date": "2026-11-03",
+  "n_examples": 200,
+  "n_completed": 0,
+  "complete": false,
+  "usage": {
+    "requests": 200,
+    "prompt_tokens": 0,
+    "completion_tokens": 0
+  },
+  "price_per_mtok": {
+    "input": 0.0,
+    "output": 0.0
+  },
+  "cost_usd": 0.0,
+  "format_downgrades": [],
+  "commit": "26bfce1",
+  "provider": "gemini"
+}
