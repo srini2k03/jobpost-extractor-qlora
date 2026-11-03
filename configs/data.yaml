@@ -1,0 +1,37 @@
+# Synthetic data generation + cleaning config (read by `jobx build-data`).
+seed: 20251103
+n_examples: 3000            # generated before filtering (validation + dedup)
+
+# Leakage-safe split: template families and companies are disjoint across splits.
+# Each generated example is drawn from one "block" so its family and company agree.
+block_weights: {train: 0.72, val: 0.12, test_synth: 0.16}
+families:
+  train: [naukri_structured, linkedin_prose, whatsapp_forward, careers_page, bullet_minimal,
+          consultancy_mail, email_jd_hr, walk_in_drive]
+  val: [tweet_short, table_pipe]
+  test_synth: [telegram_channel, hinglish_chat]
+# md5(company) % 100 falls into [lo, hi) -> split
+company_buckets: {train: [0, 70], val: [70, 82], test_synth: [82, 100]}
+
+# Probability that a field is stated in the posting (otherwise gold is null / []).
+presence:
+  company: 0.85
+  seniority: 0.55
+  skills: 0.92
+  experience: 0.85
+  salary: 0.6
+  locations: 0.9
+  work_mode: 0.6
+  employment_type: 0.5
+  education: 0.5
+seniority_in_title: 0.7     # when stated, P(seniority is in the title vs a separate "Level:" line)
+hq_trap: 0.15               # P("headquartered in <other city>" sentence when job city is stated)
+noise: true
+
+dedup:
+  num_perm: 128
+  bands: 32                 # 32 bands x 4 rows
+  shingle_words: 3
+  threshold: 0.8            # Jaccard on word 3-gram shingles; candidates verified exactly
+
+few_shot_k: 3               # few-shot exemplars for baselines (taken from train)
