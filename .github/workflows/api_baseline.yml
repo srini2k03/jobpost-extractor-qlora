@@ -14,9 +14,13 @@ on:
         required: true
         default: "gemini"
       model:
-        description: "model id (blank = provider default; gemini default is gemini-2.5-flash)"
+        description: "model id (Gemini free tier: gemini-3.8-flash; change it for other providers, blank = preset)"
         required: false
-        default: ""
+        default: "gemini-3.8-flash"
+      model_fallbacks:
+        description: "comma list used after 2 consecutive 503s (or a 403/404) on the model; blank for none"
+        required: false
+        default: "gemini-3.7-flash,gemini-3.5-flash"
       splits:
         description: "comma list; splits missing from the repo are skipped"
         required: true
@@ -84,8 +88,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .cache/jobx-api
-          key: api-cache-${{ inputs.provider }}-${{ github.run_id }}
-          restore-keys: api-cache-${{ inputs.provider }}-
+          key: api-cache-v2-${{ inputs.provider }}-${{ github.run_id }}
+          restore-keys: api-cache-v2-${{ inputs.provider }}-
       - name: Run (resumable)
         id: run
         run: |
@@ -98,27 +102,35 @@ jobs:
           else
             ARGS=(--provider "$PROVIDER" --splits "${{ inputs.splits }}" --shots "${{ inputs.shots }}"
                   --max-examples "${{ inputs.max_examples }}" --rpm "${{ inputs.rpm }}"
-                  --approach-prefix "${{ inputs.approach_prefix }}")
+                  --approach-prefix "${{ inputs.approach_prefix }}"
+                  --model-fallbacks "${{ inputs.model_fallbacks }}")
             if [ -n "${{ inputs.model }}" ]; then ARGS+=(--model "${{ inputs.model }}"); fi
             python -m jobx.baselines.openai_compat_runner "${ARGS[@]}"
           fi
           CODE=$?
-          if [ $CODE -eq 4 ]; then
-            echo "::warning::Free-tier quota exhausted; partial progress will be committed. Re-run later to resume."
-            exit 0
-          fi
-          exit $CODE
+          # 0 ok | 4 quota exhausted after some completions | 5 fatal config (401/403/404) | 6 nothing completed
+          case $CODE in
+            0) echo "succeeded=true" >> "$GITHUB_OUTPUT" ;;
+            4) echo "succeeded=true" >> "$GITHUB_OUTPUT"
+               echo "::warning::Free-tier quota exhausted; partial progress will be committed. Re-run later to resume." ;;
+            5) echo "::error::Fatal API configuration error (bad key, or no usable model in the chain; see log). Nothing committed."; exit 1 ;;
+            6) echo "::error::No request completed; nothing to score or commit."; exit 1 ;;
+            *) exit $CODE ;;
+          esac
       - name: Metrics + results table
+        if: steps.run.outputs.succeeded == 'true'
         run: |
           jobx eval
           jobx results-table
       - uses: actions/upload-artifact@v4
+        if: steps.run.outputs.succeeded == 'true'
         with:
           name: api-baseline
           path: |
             results/predictions/*.meta.json
             results/metrics/*.json
       - name: Commit results
+        if: steps.run.outputs.succeeded == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

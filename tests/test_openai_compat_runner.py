@@ -17,7 +17,7 @@ from jobx.data.build import read_jsonl  # noqa: E402
 REQ = httpx.Request("POST", "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions")
 
 
-def completion(text: str, model: str = "gemini-2.5-flash", pin: int = 900, pout: int = 120):
+def completion(text: str, model: str = "gemini-3.8-flash", pin: int = 900, pout: int = 120):
     return SimpleNamespace(
         choices=[SimpleNamespace(message=SimpleNamespace(content=text), finish_reason="stop")],
         usage=SimpleNamespace(prompt_tokens=pin, completion_tokens=pout),
@@ -56,7 +56,7 @@ def run(client, examples, tmp_path, **kw):
     limiter = oc.RateLimiter(0, sleep=no_sleep)
     defaults = dict(
         base_url="https://x/",
-        model="gemini-2.5-flash",
+        model="gemini-3.8-flash",
         approach_prefix="gemini-flash",
         shots=[],
         split="test_synth",
@@ -70,7 +70,7 @@ def run(client, examples, tmp_path, **kw):
 
 
 def test_request_uses_shared_prompt_and_json_schema():
-    kw = oc.build_request("gemini-2.5-flash", "posting", [], mode="json_schema", max_tokens=512)
+    kw = oc.build_request("gemini-3.8-flash", "posting", [], mode="json_schema", max_tokens=512)
     assert kw["messages"][0]["role"] == "system" and kw["temperature"] == 0
     rf = kw["response_format"]
     assert rf["type"] == "json_schema" and rf["json_schema"]["name"] == "JobPosting"
@@ -194,3 +194,127 @@ def test_main_end_to_end_and_missing_key(tmp_path, monkeypatch, capsys):
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     assert asyncio.run(oc.main_async(oc.parser().parse_args(["--root", str(root)]))) == 2
     assert "GEMINI_API_KEY is not set" in capsys.readouterr().err
+
+
+def status_error(cls, code: int, msg: str):
+    return cls(msg, response=httpx.Response(code, request=REQ), body=None)
+
+
+def test_fatal_401_aborts_without_writing(tmp_path):
+    examples = read_jsonl("data/processed/test_synth.jsonl")[:3]
+
+    def handler(kw, n):
+        raise status_error(openai.AuthenticationError, 401, "API key not valid")
+
+    client = FakeClient(handler)
+    with pytest.raises(oc.FatalConfigError, match="401"):
+        run(client, examples, tmp_path)
+    assert len(client.calls) == 1  # not retried
+    assert not (tmp_path / "pred").exists() or not list((tmp_path / "pred").iterdir())
+    assert not list((tmp_path / "cache").iterdir())
+
+
+def test_404_on_only_model_is_fatal_and_main_exits_nonzero(tmp_path, capsys):
+    root = tmp_path / "root"
+    (root / "data/processed").mkdir(parents=True)
+    for f in ("train.jsonl", "test_synth.jsonl"):
+        shutil.copy(Path("data/processed") / f, root / "data/processed" / f)
+    client = FakeClient(
+        lambda kw, n: (_ for _ in ()).throw(
+            status_error(openai.NotFoundError, 404, "model no longer available to new users")
+        )
+    )
+    args = oc.parser().parse_args(
+        [
+            "--root",
+            str(root),
+            "--max-examples",
+            "3",
+            "--rpm",
+            "0",
+            "--model-fallbacks",
+            "",
+            "--cache-dir",
+            str(tmp_path / "c"),
+        ]
+    )
+    assert asyncio.run(oc.main_async(args, client=client)) == oc.EXIT_FATAL
+    assert "no longer available" in capsys.readouterr().err
+    assert not (root / "results/predictions").exists() or not list(
+        (root / "results/predictions").glob("*.jsonl")
+    )
+    assert not (root / "results/metrics").exists()
+
+
+def test_fallback_after_two_503s_and_404_drops_model(tmp_path):
+    examples = read_jsonl("data/processed/test_synth.jsonl")[:4]
+
+    def handler(kw, n):
+        if kw["model"] == "gemini-3.8-flash":
+            raise status_error(openai.InternalServerError, 503, "model currently overloaded")
+        if kw["model"] == "gemini-3.7-flash":
+            raise status_error(openai.NotFoundError, 404, "not found")
+        return completion(json.dumps(label_for(kw, examples)), model=kw["model"])
+
+    client = FakeClient(handler)
+    chain = oc.ModelChain(["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.5-flash"], cooldown_s=1e9)
+    pred, st = run(client, examples, tmp_path, model=chain, concurrency=1)
+    tried = [c["model"] for c in client.calls]
+    assert tried[:4] == ["gemini-3.8-flash", "gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.5-flash"]
+    assert tried.count("gemini-3.8-flash") == 2  # cooled down, not retried for later examples
+    rows = [json.loads(x) for x in pred.read_text().splitlines()]
+    assert {r["model"] for r in rows} == {"gemini-3.5-flash"} and st.n_errors == 0
+    meta = json.loads(pred.with_name(pred.name.replace(".jsonl", ".meta.json")).read_text())
+    assert meta["models_used"] == {"gemini-3.5-flash": 4}
+    assert list(meta["dropped_models"]) == ["gemini-3.7-flash"]
+    assert meta["model"] == "gemini-3.8-flash" and meta["model_chain"][0] == "gemini-3.8-flash"
+
+
+def test_primary_comes_back_after_cooldown():
+    t = {"now": 0.0}
+    chain = oc.ModelChain(["a", "b"], switch_after=2, cooldown_s=60, clock=lambda: t["now"])
+    assert chain.current() == ("a", 0.0)
+    chain.record_overload("a")
+    assert chain.current()[0] == "a"
+    chain.record_overload("a")
+    assert chain.current() == ("b", 0.0)
+    t["now"] = 61
+    assert chain.current() == ("a", 0.0)
+    chain.drop("a", "404")
+    chain.drop("b", "403")
+    with pytest.raises(oc.FatalConfigError, match="every model"):
+        chain.current()
+
+
+def test_errors_are_never_cached(tmp_path):
+    cache = oc.ResponseCache(tmp_path / "c")
+    cache.put("k1", {"output": "", "error": "NotFoundError"})
+    cache.put("k2", {"output": "   "})
+    assert not list((tmp_path / "c").iterdir())
+    # an error entry left by an older version is ignored on read
+    (tmp_path / "c" / "k3.json").write_text(json.dumps({"output": "", "error": "NotFoundError"}))
+    assert cache.get("k3") is None
+    cache.put("k4", {"output": '{"company": null}'})
+    assert cache.get("k4") == {"output": '{"company": null}'}
+
+    examples = read_jsonl("data/processed/test_synth.jsonl")[:2]
+
+    def bad(kw, n):
+        raise status_error(openai.BadRequestError, 400, "content filtered")
+
+    run(FakeClient(bad), examples, tmp_path, mode="none")
+    assert not list((tmp_path / "cache").glob("*.json"))
+
+
+def test_all_requests_failed_writes_nothing(tmp_path):
+    examples = read_jsonl("data/processed/test_synth.jsonl")[:3]
+    pred, st = run(
+        FakeClient(
+            lambda kw, n: (_ for _ in ()).throw(status_error(openai.BadRequestError, 400, "content filtered"))
+        ),
+        examples,
+        tmp_path,
+        mode="none",
+    )
+    assert pred is None and st.n_completed == 0 and st.n_errors == 3
+    assert not list((tmp_path / "pred").glob("*.jsonl"))

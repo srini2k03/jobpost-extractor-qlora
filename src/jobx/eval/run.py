@@ -71,6 +71,31 @@ def score_file(pred_path: str | Path, root: str | Path = ".") -> tuple[list[Exam
     return scores, info
 
 
+MAX_ERROR_RATE = 0.05
+
+
+class NoCompletedPredictions(ValueError):
+    """A predictions file in which no request completed: refusing to score it as zeros."""
+
+
+def completion_info(preds: list[dict[str, Any]], meta: dict[str, Any]) -> dict[str, Any]:
+    """complete = every expected example has a row and at most 5% of rows are request errors."""
+    n_rows = len(preds)
+    n_err = sum(1 for p in preds if p.get("error"))
+    n_completed = n_rows - n_err
+    n_expected = int(meta.get("n_examples") or n_rows)
+    error_rate = n_err / n_rows if n_rows else 1.0
+    partial = n_rows < n_expected
+    status = "incomplete" if partial or error_rate > MAX_ERROR_RATE else "complete"
+    return {
+        "n_completed": n_completed,
+        "n_expected": n_expected,
+        "n_errors": n_err,
+        "error_rate": round(error_rate, 4),
+        "status": status,
+    }
+
+
 def _clean(o: Any) -> Any:
     if isinstance(o, float) and (math.isnan(o) or math.isinf(o)):
         return None
@@ -95,14 +120,18 @@ def git_commit(root: str | Path = ".") -> str | None:
 
 def evaluate_file(pred_path: str | Path, root: str | Path = ".", *, n_boot: int = 1000) -> dict[str, Any]:
     approach, _ = parse_pred_name(pred_path)
-    scores, info = score_file(pred_path, root)
     meta_path = Path(str(pred_path).removesuffix(".jsonl") + ".meta.json")
     meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
+    completion = completion_info(read_jsonl(pred_path), meta)
+    if meta.get("n_completed") == 0 or completion["n_completed"] == 0:
+        raise NoCompletedPredictions(f"{Path(pred_path).name}: no completed predictions; not scoring it")
+    scores, info = score_file(pred_path, root)
     metrics = aggregate(scores, n_boot=n_boot)
     return _clean(
         {
             "approach": approach,
             **info,
+            "completion": completion,
             "meta": meta,
             "metrics": metrics,
             "evaluated_at": datetime.now(UTC).strftime("%Y-%m-%d"),
@@ -120,9 +149,14 @@ def evaluate_all(
         _, split = parse_pred_name(p)
         if not (Path(root) / SPLIT_FILES.get(split, "__missing__")).exists():
             continue
-        res = evaluate_file(p, root, n_boot=n_boot)
-        res.pop("evaluated_at")  # keep files byte-stable so CI can diff them
         dest = out / (p.name.removesuffix(".jsonl") + ".json")
+        try:
+            res = evaluate_file(p, root, n_boot=n_boot)
+        except NoCompletedPredictions as e:
+            print(f"skipping {e}")
+            dest.unlink(missing_ok=True)  # never leave a stale score for a file that cannot be scored
+            continue
+        res.pop("evaluated_at")  # keep files byte-stable so CI can diff them
         dest.write_text(json.dumps(res, indent=2, ensure_ascii=False) + "\n")
         written.append(dest)
     return written
