@@ -1,0 +1,230 @@
+{
+  "$defs": {
+    "Salary": {
+      "additionalProperties": false,
+      "properties": {
+        "min": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Lower bound, absolute amount in `period` units",
+          "title": "Min"
+        },
+        "max": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Upper bound, absolute amount in `period` units",
+          "title": "Max"
+        },
+        "currency": {
+          "default": "INR",
+          "enum": [
+            "INR",
+            "USD"
+          ],
+          "title": "Currency",
+          "type": "string"
+        },
+        "period": {
+          "default": "year",
+          "enum": [
+            "year",
+            "month",
+            "hour"
+          ],
+          "title": "Period",
+          "type": "string"
+        }
+      },
+      "title": "Salary",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "company": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Hiring company (not a recruitment agency)",
+      "title": "Company"
+    },
+    "role": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Job title without seniority words",
+      "title": "Role"
+    },
+    "seniority": {
+      "anyOf": [
+        {
+          "enum": [
+            "intern",
+            "junior",
+            "mid",
+            "senior",
+            "lead",
+            "manager"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Seniority"
+    },
+    "skills": {
+      "description": "Required/preferred skills, canonical names",
+      "items": {
+        "type": "string"
+      },
+      "title": "Skills",
+      "type": "array"
+    },
+    "min_experience_years": {
+      "anyOf": [
+        {
+          "maximum": 50,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Min Experience Years"
+    },
+    "max_experience_years": {
+      "anyOf": [
+        {
+          "maximum": 50,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Experience Years"
+    },
+    "salary": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Salary"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "locations": {
+      "description": "Indian cities, canonical names",
+      "items": {
+        "type": "string"
+      },
+      "title": "Locations",
+      "type": "array"
+    },
+    "work_mode": {
+      "anyOf": [
+        {
+          "enum": [
+            "onsite",
+            "hybrid",
+            "remote"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Work Mode"
+    },
+    "employment_type": {
+      "anyOf": [
+        {
+          "enum": [
+            "full_time",
+            "part_time",
+            "contract",
+            "internship",
+            "freelance"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Employment Type"
+    },
+    "education": {
+      "anyOf": [
+        {
+          "enum": [
+            "10th",
+            "12th",
+            "diploma",
+            "graduate",
+            "b.tech",
+            "bca",
+            "b.sc",
+            "b.com",
+            "bba",
+            "mca",
+            "m.tech",
+            "m.sc",
+            "mba",
+            "ca",
+            "phd"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Education"
+    }
+  },
+  "title": "JobPosting",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}
