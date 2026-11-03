@@ -1,0 +1,639 @@
+{
+  "config": {
+    "seed": 20251103,
+    "n_examples": 3000,
+    "block_weights": {
+      "train": 0.72,
+      "val": 0.12,
+      "test_synth": 0.16
+    },
+    "families": {
+      "train": [
+        "naukri_structured",
+        "linkedin_prose",
+        "whatsapp_forward",
+        "careers_page",
+        "bullet_minimal",
+        "consultancy_mail",
+        "email_jd_hr",
+        "walk_in_drive"
+      ],
+      "val": [
+        "tweet_short",
+        "table_pipe"
+      ],
+      "test_synth": [
+        "telegram_channel",
+        "hinglish_chat"
+      ]
+    },
+    "company_buckets": {
+      "train": [
+        0,
+        70
+      ],
+      "val": [
+        70,
+        82
+      ],
+      "test_synth": [
+        82,
+        100
+      ]
+    },
+    "seniority_in_title": 0.7,
+    "hq_trap": 0.15,
+    "noise": true,
+    "dedup": {
+      "num_perm": 128,
+      "bands": 32,
+      "shingle_words": 3,
+      "threshold": 0.8
+    },
+    "few_shot_k": 3
+  },
+  "presence_config": {
+    "company": 0.85,
+    "seniority": 0.55,
+    "skills": 0.92,
+    "experience": 0.85,
+    "salary": 0.6,
+    "locations": 0.9,
+    "work_mode": 0.6,
+    "employment_type": 0.5,
+    "education": 0.5
+  },
+  "pipeline": {
+    "generated": 3000,
+    "validation_failed": 0,
+    "validation_failures_by_field": {},
+    "paraphrased_added": 0,
+    "dropped_family_company_mismatch": 0,
+    "exact_duplicates_removed": 0,
+    "near_duplicates_removed": 0,
+    "duplicates_removed_across_splits": 0,
+    "near_duplicate_examples": [],
+    "final": {
+      "train": 2177,
+      "val": 352,
+      "test_synth": 471
+    },
+    "final_total": 3000
+  },
+  "paraphrase_filter": null,
+  "leakage": {
+    "train~val": {
+      "family_overlap": [],
+      "company_overlap": []
+    },
+    "train~test_synth": {
+      "family_overlap": [],
+      "company_overlap": []
+    },
+    "val~test_synth": {
+      "family_overlap": [],
+      "company_overlap": []
+    },
+    "ok": true
+  },
+  "splits": {
+    "train": {
+      "n": 2177,
+      "families": {
+        "linkedin_prose": 287,
+        "naukri_structured": 287,
+        "consultancy_mail": 285,
+        "careers_page": 271,
+        "email_jd_hr": 270,
+        "bullet_minimal": 270,
+        "walk_in_drive": 265,
+        "whatsapp_forward": 242
+      },
+      "domains": {
+        "qa": 157,
+        "data_eng": 151,
+        "erp": 139,
+        "devops": 139,
+        "backend": 136,
+        "analytics": 129,
+        "fullstack": 128,
+        "frontend": 123,
+        "data_science": 122,
+        "product": 120,
+        "mobile": 119,
+        "finance": 109,
+        "marketing": 107,
+        "hr": 106,
+        "sales": 105,
+        "design": 101,
+        "ops": 93,
+        "support": 93
+      },
+      "field_presence": {
+        "company": 0.791,
+        "role": 1.0,
+        "seniority": 0.556,
+        "skills": 0.938,
+        "min_experience_years": 0.829,
+        "max_experience_years": 0.765,
+        "salary": 0.591,
+        "locations": 0.784,
+        "work_mode": 0.595,
+        "employment_type": 0.525,
+        "education": 0.503
+      },
+      "seniority": {
+        "None": 967,
+        "mid": 383,
+        "junior": 291,
+        "senior": 249,
+        "lead": 112,
+        "manager": 102,
+        "intern": 73
+      },
+      "work_mode": {
+        "None": 881,
+        "onsite": 599,
+        "hybrid": 446,
+        "remote": 251
+      },
+      "employment_type": {
+        "None": 1034,
+        "full_time": 787,
+        "internship": 145,
+        "contract": 109,
+        "part_time": 58,
+        "freelance": 44
+      },
+      "education": {
+        "None": 1081,
+        "graduate": 286,
+        "b.tech": 188,
+        "mca": 122,
+        "mba": 105,
+        "bca": 62,
+        "diploma": 58,
+        "m.tech": 58,
+        "12th": 46,
+        "b.com": 45,
+        "bba": 45,
+        "b.sc": 41,
+        "m.sc": 19,
+        "phd": 11,
+        "ca": 10
+      },
+      "salary_period": {
+        "year": 1146,
+        "month": 140
+      },
+      "salary_currency": {
+        "INR": 1277,
+        "USD": 9
+      },
+      "salary_open_ended": 169,
+      "salary_mid_lpa_quantiles": {
+        "p5": 2.58,
+        "p25": 5.0,
+        "p50": 11.75,
+        "p75": 24.0,
+        "p95": 51.19
+      },
+      "n_skills_quantiles": {
+        "p5": 0.0,
+        "p25": 3.0,
+        "p50": 4.0,
+        "p75": 6.0,
+        "p95": 7.0
+      },
+      "n_locations": {
+        "1": 1180,
+        "0": 471,
+        "2": 336,
+        "3": 190
+      },
+      "top_skills": {
+        "sql": 394,
+        "communication": 331,
+        "python": 307,
+        "excel": 218,
+        "git": 172,
+        "aws": 162,
+        "java": 158,
+        "sap fico": 148,
+        "rest api": 144,
+        "javascript": 142,
+        "docker": 124,
+        "jira": 121,
+        "salesforce": 119,
+        "google analytics": 106,
+        "statistics": 100,
+        "react": 98,
+        "english": 96,
+        "sap abap": 95,
+        "hindi": 93,
+        "crm": 92,
+        "servicenow": 90,
+        "canva": 86,
+        "azure": 85,
+        "figma": 84,
+        "apex": 83
+      },
+      "top_locations": {
+        "Bengaluru": 315,
+        "Hyderabad": 218,
+        "Pune": 208,
+        "Mumbai": 187,
+        "Chennai": 183,
+        "Gurugram": 151,
+        "Delhi": 139,
+        "Noida": 124,
+        "Ahmedabad": 103,
+        "Kolkata": 99,
+        "Jaipur": 59,
+        "Kochi": 53,
+        "Indore": 52,
+        "Coimbatore": 52,
+        "Navi Mumbai": 43
+      },
+      "distinct_companies": 260,
+      "text_chars_quantiles": {
+        "p5": 185.0,
+        "p25": 301.0,
+        "p50": 412.0,
+        "p75": 520.0,
+        "p95": 641.0
+      },
+      "noise_ops": {
+        "distractors": 1174,
+        "abbreviate": 750,
+        "typos": 742,
+        "emojis": 417,
+        "whitespace": 416,
+        "hinglish": 303,
+        "bullets": 303,
+        "shuffle_sections": 251,
+        "caps_header": 250,
+        "single_line": 207,
+        "html": 118
+      },
+      "hq_trap_rate": 0.088,
+      "sources": {
+        "synthetic": 2177
+      }
+    },
+    "val": {
+      "n": 352,
+      "families": {
+        "table_pipe": 189,
+        "tweet_short": 163
+      },
+      "domains": {
+        "mobile": 31,
+        "devops": 28,
+        "product": 25,
+        "analytics": 24,
+        "data_science": 24,
+        "design": 22,
+        "erp": 21,
+        "data_eng": 21,
+        "fullstack": 20,
+        "qa": 19,
+        "ops": 18,
+        "frontend": 17,
+        "finance": 17,
+        "backend": 16,
+        "sales": 16,
+        "hr": 14,
+        "support": 11,
+        "marketing": 8
+      },
+      "field_presence": {
+        "company": 0.864,
+        "role": 1.0,
+        "seniority": 0.543,
+        "skills": 0.912,
+        "min_experience_years": 0.849,
+        "max_experience_years": 0.815,
+        "salary": 0.608,
+        "locations": 0.795,
+        "work_mode": 0.608,
+        "employment_type": 0.523,
+        "education": 0.497
+      },
+      "seniority": {
+        "None": 161,
+        "junior": 55,
+        "mid": 46,
+        "senior": 42,
+        "lead": 22,
+        "manager": 16,
+        "intern": 10
+      },
+      "work_mode": {
+        "None": 138,
+        "onsite": 95,
+        "hybrid": 74,
+        "remote": 45
+      },
+      "employment_type": {
+        "None": 168,
+        "full_time": 131,
+        "internship": 21,
+        "contract": 18,
+        "part_time": 7,
+        "freelance": 7
+      },
+      "education": {
+        "None": 177,
+        "graduate": 38,
+        "b.tech": 32,
+        "mca": 24,
+        "mba": 16,
+        "bca": 12,
+        "diploma": 11,
+        "b.com": 8,
+        "bba": 7,
+        "m.tech": 7,
+        "b.sc": 7,
+        "12th": 6,
+        "ca": 3,
+        "phd": 2,
+        "m.sc": 2
+      },
+      "salary_period": {
+        "year": 192,
+        "month": 22
+      },
+      "salary_currency": {
+        "INR": 213,
+        "USD": 1
+      },
+      "salary_open_ended": 31,
+      "salary_mid_lpa_quantiles": {
+        "p5": 2.27,
+        "p25": 5.0,
+        "p50": 12.12,
+        "p75": 25.75,
+        "p95": 49.87
+      },
+      "n_skills_quantiles": {
+        "p5": 0.0,
+        "p25": 3.0,
+        "p50": 4.0,
+        "p75": 6.0,
+        "p95": 7.0
+      },
+      "n_locations": {
+        "1": 194,
+        "0": 72,
+        "2": 60,
+        "3": 26
+      },
+      "top_skills": {
+        "sql": 64,
+        "python": 48,
+        "communication": 37,
+        "git": 34,
+        "excel": 30,
+        "aws": 28,
+        "java": 28,
+        "javascript": 24,
+        "docker": 21,
+        "statistics": 21,
+        "salesforce": 19,
+        "servicenow": 18,
+        "jira": 18,
+        "sap fico": 17,
+        "canva": 16,
+        "scrum": 16,
+        "react native": 16,
+        "flutter": 16,
+        "rest api": 15,
+        "spark": 15,
+        "agile": 15,
+        "sap abap": 15,
+        "google analytics": 14,
+        "inventory management": 14,
+        "azure": 14
+      },
+      "top_locations": {
+        "Bengaluru": 50,
+        "Hyderabad": 38,
+        "Mumbai": 35,
+        "Chennai": 33,
+        "Pune": 27,
+        "Noida": 20,
+        "Gurugram": 20,
+        "Delhi": 19,
+        "Kolkata": 17,
+        "Ahmedabad": 15,
+        "Coimbatore": 11,
+        "Navi Mumbai": 9,
+        "Chandigarh": 8,
+        "Visakhapatnam": 8,
+        "Surat": 7
+      },
+      "distinct_companies": 60,
+      "text_chars_quantiles": {
+        "p5": 141.55,
+        "p25": 188.75,
+        "p50": 234.5,
+        "p75": 280.0,
+        "p95": 339.0
+      },
+      "noise_ops": {
+        "distractors": 186,
+        "abbreviate": 133,
+        "typos": 110,
+        "emojis": 78,
+        "whitespace": 69,
+        "hinglish": 67,
+        "bullets": 55,
+        "caps_header": 37,
+        "single_line": 32,
+        "html": 20
+      },
+      "hq_trap_rate": 0.108,
+      "sources": {
+        "synthetic": 352
+      }
+    },
+    "test_synth": {
+      "n": 471,
+      "families": {
+        "hinglish_chat": 246,
+        "telegram_channel": 225
+      },
+      "domains": {
+        "qa": 37,
+        "product": 37,
+        "data_eng": 35,
+        "analytics": 32,
+        "frontend": 32,
+        "devops": 32,
+        "mobile": 31,
+        "backend": 29,
+        "fullstack": 25,
+        "data_science": 24,
+        "hr": 22,
+        "finance": 21,
+        "erp": 21,
+        "ops": 20,
+        "marketing": 20,
+        "design": 19,
+        "sales": 18,
+        "support": 16
+      },
+      "field_presence": {
+        "company": 0.841,
+        "role": 1.0,
+        "seniority": 0.524,
+        "skills": 0.943,
+        "min_experience_years": 0.837,
+        "max_experience_years": 0.781,
+        "salary": 0.577,
+        "locations": 0.771,
+        "work_mode": 0.582,
+        "employment_type": 0.544,
+        "education": 0.503
+      },
+      "seniority": {
+        "None": 224,
+        "senior": 65,
+        "mid": 57,
+        "junior": 51,
+        "lead": 37,
+        "manager": 22,
+        "intern": 15
+      },
+      "work_mode": {
+        "None": 197,
+        "onsite": 117,
+        "hybrid": 102,
+        "remote": 55
+      },
+      "employment_type": {
+        "None": 215,
+        "full_time": 174,
+        "internship": 33,
+        "contract": 25,
+        "part_time": 16,
+        "freelance": 8
+      },
+      "education": {
+        "None": 234,
+        "graduate": 66,
+        "b.tech": 37,
+        "mca": 33,
+        "bca": 19,
+        "mba": 15,
+        "b.sc": 13,
+        "m.tech": 12,
+        "12th": 10,
+        "b.com": 9,
+        "diploma": 8,
+        "ca": 5,
+        "bba": 5,
+        "m.sc": 3,
+        "phd": 2
+      },
+      "salary_period": {
+        "year": 251,
+        "month": 21
+      },
+      "salary_currency": {
+        "INR": 270,
+        "USD": 2
+      },
+      "salary_open_ended": 45,
+      "salary_mid_lpa_quantiles": {
+        "p5": 2.76,
+        "p25": 6.5,
+        "p50": 14.5,
+        "p75": 30.75,
+        "p95": 52.12
+      },
+      "n_skills_quantiles": {
+        "p5": 0.0,
+        "p25": 3.0,
+        "p50": 4.0,
+        "p75": 6.0,
+        "p95": 7.0
+      },
+      "n_locations": {
+        "1": 278,
+        "0": 108,
+        "2": 50,
+        "3": 35
+      },
+      "top_skills": {
+        "sql": 78,
+        "communication": 69,
+        "python": 68,
+        "java": 52,
+        "git": 45,
+        "excel": 38,
+        "aws": 35,
+        "rest api": 34,
+        "jira": 31,
+        "javascript": 30,
+        "scrum": 28,
+        "flutter": 24,
+        "react": 22,
+        "gcp": 22,
+        "roadmapping": 22,
+        "sap fico": 22,
+        "salesforce": 21,
+        "google analytics": 19,
+        "statistics": 19,
+        "kubernetes": 19,
+        "docker": 19,
+        "figma": 18,
+        "hindi": 18,
+        "product management": 18,
+        "mongodb": 18
+      },
+      "top_locations": {
+        "Bengaluru": 69,
+        "Hyderabad": 43,
+        "Mumbai": 42,
+        "Pune": 40,
+        "Gurugram": 37,
+        "Chennai": 36,
+        "Noida": 26,
+        "Kolkata": 26,
+        "Delhi": 22,
+        "Coimbatore": 13,
+        "Jaipur": 11,
+        "Ahmedabad": 11,
+        "Kochi": 8,
+        "Navi Mumbai": 8,
+        "Indore": 7
+      },
+      "distinct_companies": 80,
+      "text_chars_quantiles": {
+        "p5": 232.5,
+        "p25": 294.5,
+        "p50": 344.0,
+        "p75": 384.0,
+        "p95": 445.5
+      },
+      "noise_ops": {
+        "distractors": 264,
+        "abbreviate": 165,
+        "typos": 162,
+        "whitespace": 96,
+        "emojis": 82,
+        "bullets": 65,
+        "caps_header": 63,
+        "hinglish": 60,
+        "single_line": 47,
+        "html": 34
+      },
+      "hq_trap_rate": 0.119,
+      "sources": {
+        "synthetic": 471
+      }
+    }
+  }
+}
