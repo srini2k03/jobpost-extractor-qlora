@@ -29,6 +29,7 @@ def main() -> int:
     ap.add_argument("site")
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--timeout-min", type=float, default=20)
+    ap.add_argument("--chrome", default=None, help="use this Chrome/Chromium binary instead of Playwright's")
     a = ap.parse_args()
     from playwright.sync_api import sync_playwright
 
@@ -38,7 +39,7 @@ def main() -> int:
     ms = int(a.timeout_min * 60 * 1000)
     t0 = time.time()
     with sync_playwright() as p:
-        browser = p.chromium.launch()
+        browser = p.chromium.launch(executable_path=a.chrome) if a.chrome else p.chromium.launch()
         page = browser.new_page()
         page.on("console", lambda m: print(f"[console] {m.text}"))
         page.goto(f"http://127.0.0.1:{a.port}/index.html")
@@ -56,10 +57,13 @@ def main() -> int:
     httpd.shutdown()
     print(status)
     print(out)
-    obj = json.loads(out)
-    JobPosting.model_validate(obj)
     if valid != "true":
-        print("page reported invalid output", file=sys.stderr)
+        print("FAIL: the page reported invalid output (see above)", file=sys.stderr)
+        return 1
+    try:
+        JobPosting.model_validate(json.loads(out))
+    except Exception as e:
+        print(f"FAIL: output does not validate as JobPosting: {e}", file=sys.stderr)
         return 1
     print(f"OK: valid JobPosting JSON in {time.time() - t0:.0f}s")
     return 0

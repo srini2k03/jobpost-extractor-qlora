@@ -38,7 +38,7 @@ from pathlib import Path
 from typing import Any
 
 from jobx import REPO_ROOT, prompts
-from jobx.baselines.guided import inline_refs
+from jobx.baselines.guided import inline_refs, require_all
 from jobx.data.build import read_jsonl
 from jobx.eval.run import SPLIT_FILES, eval_subset, git_commit, write_metrics
 from jobx.schema import json_schema
@@ -186,7 +186,7 @@ def provider_schema() -> dict[str, Any]:
             return [strip(x) for x in node]
         return node
 
-    out: dict[str, Any] = strip(inline_refs(json_schema()))
+    out: dict[str, Any] = strip(require_all(inline_refs(json_schema())))
     out.pop("$schema", None)
     return out
 

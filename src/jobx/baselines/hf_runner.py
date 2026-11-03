@@ -105,7 +105,8 @@ def generate(
     t0 = time.perf_counter()
     with torch.inference_mode():
         out = model.generate(
-            **enc,
+            input_ids=enc["input_ids"],
+            attention_mask=enc["attention_mask"],
             max_new_tokens=max_new_tokens,
             do_sample=sample,
             temperature=temperature if sample else None,
