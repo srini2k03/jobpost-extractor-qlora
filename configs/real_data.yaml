@@ -1,0 +1,26 @@
+# Real public job postings for the headline test set (fetched in Colab or CI; HF Hub is not
+# reachable from the build sandbox, so none of this has been run yet).
+#
+# Candidates are tried in order. For each, the licence declared on the dataset card is read at
+# runtime and must be in `licence_allowlist`; otherwise the candidate is skipped.
+# TODO(licence): a human must still open the dataset card and confirm the licence and the terms of
+# the underlying source before committing any real text. See docs/real_dataset.md.
+candidates:
+  - id: datastax/linkedin_job_listings
+    split: train
+    text_columns: [description]
+    location_columns: [location]
+    company_column: company_name
+    title_column: title
+  - id: jacob-hugging-face/job-descriptions
+    split: train
+    text_columns: [job_description]
+    location_columns: []
+    company_column: company_name
+    title_column: position_title
+licence_allowlist: [mit, apache-2.0, cc0-1.0, cc-by-4.0, cc-by-sa-4.0, odc-by, pddl, cdla-permissive-2.0, odbl]
+n_target: 200
+min_chars: 200
+max_chars: 3000
+max_rows_scanned: 200000
+seed: 11
