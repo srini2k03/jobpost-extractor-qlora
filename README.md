@@ -3,8 +3,8 @@
 [![CI](https://github.com/srini2k03/jobpost-extractor-qlora/actions/workflows/ci.yml/badge.svg)](https://github.com/srini2k03/jobpost-extractor-qlora/actions/workflows/ci.yml)
 
 Messy Indian job postings in, one strict JSON object out. A small open model (Qwen2.5-1.5B-Instruct) is
-fine-tuned with QLoRA on a free Colab T4, then measured against prompting baselines, a 7B upper bound,
-guided JSON decoding and a rule-based baseline. The model is quantised to GGUF for CPU serving (FastAPI,
+fine-tuned with QLoRA on a free Colab T4, then measured against prompting baselines, two upper bounds
+(a hosted API model and an open 7B model), guided JSON decoding and a rule-based baseline. The model is quantised to GGUF for CPU serving (FastAPI,
 Ollama, a Gradio Space).
 
 > **Status.** Everything that runs on CPU is built and measured here: data generation, validation, dedup,
@@ -53,8 +53,10 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 | Qwen2.5-1.5B-Instruct 3-shot | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-1.5B-Instruct 3-shot + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Llama-3.2-1B-Instruct 3-shot (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-7B-Instruct 3-shot, 4-bit (upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
+| Claude Opus 5.5 zero-shot, structured outputs (API upper bound) | Anthropic API | - | - | - | - | - | - | - | pending API run |
+| Claude Opus 5.5 3-shot, structured outputs (API upper bound) | Anthropic API | - | - | - | - | - | - | - | pending API run |
 | Qwen2.5-1.5B QLoRA fine-tune (ours) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-1.5B QLoRA fine-tune + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Llama-3.2-1B QLoRA fine-tune (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
@@ -73,8 +75,10 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 | Qwen2.5-1.5B-Instruct 3-shot | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-1.5B-Instruct 3-shot + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Llama-3.2-1B-Instruct 3-shot (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-7B-Instruct 3-shot, 4-bit (upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
+| Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
+| Claude Opus 5.5 zero-shot, structured outputs (API upper bound) | Anthropic API | - | - | - | - | - | - | - | pending API run |
+| Claude Opus 5.5 3-shot, structured outputs (API upper bound) | Anthropic API | - | - | - | - | - | - | - | pending API run |
 | Qwen2.5-1.5B QLoRA fine-tune (ours) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-1.5B QLoRA fine-tune + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Llama-3.2-1B QLoRA fine-tune (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
@@ -140,10 +144,23 @@ this repo and the image appears here:
    human with `jobx verify`. This **real-only test split is the headline evaluation**. Pending; see
    [`docs/real_dataset.md`](docs/real_dataset.md).
 
-**Baselines** (notebook 02): Qwen2.5-1.5B zero-shot and 3-shot, an optional Llama-3.2-1B, and
-Qwen2.5-7B-Instruct 3-shot in 4-bit as the upper bound. No API key is available, so an open 7B model stands
-in for a hosted model. Every baseline runs with free decoding and with guided JSON decoding
-(lm-format-enforcer). All of them use the same system prompt and schema as the fine-tune
+**Baselines** (notebook 02): Qwen2.5-1.5B zero-shot and 3-shot and an optional Llama-3.2-1B. Each runs
+with free decoding and with guided JSON decoding (lm-format-enforcer).
+
+**Upper bounds.** There are two:
+- **Hosted API model:** Claude Opus 5.5, zero-shot and 3-shot
+  ([`anthropic_runner.py`](src/jobx/baselines/anthropic_runner.py), run by
+  [`api_baseline.yml`](.github/workflows/api_baseline.yml)). It uses structured outputs (the `JobPosting`
+  JSON Schema in `output_config.format`) at effort `low`, with server-side refusal fallbacks on. Rows show
+  "pending API run" until the workflow has run.
+  - The runner prices the run with `count_tokens` before sending anything.
+  - It shrinks the evenly spaced test subset to fit a $2 budget, and stops starting requests if actual
+    spend would pass it.
+  - It records tokens and cost per posting.
+- **Open 7B model:** Qwen2.5-7B-Instruct 3-shot in 4-bit on the T4 (free and guided decoding). It is the
+  model you could run yourself.
+
+All approaches use the same system prompt and schema as the fine-tune
 ([`src/jobx/prompts.py`](src/jobx/prompts.py)).
 
 **Fine-tuning** (notebook 03, [`src/jobx/train/sft.py`](src/jobx/train/sft.py)): the recipe is QLoRA
@@ -215,6 +232,7 @@ under your Hugging Face account (the `jobx-artifacts` dataset repo is private). 
 | 6 | `05_awq_benchmark` | T4, ~45 min | HF_TOKEN, HF_USERNAME | AWQ model, T4 benchmark rows (fp16 / 8-bit / AWQ) |
 | 7 | `06_error_analysis` | CPU, ~1 min | (HF_TOKEN to pull) | taxonomy table, chart, worked examples |
 | 8 | Actions → `deploy-space` | ~5 min | HF_TOKEN | Gradio Space running the Q4 GGUF |
+| 9 | Actions → `api-baseline` (any time; rerun after `test_real` lands) | ~10 min, ≤ $2 | repo secret ANTHROPIC_API_KEY | Claude Opus 5.5 zero/3-shot predictions, metrics and table, committed |
 
 ## Repository layout
 
@@ -247,8 +265,9 @@ docker/ ollama/ model_cards/ docs/ results/ data/ tests/ .github/workflows/
 - **Conventions are opinions.** Seniority is labelled only when stated in words. Role excludes seniority
   words. Skills named in the title count as skills. Salary conversion uses fixed constants. A model that
   follows different but reasonable conventions is penalised.
-- **The regex baseline is optimistic on synthetic data** (see above). The 7B "upper bound" is an open model
-  standing in for a hosted model.
+- **The regex baseline is optimistic on synthetic data** (see above).
+- **The API upper bound runs on a budget.** To stay under ~$2 per run, it uses effort `low` and an evenly
+  spaced subset (its `n` is in the table). So its CIs are wider than those of rows that score the full split.
 - **Free-tier serving.** The Space and CPU benchmarks run on shared CPUs, so latency varies between runs.
 - **Licence of real postings** is a TODO until a human confirms the source dataset's terms.
 

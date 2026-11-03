@@ -28,6 +28,13 @@ def _ci(m: dict[str, Any], key: str) -> str:
     return f"{_pct(m.get(key))} [{_pct(ci[0])}, {_pct(ci[1])}]"
 
 
+def pending_label(a: dict[str, Any]) -> str:
+    """Why a row has no numbers yet: an explicit `pending` in approaches.yaml, else by hardware."""
+    if a.get("pending"):
+        return str(a["pending"])
+    return "pending (needs this split)" if a.get("hardware") == "CPU" else PENDING
+
+
 def load_metrics(metrics_dir: str | Path) -> dict[tuple[str, str], dict[str, Any]]:
     out = {}
     for p in sorted(Path(metrics_dir).glob("*__*.json")):
@@ -71,9 +78,7 @@ def build_tables(root: str | Path = ".") -> tuple[str, dict[str, Any]]:
             d = metrics.get((a["id"], split))
             if d is None:
                 md.append(
-                    f"| {a['name']} | {a['hardware']} | - | - | - | - | - | - | - | {PENDING} |"
-                    if a["hardware"] != "CPU"
-                    else f"| {a['name']} | {a['hardware']} | - | - | - | - | - | - | - | pending (needs this split) |"
+                    f"| {a['name']} | {a['hardware']} | - | - | - | - | - | - | - | {pending_label(a)} |"
                 )
                 rows.append({"approach": a["id"], "name": a["name"], "status": "pending"})
                 continue

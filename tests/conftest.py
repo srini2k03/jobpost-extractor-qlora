@@ -12,7 +12,14 @@ ROOT = Path(__file__).resolve().parents[1]
 def _repo_root_cwd(monkeypatch: pytest.MonkeyPatch) -> None:
     """Commands and default paths are relative to the repository root."""
     monkeypatch.chdir(ROOT)
-    for k in ("HF_TOKEN", "HF_USERNAME", "JOBX_BACKEND", "JOBX_GGUF_PATH", "JOBX_GGUF_REPO"):
+    for k in (
+        "ANTHROPIC_API_KEY",
+        "HF_TOKEN",
+        "HF_USERNAME",
+        "JOBX_BACKEND",
+        "JOBX_GGUF_PATH",
+        "JOBX_GGUF_REPO",
+    ):
         monkeypatch.delenv(k, raising=False)
 
 
