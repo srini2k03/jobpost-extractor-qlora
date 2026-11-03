@@ -1,0 +1,20 @@
+.venv/
+__pycache__/
+*.pyc
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.ipynb_checkpoints/
+site/
+# model artefacts never live in git
+*.gguf
+*.safetensors
+outputs/
+checkpoints/
+wandb/
+# raw real postings stay out of git until the licence check is done (see docs/real_dataset.md)
+data/real/raw_postings.jsonl
+data/real/*.progress.json
