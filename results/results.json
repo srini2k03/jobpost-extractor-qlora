@@ -42,13 +42,8 @@
         "status": "pending"
       },
       {
-        "approach": "claude-opus-5-5_zero_shot",
-        "name": "Claude Opus 5.5 zero-shot, structured outputs (API upper bound)",
-        "status": "pending"
-      },
-      {
-        "approach": "claude-opus-5-5_few_shot",
-        "name": "Claude Opus 5.5 3-shot, structured outputs (API upper bound)",
+        "approach": "gemini-flash_few_shot",
+        "name": "Gemini Flash (API, few-shot)",
         "status": "pending"
       },
       {
@@ -267,13 +262,8 @@
         "status": "pending"
       },
       {
-        "approach": "claude-opus-5-5_zero_shot",
-        "name": "Claude Opus 5.5 zero-shot, structured outputs (API upper bound)",
-        "status": "pending"
-      },
-      {
-        "approach": "claude-opus-5-5_few_shot",
-        "name": "Claude Opus 5.5 3-shot, structured outputs (API upper bound)",
+        "approach": "gemini-flash_few_shot",
+        "name": "Gemini Flash (API, few-shot)",
         "status": "pending"
       },
       {

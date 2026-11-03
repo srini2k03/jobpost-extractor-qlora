@@ -48,10 +48,19 @@ def build_tables(root: str | Path = ".") -> tuple[str, dict[str, Any]]:
     cfg = yaml.safe_load((root / "configs/approaches.yaml").read_text())
     metrics = load_metrics(root / "results/metrics")
     known = {a["id"] for a in cfg["approaches"]}
-    approaches = list(cfg["approaches"]) + [
-        {"id": a, "name": a, "model": "?", "decoding": "?", "hardware": "?", "produced_by": "?"}
-        for a in sorted({k[0] for k in metrics} - known)
-    ]
+    approaches = list(cfg["approaches"])
+    for a in sorted({k[0] for k in metrics} - known):  # measured but not configured: describe from meta
+        meta = next((d.get("meta") or {} for k, d in metrics.items() if k[0] == a), {})
+        approaches.append(
+            {
+                "id": a,
+                "name": a,
+                "model": meta.get("model", "?"),
+                "decoding": meta.get("decoding", "?"),
+                "hardware": meta.get("hardware", "?"),
+                "produced_by": "?",
+            }
+        )
     md: list[str] = []
     data: dict[str, Any] = {"splits": {}, "benchmarks": []}
     split_titles = {
@@ -130,8 +139,45 @@ def build_tables(root: str | Path = ".") -> tuple[str, dict[str, Any]]:
             pf = d["metrics"]["per_field"]
             md.append(f"| {a['name']} | " + " | ".join(_pct(pf[f]["em"]) for f in fields) + " |")
         md.append("")
+    md += api_usage_table(approaches, metrics, cfg["splits"])
     md += benchmark_table(root, data)
     return "\n".join(md).rstrip() + "\n", data
+
+
+def api_usage_table(
+    approaches: list[dict[str, Any]], metrics: dict[tuple[str, str], dict[str, Any]], splits: list[str]
+) -> list[str]:
+    """Requests, tokens and cost for API rows (from the runners' meta files)."""
+    api = [a for a in approaches if "API" in str(a.get("hardware", ""))]
+    if not api:
+        return []
+    md = [
+        "#### API usage",
+        "",
+        "| Approach | Split | Model | Requests | Input tokens | Output tokens | Cost (USD) |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for a in api:
+        found = False
+        for split in splits:
+            d = metrics.get((a["id"], split))
+            if d is None:
+                continue
+            found = True
+            meta = d.get("meta") or {}
+            u = meta.get("usage") or {}
+            tin = u.get("prompt_tokens", u.get("input_tokens", "-"))
+            tout = u.get("completion_tokens", u.get("output_tokens", "-"))
+            req = u.get("requests", meta.get("n_examples", "-"))
+            cost = meta.get("cost_usd")
+            md.append(
+                f"| {a['name']} | {split} | `{meta.get('model', a.get('model'))}` | {req} | {tin} | {tout} | "
+                f"{'-' if cost is None else f'{cost:.2f}'} |"
+            )
+        if not found:
+            md.append(f"| {a['name']} | - | `{a.get('model')}` | - | - | - | - ({pending_label(a)}) |")
+    md.append("")
+    return md
 
 
 def benchmark_table(root: Path, data: dict[str, Any]) -> list[str]:
