@@ -20,8 +20,9 @@ lora:
 training:
   max_length_target: 512        # chosen max_length = 512 unless the measured p99 needs more (cap below)
   max_length_cap: 768
-  per_device_train_batch_size: 8
-  gradient_accumulation_steps: 2  # effective batch 16, as on the GPU route
+  per_device_train_batch_size: 2   # measured locally: 8 x 360 tokens was OOM-killed at ~14 GB RSS, 4 x 360 peaked
+  gradient_accumulation_steps: 8   # at ~10.6 GB (fp32 logits over the 152k vocabulary dominate). 2 x 8 keeps the
+                                   # effective batch at 16 with room to spare on a 16 GB runner
   learning_rate: 3.0e-4           # a bit above the GPU route's 2e-4: fewer steps, smaller model
   lr_scheduler_type: cosine
   warmup_ratio: 0.05
