@@ -42,8 +42,8 @@
         "status": "pending"
       },
       {
-        "approach": "llama-3.3-70b-groq_few_shot",
-        "name": "Llama-3.3-70B via Groq (API, few-shot)",
+        "approach": "gpt-oss-120b-groq_few_shot",
+        "name": "GPT-OSS-120B via Groq (API, few-shot)",
         "status": "pending"
       },
       {
@@ -262,8 +262,8 @@
         "status": "pending"
       },
       {
-        "approach": "llama-3.3-70b-groq_few_shot",
-        "name": "Llama-3.3-70B via Groq (API, few-shot)",
+        "approach": "gpt-oss-120b-groq_few_shot",
+        "name": "GPT-OSS-120B via Groq (API, few-shot)",
         "status": "incomplete",
         "completion": {
           "n_completed": 25,

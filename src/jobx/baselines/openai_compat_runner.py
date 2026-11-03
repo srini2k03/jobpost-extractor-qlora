@@ -1,4 +1,4 @@
-"""Hosted API baseline over any OpenAI-compatible endpoint (default: Llama-3.3-70B on Groq's free tier).
+"""Hosted API baseline over any OpenAI-compatible endpoint (default: GPT-OSS-120B on Groq's free tier).
 
 * same system prompt, user template, few-shot exemplars and JSON schema as every other approach;
 * structured output when the provider supports it: ``json_schema`` -> ``json_object`` -> plain prompt,
@@ -14,6 +14,7 @@
 Providers are presets of (base_url, key env var, default model); ``--base-url/--key-env/--model`` override:
 
     python -m jobx.baselines.openai_compat_runner --provider groq --shots 3      # default
+    python -m jobx.baselines.openai_compat_runner --check-complete            # exit 0 if nothing is left
     python -m jobx.baselines.openai_compat_runner --provider gemini --model gemini-3.8-flash
 
 The key is read from the environment variable and never printed or written.
@@ -56,16 +57,17 @@ class Provider:
 
 
 # Default model ids are the providers' free-tier models at the time of writing; override with --model.
-# Groq is the default: a 70B model on a free tier that is usable from CI (Gemini's free tier had tiny daily
-# quotas and frequent 503s there).
+# Groq is the default: GPT-OSS-120B (OpenAI open-weight, ~117B-parameter MoE) on a free tier that is usable
+# from CI. Gemini's free tier had tiny daily quotas and frequent 503s there, and llama-3.3-70b-versatile
+# returned 404 for the project's Groq key.
 PROVIDERS: dict[str, Provider] = {
     "groq": Provider(
         "https://api.groq.com/openai/v1",
         "GROQ_API_KEY",
-        "llama-3.3-70b-versatile",
-        default_fallbacks=("openai/gpt-oss-120b", "qwen/qwen3-32b"),
+        "openai/gpt-oss-120b",
+        default_fallbacks=("qwen/qwen3.8-27b",),
         default_rpm=25.0,
-        approach_prefix="llama-3.3-70b-groq",
+        approach_prefix="gpt-oss-120b-groq",
     ),
     "gemini": Provider(
         "https://generativelanguage.googleapis.com/v1beta/openai/",
@@ -557,6 +559,35 @@ async def run_split(
     return pred, stats
 
 
+EXIT_INCOMPLETE = 10
+
+
+def check_complete(
+    root: Path, splits_arg: str, shots_arg: str, prefix: str, model: str, max_examples: int | None
+) -> int:
+    """Exit code 0 when every (split, shots) run already has an error-free prediction for every example of
+    the evenly spaced subset, from the same primary model; EXIT_INCOMPLETE otherwise. No API calls."""
+    status = []
+    for split in [s.strip() for s in splits_arg.split(",") if s.strip()]:
+        if not (root / SPLIT_FILES[split]).exists():
+            continue
+        wanted = {e["id"] for e in eval_subset(read_jsonl(root / SPLIT_FILES[split]), max_examples)}
+        for k in [int(x) for x in str(shots_arg).split(",") if x.strip()]:
+            pred = root / "results" / "predictions" / f"{approach_id(prefix, k)}__{split}.jsonl"
+            meta_path = pred.with_name(pred.name.removesuffix(".jsonl") + ".meta.json")
+            done: set[str] = set()
+            if (
+                pred.exists()
+                and meta_path.exists()
+                and json.loads(meta_path.read_text()).get("model") == model
+            ):
+                done = {r["id"] for r in read_jsonl(pred) if not r.get("error")}
+            status.append({"run": pred.name, "done": len(wanted & done), "wanted": len(wanted)})
+    complete = bool(status) and all(s["done"] == s["wanted"] for s in status)
+    print(json.dumps({"complete": complete, "runs": status}, indent=2))
+    return EXIT_OK if complete else EXIT_INCOMPLETE
+
+
 async def main_async(a: argparse.Namespace, client: Any = None) -> int:
     prov = PROVIDERS.get(a.provider)
     base_url = a.base_url or (prov.base_url if prov else "")
@@ -567,6 +598,9 @@ async def main_async(a: argparse.Namespace, client: Any = None) -> int:
         return 2
     price_in = a.price_in if a.price_in is not None else (prov.price_in if prov else 0.0)
     price_out = a.price_out if a.price_out is not None else (prov.price_out if prov else 0.0)
+    if a.check_complete:
+        prefix = a.approach_prefix or (prov.approach_prefix if prov else "api")
+        return check_complete(Path(a.root), a.splits, a.shots, prefix, model, a.max_examples)
     if client is None:
         key = os.environ.get(key_env, "")
         if not key:
@@ -678,12 +712,17 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument(
         "--approach-prefix",
         default=None,
-        help="results row id prefix (default: the preset's, e.g. llama-3.3-70b-groq -> llama-3.3-70b-groq_few_shot)",
+        help="results row id prefix (default: the preset's, e.g. gpt-oss-120b-groq -> gpt-oss-120b-groq_few_shot)",
     )
     ap.add_argument("--splits", default="test_synth,test_real")
     ap.add_argument("--shots", default="3")
     ap.add_argument("--max-examples", type=int, default=200)
     ap.add_argument("--response-format", default="json_schema", choices=RESPONSE_FORMATS)
+    ap.add_argument(
+        "--check-complete",
+        action="store_true",
+        help="no API calls: exit 0 if all planned predictions exist, 10 if work is left",
+    )
     ap.add_argument("--max-tokens", type=int, default=2048, help="room for reasoning-model fallbacks")
     ap.add_argument(
         "--rpm", type=float, default=None, help="client-side requests per minute (default: preset)"
