@@ -7,6 +7,7 @@ approaches:
   - {id: qwen2.5-1.5b_few_shot, name: "Qwen2.5-1.5B-Instruct 3-shot", model: Qwen/Qwen2.5-1.5B-Instruct, decoding: free, hardware: "T4", produced_by: "notebooks/02_baselines"}
   - {id: qwen2.5-1.5b_few_shot_guided, name: "Qwen2.5-1.5B-Instruct 3-shot + guided JSON", model: Qwen/Qwen2.5-1.5B-Instruct, decoding: guided, hardware: "T4", produced_by: "notebooks/02_baselines"}
   - {id: llama3.2-1b_few_shot, name: "Llama-3.2-1B-Instruct 3-shot (optional)", model: meta-llama/Llama-3.2-1B-Instruct, decoding: free, hardware: "T4", produced_by: "notebooks/02_baselines"}
+  - {id: llama3.2-1b_few_shot_guided, name: "Llama-3.2-1B-Instruct 3-shot + guided JSON (optional)", model: meta-llama/Llama-3.2-1B-Instruct, decoding: guided, hardware: "T4", produced_by: "notebooks/02_baselines"}
   - {id: qwen2.5-7b_few_shot, name: "Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound)", model: Qwen/Qwen2.5-7B-Instruct, decoding: free, hardware: "T4", produced_by: "notebooks/02_baselines"}
   - {id: qwen2.5-7b_few_shot_guided, name: "Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound)", model: Qwen/Qwen2.5-7B-Instruct, decoding: guided, hardware: "T4", produced_by: "notebooks/02_baselines"}
   # Larger-model API upper bound: same prompt + schema on GPT-OSS-120B (OpenAI open-weight, ~117B MoE) via

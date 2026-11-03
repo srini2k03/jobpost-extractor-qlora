@@ -44,6 +44,15 @@ def test_update_readme_markers(tmp_path):
     assert not update_readme(q, "x")
 
 
+def test_update_readme_keeps_backslashes_literal(tmp_path):
+    # a table cell such as a Windows path or "\1" must not be parsed as a regex escape / group reference
+    p = tmp_path / "R.md"
+    p.write_text(f"a\n{START}\nold\n{END}\nb\n")
+    table = "| C:\\models\\q4 | \\1 \\d |\n"
+    assert update_readme(p, table)
+    assert p.read_text() == f"a\n{START}\n{table}{END}\nb\n"
+
+
 @pytest.mark.parametrize("path", NOTEBOOKS, ids=lambda p: p.stem)
 def test_notebook_static_checks(path):
     nb = nbformat.read(path, as_version=4)
@@ -63,6 +72,59 @@ def test_notebook_static_checks(path):
         assert len(pins) >= 4 and all(re.fullmatch(r"[\w.\-]+==\d[\w.]*", p) for p in pins), pins
         assert "bf16" not in code.replace("bf16': False", "") or "fp16" in code
         assert "userdata" in code
+
+
+@pytest.mark.parametrize("path", NOTEBOOKS, ids=lambda p: p.stem)
+def test_notebook_jobx_imports_and_calls_resolve(path):
+    """Every `from jobx... import name` in a notebook exists, and every direct call of an imported jobx
+    function binds to its signature (catches renamed functions / keyword arguments before a Colab run)."""
+    import ast
+    import importlib
+    import inspect
+
+    nb = nbformat.read(path, as_version=4)
+    names: dict[str, object] = {}
+    for c in nb.cells:
+        if c.cell_type != "code":
+            continue
+        # IPython magics / shell lines are not Python: keep their indentation, replace the body
+        lines = [
+            ln[: len(ln) - len(ln.lstrip())] + "pass" if ln.lstrip().startswith(("!", "%")) else ln
+            for ln in c.source.splitlines()
+        ]
+        tree = ast.parse("\n".join(lines))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and (node.module or "").startswith("jobx"):
+                mod = importlib.import_module(node.module or "")
+                for a in node.names:
+                    if hasattr(mod, a.name):
+                        names[a.asname or a.name] = getattr(mod, a.name)
+                    else:  # a submodule, e.g. `from jobx import prompts`
+                        try:
+                            names[a.asname or a.name] = importlib.import_module(f"{node.module}.{a.name}")
+                        except ModuleNotFoundError as e:
+                            raise AssertionError(f"{path.name}: {node.module}.{a.name} does not exist") from e
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            fn, obj = node.func, None
+            if isinstance(fn, ast.Name) and fn.id in names:
+                obj = names[fn.id]
+            elif isinstance(fn, ast.Attribute) and isinstance(fn.value, ast.Name) and fn.value.id in names:
+                base = names[fn.value.id]
+                if inspect.ismodule(base):
+                    assert hasattr(base, fn.attr), f"{path.name}: {fn.value.id}.{fn.attr} does not exist"
+                    obj = getattr(base, fn.attr)
+            if obj is None or not inspect.isfunction(obj):
+                continue
+            if any(isinstance(a, ast.Starred) for a in node.args) or any(
+                k.arg is None for k in node.keywords
+            ):
+                continue
+            try:
+                inspect.signature(obj).bind(*node.args, **{k.arg: None for k in node.keywords if k.arg})
+            except TypeError as e:
+                raise AssertionError(f"{path.name}: {ast.unparse(node)[:80]}: {e}") from e
 
 
 def test_notebooks_match_generator(tmp_path):
