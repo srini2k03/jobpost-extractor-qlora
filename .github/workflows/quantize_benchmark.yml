@@ -1,0 +1,119 @@
+name: quantize-benchmark
+# Build llama.cpp, convert the merged fine-tune (from the HF Hub) to GGUF Q8_0 / Q4_K_M, benchmark on this
+# runner's CPU (tokens/s, peak RAM, accuracy on the test set), push the GGUF files to the Hub and commit the
+# benchmark + predictions. Needs: secret HF_TOKEN (write), repository variable HF_USERNAME.
+on:
+  workflow_dispatch:
+    inputs:
+      merged_repo:
+        description: "HF repo with the merged fp16 model (default <HF_USERNAME>/jobx-qwen2.5-1.5b-merged)"
+        required: false
+        default: ""
+      llama_cpp_ref:
+        description: "llama.cpp git tag"
+        required: true
+        default: "b6000"
+      split:
+        description: "test split (test_real if it exists in the repo, else test_synth)"
+        required: true
+        default: "test_synth"
+      max_examples:
+        description: "examples per quantisation (evenly spaced subset)"
+        required: true
+        default: "150"
+      push_gguf:
+        description: "upload GGUF files to <HF_USERNAME>/jobx-qwen2.5-1.5b-gguf"
+        type: boolean
+        default: true
+      commit_results:
+        description: "commit predictions/metrics/benchmark back to the branch"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  gguf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_USERNAME: ${{ vars.HF_USERNAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install jobx
+        run: pip install -e ".[hub,serve]"
+      - name: Build llama.cpp
+        run: |
+          git clone --depth 1 --branch "${{ inputs.llama_cpp_ref }}" https://github.com/ggml-org/llama.cpp.git
+          cmake -S llama.cpp -B llama.cpp/build -DLLAMA_CURL=OFF -DGGML_NATIVE=ON -DCMAKE_BUILD_TYPE=Release
+          cmake --build llama.cpp/build --target llama-quantize llama-server -j "$(nproc)"
+          pip install -r llama.cpp/requirements/requirements-convert_hf_to_gguf.txt
+      - name: Download merged model
+        run: |
+          MERGED="${{ inputs.merged_repo }}"
+          if [ -z "$MERGED" ]; then MERGED="$(python -c 'from jobx.hub import repo_id; print(repo_id("merged"))')"; fi
+          echo "MERGED=$MERGED" >> "$GITHUB_ENV"
+          python -c "from huggingface_hub import snapshot_download; snapshot_download('$MERGED', local_dir='merged')"
+      - name: Convert + quantise
+        run: scripts/gguf_convert.sh llama.cpp merged gguf jobx-qwen2.5-1.5b
+      - name: Benchmark Q8_0
+        run: |
+          python -m jobx.quantize.benchmark --server-bin llama.cpp/build/bin/llama-server \
+            --model gguf/jobx-qwen2.5-1.5b-Q8_0.gguf --variant "GGUF Q8_0 (llama.cpp)" \
+            --approach qwen2.5-1.5b_gguf_q8_0 --split "${{ inputs.split }}" --max-examples "${{ inputs.max_examples }}" \
+            --threads "$(nproc)"
+      - name: Benchmark Q4_K_M
+        run: |
+          python -m jobx.quantize.benchmark --server-bin llama.cpp/build/bin/llama-server \
+            --model gguf/jobx-qwen2.5-1.5b-Q4_K_M.gguf --variant "GGUF Q4_K_M (llama.cpp)" \
+            --approach qwen2.5-1.5b_gguf_q4_k_m --split "${{ inputs.split }}" --max-examples "${{ inputs.max_examples }}" \
+            --threads "$(nproc)"
+      - name: Metrics + tables
+        run: |
+          jobx eval
+          jobx results-table
+          cat results/benchmarks/gguf_cpu.json
+      - name: Push GGUF to the Hub
+        if: ${{ inputs.push_gguf }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from jobx.cards import render_card, metrics_table
+          from jobx.hub import repo_id, push_folder
+          rows = json.loads(Path("results/benchmarks/gguf_cpu.json").read_text())["rows"]
+          bench = "\n".join(["| variant | size GB | micro F1 | tokens/s | peak RAM GB |", "|---|---|---|---|---|"]
+                            + [f"| {r['variant']} | {r['size_gb']} | {r['micro_f1']:.3f} | {r['tokens_per_s']} | {r['peak_ram_gb']} |" for r in rows])
+          size = {r["variant"]: f"{r['size_gb']} GB" for r in rows}
+          out = Path("gguf_upload"); out.mkdir()
+          for q in ("Q8_0", "Q4_K_M"):
+              os.link(f"gguf/jobx-qwen2.5-1.5b-{q}.gguf", out / f"jobx-qwen2.5-1.5b-{q}.gguf")
+          (out / "README.md").write_text(render_card("gguf", {
+              "merged_repo": os.environ["MERGED"], "base_model": "Qwen/Qwen2.5-1.5B-Instruct",
+              "repo_name": repo_id("gguf"), "llama_cpp_ref": "${{ inputs.llama_cpp_ref }}",
+              "size_q8": size.get("GGUF Q8_0 (llama.cpp)", "-"), "size_q4": size.get("GGUF Q4_K_M (llama.cpp)", "-"),
+              "benchmark_table": bench, "metrics_table": metrics_table(["qwen2.5-1.5b_gguf_q8_0", "qwen2.5-1.5b_gguf_q4_k_m"]),
+              "base_licence": "Apache-2.0"}))
+          print(push_folder(out, "gguf", commit_message="GGUF Q8_0 + Q4_K_M"))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gguf-benchmark
+          path: |
+            results/benchmarks/gguf_cpu.json
+            results/predictions/qwen2.5-1.5b_gguf_*
+            results/metrics/qwen2.5-1.5b_gguf_*
+      - name: Commit results
+        if: ${{ inputs.commit_results }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add results README.md
+          git diff --cached --quiet || git commit -m "GGUF CPU benchmark (llama.cpp ${{ inputs.llama_cpp_ref }})"
+          git push

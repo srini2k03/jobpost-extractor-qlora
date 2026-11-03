@@ -1,0 +1,45 @@
+name: deploy-space
+# Push space/ (plus a copy of src/jobx) to a Hugging Face Space. Needs: secret HF_TOKEN (write),
+# repository variable HF_USERNAME. Set the Space variable JOBX_GGUF_REPO on the Space settings page.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_USERNAME: ${{ vars.HF_USERNAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install huggingface_hub pyyaml
+      - name: Assemble Space folder
+        run: |
+          rm -rf build_space && cp -r space build_space
+          cp -r src/jobx build_space/jobx
+          mkdir -p build_space/configs && cp configs/hub.yaml build_space/configs/
+          find build_space -name "__pycache__" -prune -exec rm -rf {} +
+      - name: Upload to the Space
+        run: |
+          python - <<'PY'
+          import os, yaml
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          user = os.environ.get("HF_USERNAME") or api.whoami()["name"]
+          name = yaml.safe_load(open("configs/hub.yaml"))["repos"]["space"]
+          rid = f"{user}/{name}"
+          api.create_repo(rid, repo_type="space", space_sdk="gradio", exist_ok=True)
+          try:
+              api.add_space_variable(rid, "JOBX_GGUF_REPO", f"{user}/" + yaml.safe_load(open("configs/hub.yaml"))["repos"]["gguf"])
+              api.add_space_variable(rid, "HF_USERNAME", user)
+          except Exception as e:
+              print("could not set Space variables:", e)
+          api.upload_folder(folder_path="build_space", repo_id=rid, repo_type="space", commit_message="deploy from GitHub Actions")
+          print(f"https://huggingface.co/spaces/{rid}")
+          PY
