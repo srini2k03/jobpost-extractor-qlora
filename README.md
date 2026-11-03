@@ -4,7 +4,7 @@
 
 Messy Indian job postings in, one strict JSON object out. A small open model (Qwen2.5-1.5B-Instruct) is
 fine-tuned with QLoRA on a free Colab T4, then measured against prompting baselines, two upper bounds
-(Llama-3.3-70B via Groq's free API tier and an open 7B model), guided JSON decoding and a rule-based baseline. The model is quantised to GGUF for CPU serving (FastAPI,
+(GPT-OSS-120B via Groq's free API tier and an open 7B model), guided JSON decoding and a rule-based baseline. The model is quantised to GGUF for CPU serving (FastAPI,
 Ollama, a Gradio Space).
 
 > **Status.** Everything that runs on CPU is built and measured here: data generation, validation, dedup,
@@ -55,7 +55,7 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 | Llama-3.2-1B-Instruct 3-shot (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.3-70B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | pending API run |
+| GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | pending API run |
 | Qwen2.5-1.5B QLoRA fine-tune (ours) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-1.5B QLoRA fine-tune + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Llama-3.2-1B QLoRA fine-tune (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
@@ -76,7 +76,7 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 | Llama-3.2-1B-Instruct 3-shot (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.3-70B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | incomplete (25/200) |
+| GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | incomplete (25/200) |
 | Qwen2.5-1.5B QLoRA fine-tune (ours) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-1.5B QLoRA fine-tune + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Llama-3.2-1B QLoRA fine-tune (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
@@ -97,13 +97,13 @@ Partial runs, or runs with more than 5% failed requests, are scored on what comp
 
 | Approach | Split | Status | Error rate % | n scored | Micro F1 % | JSON valid % |
 |---|---|---|---|---|---|---|
-| Llama-3.3-70B via Groq (API, few-shot) | test_synth | incomplete (25/200) | 0.0 | 25 | 97.5 | 100.0 |
+| GPT-OSS-120B via Groq (API, few-shot) | test_synth | incomplete (25/200) | 0.0 | 25 | 97.5 | 100.0 |
 
 #### API usage
 
 | Approach | Split | Model | Requests | Input tokens | Output tokens | Cost (USD) |
 |---|---|---|---|---|---|---|
-| Llama-3.3-70B via Groq (API, few-shot) | test_synth | `openai/gpt-oss-120b` (25) | 25 | 44815 | 11546 | 0.00 |
+| GPT-OSS-120B via Groq (API, few-shot) | test_synth | `openai/gpt-oss-120b` (25) | 25 | 44815 | 11546 | 0.00 |
 
 #### Size / speed / accuracy trade-off
 
@@ -160,23 +160,26 @@ this repo and the image appears here:
 with free decoding and with guided JSON decoding (lm-format-enforcer).
 
 **Upper bounds.** There are two:
-- **Larger API model:** Llama-3.3-70B via Groq's free tier, 3-shot
+- **Larger API model:** GPT-OSS-120B via Groq's free tier, 3-shot. GPT-OSS-120B is OpenAI's open-weight
+  model, a mixture-of-experts with about 117B parameters. The plan was Llama-3.3-70B, but that model was not
+  available to the project's Groq key (404, and it is not in the key's model list).
   ([`openai_compat_runner.py`](src/jobx/baselines/openai_compat_runner.py), run by
   [`api_baseline.yml`](.github/workflows/api_baseline.yml)). It calls Groq's OpenAI-compatible endpoint with
   the `JobPosting` JSON Schema as `response_format`. If the model rejects that, it falls back to JSON mode,
   then to prompt-only; the evaluator parses the output either way.
-  - Models: `llama-3.3-70b-versatile`, falling back to `openai/gpt-oss-120b`, then `qwen/qwen3-32b`. The
-    workflow first lists the models the key can use.
+  - Models: `openai/gpt-oss-120b`, falling back to `qwen/qwen3.8-27b`. The workflow first lists the models
+    the key can use.
     - After 2 consecutive 503s ("overloaded"), the runner moves to the next model and lets the overloaded
       one cool down.
     - A 403/404 drops a model from the chain. The run aborts only when no model is usable, or on a 401 (bad
       key), and then writes nothing.
     - Each prediction records the model that answered. If a fallback answered any of them, the row name shows
-      the mix, e.g. "Llama-3.3-70B via Groq (llama-3.3-70b-versatile / gpt-oss-120b fallback) (API, few-shot)".
+      the mix, e.g. "GPT-OSS-120B via Groq (gpt-oss-120b / qwen3.8-27b fallback) (API, few-shot)".
   - Free-tier handling: client-side rate limiting (25 requests/min, under Groq's free limit), and on 429 a
     wait for the time given in `Retry-After` or `x-ratelimit-reset-*`. The on-disk response cache stores
     successful completions only, and runs are resumable: when a daily quota runs out, the workflow commits
-    what it has and the next dispatch continues.
+    what it has. A daily schedule (03:23 UTC) resumes the run and exits without committing once every
+    planned prediction exists.
   - Failed runs are never shown as results.
     - A predictions file with no completed request is not scored.
     - A partial run, or one where more than 5% of requests failed, is listed as "incomplete (k/N)" in a
@@ -265,7 +268,7 @@ under your Hugging Face account (the `jobx-artifacts` dataset repo is private). 
 | 6 | `05_awq_benchmark` | T4, ~45 min | HF_TOKEN, HF_USERNAME | AWQ model, T4 benchmark rows (fp16 / 8-bit / AWQ) |
 | 7 | `06_error_analysis` | CPU, ~1 min | (HF_TOKEN to pull) | taxonomy table, chart, worked examples |
 | 8 | Actions → `deploy-space` | ~5 min | HF_TOKEN | Gradio Space running the Q4 GGUF |
-| 9 | Actions → `api-baseline` (any time; rerun after `test_real` lands) | ~20–30 min at 25 RPM, $0 (free tier) | repo secret GROQ_API_KEY | Llama-3.3-70B (Groq) 3-shot predictions, token counts, metrics and table, committed (resumable) |
+| 9 | Actions → `api-baseline` (any time; rerun after `test_real` lands) | ~20–30 min at 25 RPM, $0 (free tier); resumes daily when the quota runs out | repo secret GROQ_API_KEY | GPT-OSS-120B (Groq) 3-shot predictions, token counts, metrics and table, committed (resumable) |
 
 ## Repository layout
 

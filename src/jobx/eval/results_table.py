@@ -83,7 +83,7 @@ def model_mix_label(meta: dict[str, Any]) -> str | None:
 
 def display_name(a: dict[str, Any], d: dict[str, Any] | None) -> str:
     """Row name. When a fallback model answered any prediction, `name_template` from approaches.yaml is
-    filled with the measured model mix, e.g. 'Llama-3.3-70B via Groq (llama-3.3-70b-versatile / gpt-oss-120b
+    filled with the measured model mix, e.g. 'GPT-OSS-120B via Groq (gpt-oss-120b / qwen3.8-27b
     fallback) (API, few-shot)'; runs answered by the primary model alone keep the plain name."""
     if d is not None and a.get("name_template"):
         meta = d.get("meta") or {}

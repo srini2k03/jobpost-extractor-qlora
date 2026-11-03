@@ -12,7 +12,7 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 | Llama-3.2-1B-Instruct 3-shot (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.3-70B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | pending API run |
+| GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | pending API run |
 | Qwen2.5-1.5B QLoRA fine-tune (ours) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-1.5B QLoRA fine-tune + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Llama-3.2-1B QLoRA fine-tune (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
@@ -33,7 +33,7 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 | Llama-3.2-1B-Instruct 3-shot (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-7B-Instruct 3-shot, 4-bit + guided JSON (open-model upper bound) | T4 | - | - | - | - | - | - | - | pending GPU run |
-| Llama-3.3-70B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | incomplete (25/200) |
+| GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | incomplete (25/200) |
 | Qwen2.5-1.5B QLoRA fine-tune (ours) | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Qwen2.5-1.5B QLoRA fine-tune + guided JSON | T4 | - | - | - | - | - | - | - | pending GPU run |
 | Llama-3.2-1B QLoRA fine-tune (optional) | T4 | - | - | - | - | - | - | - | pending GPU run |
@@ -54,13 +54,13 @@ Partial runs, or runs with more than 5% failed requests, are scored on what comp
 
 | Approach | Split | Status | Error rate % | n scored | Micro F1 % | JSON valid % |
 |---|---|---|---|---|---|---|
-| Llama-3.3-70B via Groq (API, few-shot) | test_synth | incomplete (25/200) | 0.0 | 25 | 97.5 | 100.0 |
+| GPT-OSS-120B via Groq (API, few-shot) | test_synth | incomplete (25/200) | 0.0 | 25 | 97.5 | 100.0 |
 
 #### API usage
 
 | Approach | Split | Model | Requests | Input tokens | Output tokens | Cost (USD) |
 |---|---|---|---|---|---|---|
-| Llama-3.3-70B via Groq (API, few-shot) | test_synth | `openai/gpt-oss-120b` (25) | 25 | 44815 | 11546 | 0.00 |
+| GPT-OSS-120B via Groq (API, few-shot) | test_synth | `openai/gpt-oss-120b` (25) | 25 | 44815 | 11546 | 0.00 |
 
 #### Size / speed / accuracy trade-off
 

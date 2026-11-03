@@ -1,14 +1,17 @@
 name: api-baseline
-# Hosted-API upper bound: the project prompt + JSON schema on a larger API model. Default: Llama-3.3-70B on
-# Groq's free tier (secret GROQ_API_KEY) through its OpenAI-compatible endpoint, falling back to
-# openai/gpt-oss-120b and qwen/qwen3-32b when a model is overloaded or unavailable. Other presets: gemini
-# (GEMINI_API_KEY), openrouter (OPENROUTER_API_KEY) and, optionally, anthropic (ANTHROPIC_API_KEY, with a
-# cost estimate and a hard USD budget).
+# Larger-model API upper bound: the project prompt + JSON schema on GPT-OSS-120B (OpenAI open-weight, ~117B
+# MoE) via Groq's free tier (secret GROQ_API_KEY), OpenAI-compatible endpoint, falling back to
+# qwen/qwen3.8-27b when the primary is overloaded or unavailable. (Llama-3.3-70B was not available to the
+# project's Groq key.) Other presets: gemini (GEMINI_API_KEY), openrouter (OPENROUTER_API_KEY) and,
+# optionally, anthropic (ANTHROPIC_API_KEY, with a cost estimate and a hard USD budget).
+#
 # Runs on test_synth, and on test_real when it exists. Free-tier friendly: client-side rate limit, 429
 # backoff that honours Retry-After / x-ratelimit-reset-*, an on-disk cache of successful responses (kept
-# between runs with actions/cache) and resumable runs: when a daily quota runs out, progress is committed and
-# the next dispatch continues where it stopped.
+# between runs with actions/cache) and resumable runs. When the daily quota runs out, progress is committed;
+# the daily schedule resumes it and stops (without committing) once every planned prediction exists.
 on:
+  schedule:
+    - cron: "23 3 * * *"
   workflow_dispatch:
     inputs:
       provider:
@@ -16,13 +19,13 @@ on:
         required: true
         default: "groq"
       model:
-        description: "model id ('preset' = the provider's default; e.g. gemini-3.8-flash for gemini)"
+        description: "model id ('preset' = the provider's default, e.g. gemini-3.8-flash for gemini)"
         required: true
-        default: "llama-3.3-70b-versatile"
+        default: "openai/gpt-oss-120b"
       model_fallbacks:
-        description: "comma list used after 2 consecutive 503s (or a 403/404); 'preset' = provider default, blank = none"
+        description: "comma list used after 2 consecutive 503s (or a 403/404); 'preset' = provider default, 'none' = none"
         required: false
-        default: "openai/gpt-oss-120b,qwen/qwen3-32b"
+        default: "qwen/qwen3.8-27b"
       splits:
         description: "comma list; splits missing from the repo are skipped"
         required: true
@@ -40,7 +43,7 @@ on:
         required: true
         default: "25"
       approach_prefix:
-        description: "results row id prefix (blank = preset: llama-3.3-70b-groq -> 'Llama-3.3-70B via Groq (API, few-shot)')"
+        description: "results row id prefix (blank = preset: gpt-oss-120b-groq -> 'GPT-OSS-120B via Groq (API, few-shot)')"
         required: false
         default: ""
       budget_usd:
@@ -64,7 +67,16 @@ jobs:
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      PROVIDER: ${{ inputs.provider }}
+      # Scheduled runs have no inputs: every value falls back to the dispatch defaults.
+      PROVIDER: ${{ inputs.provider || 'groq' }}
+      MODEL: ${{ inputs.model || 'openai/gpt-oss-120b' }}
+      FALLBACKS: ${{ inputs.model_fallbacks || 'qwen/qwen3.8-27b' }}
+      SPLITS: ${{ inputs.splits || 'test_synth,test_real' }}
+      SHOTS: ${{ inputs.shots || '3' }}
+      MAX_EXAMPLES: ${{ inputs.max_examples || '200' }}
+      RPM: ${{ inputs.rpm || '25' }}
+      PREFIX: ${{ inputs.approach_prefix || '' }}
+      BUDGET_USD: ${{ inputs.budget_usd || '2.0' }}
     steps:
       - name: Check the API key secret
         run: |
@@ -79,12 +91,6 @@ jobs:
             echo "::error::Repository secret $KEY_NAME is empty or missing (Settings -> Secrets and variables -> Actions)."
             exit 1
           fi
-      - name: List Groq models
-        if: inputs.provider == 'groq'
-        run: |
-          # The key goes in the Authorization header only (never in the URL or the log).
-          curl -sS --fail -H "Authorization: Bearer ${GROQ_API_KEY}" https://api.groq.com/openai/v1/models \
-            | jq -r '.data[] | "\(.id)\t\(.owned_by)\tctx=\(.context_window)"' | sort
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
@@ -92,38 +98,60 @@ jobs:
           cache: pip
       - name: Install
         run: pip install -e ".[api]"
+      - name: Build runner arguments
+        run: |
+          ARGS="--provider $PROVIDER --splits $SPLITS --shots $SHOTS --max-examples $MAX_EXAMPLES --rpm $RPM"
+          if [ -n "$MODEL" ] && [ "$MODEL" != "preset" ]; then ARGS="$ARGS --model $MODEL"; fi
+          if [ "$FALLBACKS" = "none" ]; then ARGS="$ARGS --model-fallbacks="
+          elif [ "$FALLBACKS" != "preset" ]; then ARGS="$ARGS --model-fallbacks $FALLBACKS"; fi
+          if [ -n "$PREFIX" ]; then ARGS="$ARGS --approach-prefix $PREFIX"; fi
+          echo "RUNNER_ARGS=$ARGS" >> "$GITHUB_ENV"
+      - name: Already complete? (scheduled runs)
+        id: done
+        if: github.event_name == 'schedule' && env.PROVIDER != 'anthropic'
+        run: |
+          set +e
+          # shellcheck disable=SC2086
+          python -m jobx.baselines.openai_compat_runner $RUNNER_ARGS --check-complete
+          CODE=$?
+          if [ $CODE -eq 0 ]; then
+            echo "complete=true" >> "$GITHUB_OUTPUT"
+            echo "Every planned prediction already exists: nothing to do, nothing to commit."
+          elif [ $CODE -ne 10 ]; then
+            exit $CODE
+          fi
+      - name: List Groq models
+        if: env.PROVIDER == 'groq' && steps.done.outputs.complete != 'true'
+        run: |
+          # The key goes in the Authorization header only (never in the URL or the log).
+          curl -sS --fail -H "Authorization: Bearer ${GROQ_API_KEY}" https://api.groq.com/openai/v1/models \
+            | jq -r '.data[] | "\(.id)\t\(.owned_by)\tctx=\(.context_window)"' | sort
       - name: Restore API response cache
+        if: steps.done.outputs.complete != 'true'
         uses: actions/cache@v4
         with:
           path: .cache/jobx-api
-          key: api-cache-v2-${{ inputs.provider }}-${{ github.run_id }}
-          restore-keys: api-cache-v2-${{ inputs.provider }}-
+          key: api-cache-v2-${{ env.PROVIDER }}-${{ github.run_id }}
+          restore-keys: api-cache-v2-${{ env.PROVIDER }}-
       - name: Run (resumable)
         id: run
+        if: steps.done.outputs.complete != 'true'
         run: |
           set +e
           if [ "$PROVIDER" = "anthropic" ]; then
-            ARGS=(--splits "${{ inputs.splits }}" --shots "${{ inputs.shots }}"
-                  --max-examples "${{ inputs.max_examples }}" --budget-usd "${{ inputs.budget_usd }}")
-            if [ -n "${{ inputs.model }}" ] && [ "${{ inputs.model }}" != "preset" ] && [ "${{ inputs.model }}" != "llama-3.3-70b-versatile" ]; then
-              ARGS+=(--model "${{ inputs.model }}")
-            fi
+            ARGS=(--splits "$SPLITS" --shots "$SHOTS" --max-examples "$MAX_EXAMPLES" --budget-usd "$BUDGET_USD")
+            case "$MODEL" in claude-*) ARGS+=(--model "$MODEL") ;; esac  # other ids belong to other providers
             python -m jobx.baselines.anthropic_runner "${ARGS[@]}"
           else
-            ARGS=(--provider "$PROVIDER" --splits "${{ inputs.splits }}" --shots "${{ inputs.shots }}"
-                  --max-examples "${{ inputs.max_examples }}" --rpm "${{ inputs.rpm }}")
-            MODEL="${{ inputs.model }}"; FALLBACKS="${{ inputs.model_fallbacks }}"; PREFIX="${{ inputs.approach_prefix }}"
-            if [ -n "$MODEL" ] && [ "$MODEL" != "preset" ]; then ARGS+=(--model "$MODEL"); fi
-            if [ "$FALLBACKS" != "preset" ]; then ARGS+=(--model-fallbacks "$FALLBACKS"); fi
-            if [ -n "$PREFIX" ]; then ARGS+=(--approach-prefix "$PREFIX"); fi
-            python -m jobx.baselines.openai_compat_runner "${ARGS[@]}"
+            # shellcheck disable=SC2086
+            python -m jobx.baselines.openai_compat_runner $RUNNER_ARGS
           fi
           CODE=$?
           # 0 ok | 4 quota exhausted after some completions | 5 fatal config (401/403/404) | 6 nothing completed
           case $CODE in
             0) echo "succeeded=true" >> "$GITHUB_OUTPUT" ;;
             4) echo "succeeded=true" >> "$GITHUB_OUTPUT"
-               echo "::warning::Free-tier quota exhausted; partial progress will be committed. Re-run later to resume." ;;
+               echo "::warning::Free-tier quota exhausted; partial progress will be committed. The daily schedule resumes it." ;;
             5) echo "::error::Fatal API configuration error (bad key, or no usable model in the chain; see log). Nothing committed."; exit 1 ;;
             6) echo "::error::No request completed; nothing to score or commit."; exit 1 ;;
             *) exit $CODE ;;
@@ -146,5 +174,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add results README.md
-          git diff --cached --quiet || git commit -m "API baseline: ${{ inputs.provider }} ${{ inputs.model }} (shots ${{ inputs.shots }})"
+          git diff --cached --quiet || git commit -m "API baseline: $PROVIDER $MODEL (shots $SHOTS, ${{ github.event_name }})"
           git push

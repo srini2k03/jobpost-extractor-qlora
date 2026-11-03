@@ -1,5 +1,5 @@
 {
-  "approach": "llama-3.3-70b-groq_few_shot",
+  "approach": "gpt-oss-120b-groq_few_shot",
   "model": "openai/gpt-oss-120b",
   "base_url": "https://api.groq.com/openai/v1",
   "hardware": "API",
