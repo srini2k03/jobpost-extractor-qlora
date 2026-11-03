@@ -7,14 +7,24 @@ import nbformat
 import pytest
 
 from jobx.eval.results_table import END, PENDING, START, build_tables, update_readme
-from jobx.prompts import SYSTEM_PROMPT, USER_TEMPLATE, messages, select_few_shot, sft_record, target_json
+from jobx.prompts import (
+    COMPACT_SYSTEM_PROMPT,
+    SYSTEM_PROMPT,
+    USER_TEMPLATE,
+    messages,
+    select_few_shot,
+    sft_record,
+    target_json,
+)
 
 NOTEBOOKS = sorted(Path("notebooks").glob("*.ipynb"))
 
 
 def test_results_table_has_measured_and_pending_rows():
     md, data = build_tables(".")
-    assert "regex" in md.lower() and PENDING in md
+    assert "regex" in md.lower() and "pending CPU run" in md
+    assert PENDING not in md  # optional GPU-route rows are summarised, not listed as pending rows
+    assert "optional GPU-route rows" in md
     synth = {r["approach"]: r for r in data["splits"]["test_synth"]}
     assert synth["regex_baseline"]["status"] == "measured"
     assert synth["qwen2.5-1.5b_qlora"]["status"] == "pending"
@@ -139,7 +149,7 @@ def test_notebooks_match_generator(tmp_path):
 
 def test_modelfile_matches_prompts():
     mf = Path("ollama/Modelfile").read_text()
-    assert f'SYSTEM """{SYSTEM_PROMPT}"""' in mf
+    assert f'SYSTEM """{COMPACT_SYSTEM_PROMPT}"""' in mf  # the CPU-trained release uses the short prompt
     pre, post = USER_TEMPLATE.split("{text}")
     assert pre + "{{ .Content }}" + post in mf
 

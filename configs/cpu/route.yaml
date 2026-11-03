@@ -1,0 +1,55 @@
+# No-account CPU route: everything runs on free GitHub-hosted ubuntu-latest runners (4 vCPU, 16 GB RAM,
+# 6 h per job). See docs/hyperparameters.md ("CPU route") for the reasoning behind each value.
+base_model: Qwen/Qwen2.5-0.5B-Instruct      # ungated, ~0.5B params: trainable on CPU in a few hours
+system_prompt: compact                      # prompts.COMPACT_SYSTEM_PROMPT (baselines keep the full prompt)
+run_name: qwen2.5-0.5b-lora-cpu
+output_dir: outputs/cpu-lora
+
+data:
+  train: data/processed/train.jsonl
+  val: data/processed/val.jsonl
+  val_loss_subset: 64           # eval_loss on this many val examples
+  val_json_f1_subset: 24        # greedy-decoded at each eval for JSON micro F1 (CPU generation is slow)
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+training:
+  max_length_target: 512        # chosen max_length = 512 unless the measured p99 needs more (cap below)
+  max_length_cap: 768
+  per_device_train_batch_size: 8
+  gradient_accumulation_steps: 2  # effective batch 16, as on the GPU route
+  learning_rate: 3.0e-4           # a bit above the GPU route's 2e-4: fewer steps, smaller model
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.05
+  weight_decay: 0.0
+  max_grad_norm: 1.0
+  max_epochs: 2                   # upper bound; the planner picks 1-2 epochs or a subset to fit the budget
+  evals_per_run: 4                # eval_loss + JSON-F1 at 25/50/75/100 % of training
+  logging_steps: 5
+  save_every_steps: 20            # crash safety; a time-limit save also happens at the end of each job
+  seed: 42
+  gradient_checkpointing: false   # 16 GB RAM is plenty at 0.5B; checkpointing would cost ~30 % compute
+
+budget:
+  job_minutes: 300                # training minutes per GitHub job (6 h limit minus setup/upload)
+  max_jobs: 3                     # chained jobs the planner may use
+  overhead: 0.85                  # fraction of the budget for training steps (evals + saves take the rest)
+  bench_steps: 4                  # optimiser steps timed by the benchmark (the first is discarded)
+
+baselines:                        # llama.cpp (GGUF Q8_0) on CPU; ids <prefix>_<setting>
+  models:
+    - {model: Qwen/Qwen2.5-0.5B-Instruct, prefix: qwen2.5-0.5b-cpu, settings: [zero_shot, few_shot, zero_shot_guided, few_shot_guided]}
+    - {model: Qwen/Qwen2.5-1.5B-Instruct, prefix: qwen2.5-1.5b-cpu, settings: [zero_shot, few_shot]}
+  guided_max: 200                 # guided rows use the same evenly spaced subset as the GPU route
+  free_max: null                  # null = the whole split
+  quant: Q8_0
+
+eval:
+  prefix: qwen2.5-0.5b-lora-cpu   # fine-tune rows: <prefix>_f16 / _q8_0 / _q4_k_m
+  quants: [F16, Q8_0, Q4_K_M]
+
+llama_cpp_ref: b6000

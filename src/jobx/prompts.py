@@ -32,6 +32,21 @@ Rules:
 USER_TEMPLATE = "Extract the fields from this job posting.\n\n<posting>\n{text}\n</posting>"
 
 
+# Short instruction used by the CPU-route LoRA fine-tune. A fine-tuned model learns the conventions from
+# its training data, so it does not need the long rule list; the short prompt halves the sequence length
+# (cheaper CPU training, faster in-browser inference). Baselines always use SYSTEM_PROMPT.
+COMPACT_SYSTEM_PROMPT = (
+    "Extract the Indian job posting into one JSON object with keys company, role, seniority, skills, "
+    "min_experience_years, max_experience_years, salary, locations, work_mode, employment_type, education. "
+    "Use null or [] for anything not stated."
+)
+SYSTEM_PROMPTS = {"full": SYSTEM_PROMPT, "compact": COMPACT_SYSTEM_PROMPT}
+
+
+def system_prompt(name: str = "full") -> str:
+    return SYSTEM_PROMPTS[name]
+
+
 def user_prompt(text: str) -> str:
     return USER_TEMPLATE.format(text=text.strip())
 
@@ -42,9 +57,11 @@ def target_json(label: dict[str, Any]) -> str:
     return json.dumps(ordered, ensure_ascii=False, separators=(", ", ": "))
 
 
-def messages(text: str, shots: Sequence[dict[str, Any]] = ()) -> list[dict[str, str]]:
-    """Chat messages for zero-shot (no shots) or few-shot prompting."""
-    msgs = [{"role": "system", "content": SYSTEM_PROMPT}]
+def messages(
+    text: str, shots: Sequence[dict[str, Any]] = (), *, system: str = "full"
+) -> list[dict[str, str]]:
+    """Chat messages for zero-shot (no shots) or few-shot prompting. ``system``: 'full' or 'compact'."""
+    msgs = [{"role": "system", "content": system_prompt(system)}]
     for ex in shots:
         msgs.append({"role": "user", "content": user_prompt(ex["text"])})
         msgs.append({"role": "assistant", "content": target_json(ex["label"])})
@@ -52,11 +69,11 @@ def messages(text: str, shots: Sequence[dict[str, Any]] = ()) -> list[dict[str, 
     return msgs
 
 
-def sft_record(example: dict[str, Any]) -> dict[str, Any]:
+def sft_record(example: dict[str, Any], *, system: str = "full") -> dict[str, Any]:
     """Conversational prompt-completion record for TRL (loss on the completion only)."""
     return {
         "prompt": [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt(system)},
             {"role": "user", "content": user_prompt(example["text"])},
         ],
         "completion": [{"role": "assistant", "content": target_json(example["label"])}],

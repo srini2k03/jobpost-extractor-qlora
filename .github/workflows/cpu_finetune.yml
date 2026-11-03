@@ -1,0 +1,107 @@
+name: cpu-finetune
+# No-account CPU route, step 2: LoRA fine-tune of Qwen2.5-0.5B-Instruct on a free GitHub-hosted runner.
+# The first job benchmarks seconds/step and plans the run (epochs or a stratified subset) to fit
+# configs/cpu/route.yaml's budget. Each job trains for up to ~5 h, checkpoints, and stores the state as an
+# asset of the prerelease `cpu-train-state`; it then dispatches the next job, until training is done, and
+# finally dispatches cpu_eval_release.yml. A 6-hourly schedule resumes the chain if a dispatch was lost.
+on:
+  workflow_dispatch:
+    inputs:
+      restart:
+        description: "ignore saved state and start over (re-benchmarks)"
+        type: boolean
+        default: false
+      chain:
+        description: "chain depth (set automatically)"
+        required: false
+        default: "0"
+      max_minutes:
+        description: "training minutes in this job"
+        required: false
+        default: "300"
+  schedule:
+    - cron: "17 */6 * * *"
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: cpu-finetune
+  cancel-in-progress: false
+
+env:
+  STATE_TAG: cpu-train-state
+  HF_HUB_DISABLE_TELEMETRY: "1"
+  GH_TOKEN: ${{ github.token }}
+  MAX_CHAIN: "8"
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - name: Scheduled runs only resume a run that was started by hand
+        if: github.event_name == 'schedule'
+        run: |
+          if ! gh release view "$STATE_TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "no training state yet: nothing to resume"; echo "SKIP=1" >> "$GITHUB_ENV"
+          fi
+      - uses: actions/checkout@v4
+        if: env.SKIP != '1'
+      - uses: actions/setup-python@v5
+        if: env.SKIP != '1'
+        with: {python-version: "3.12", cache: pip}
+      - name: Install (CPU torch + pinned training stack)
+        if: env.SKIP != '1'
+        run: pip install -r requirements/cpu-train.txt -e .
+      - name: Restore training state
+        if: env.SKIP != '1'
+        run: |
+          if [ "${{ inputs.restart }}" != "true" ] && gh release view "$STATE_TAG" > /dev/null 2>&1; then
+            if gh release download "$STATE_TAG" -p state.tar.gz -D /tmp --clobber; then tar xzf /tmp/state.tar.gz; fi
+          fi
+          ls -la outputs/cpu-lora 2>/dev/null || echo "no saved state: fresh start"
+      - name: Status
+        if: env.SKIP != '1'
+        id: st
+        run: |
+          if python -m jobx.cpu.train status; then echo "done=true" >> "$GITHUB_OUTPUT"; else echo "done=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Benchmark seconds/step and plan (first job only)
+        if: env.SKIP != '1' && steps.st.outputs.done != 'true'
+        run: |
+          if [ ! -f outputs/cpu-lora/plan.json ]; then python -m jobx.cpu.train bench; fi
+          cat outputs/cpu-lora/plan.json
+      - name: Train (stops and checkpoints at the time limit)
+        if: env.SKIP != '1' && steps.st.outputs.done != 'true'
+        run: python -m jobx.cpu.train train --max-minutes "${{ inputs.max_minutes || '300' }}" || [ $? -eq 3 ]
+      - name: Save state to the cpu-train-state release
+        if: always() && env.SKIP != '1' && steps.st.outputs.done != 'true'
+        run: |
+          [ -d outputs/cpu-lora ] || exit 0
+          gh release view "$STATE_TAG" > /dev/null 2>&1 || gh release create "$STATE_TAG" --prerelease --target "$GITHUB_SHA" \
+            --title "CPU training state (internal)" --notes "Checkpoints for the chained cpu-finetune jobs. Not a model release."
+          tar czf /tmp/state.tar.gz --exclude='outputs/cpu-lora/bench' outputs/cpu-lora
+          gh release upload "$STATE_TAG" /tmp/state.tar.gz --clobber
+          if [ -f outputs/cpu-lora/final/adapter_config.json ]; then
+            tar czf /tmp/adapter.tar.gz -C outputs/cpu-lora final
+            gh release upload "$STATE_TAG" /tmp/adapter.tar.gz --clobber
+          fi
+      - name: Commit plan + curves
+        if: always() && env.SKIP != '1' && steps.st.outputs.done != 'true'
+        run: scripts/commit_results.sh "CPU fine-tune progress" results/training
+      - name: Chain the next job
+        if: always() && env.SKIP != '1'
+        run: |
+          DEPTH="${{ inputs.chain || '0' }}"
+          if python -m jobx.cpu.train status; then
+            if ! gh release view model-v1 > /dev/null 2>&1; then
+              echo "training complete: dispatching cpu_eval_release.yml"
+              gh workflow run cpu_eval_release.yml --ref "$GITHUB_REF_NAME"
+            fi
+          elif [ "$DEPTH" -lt "$MAX_CHAIN" ]; then
+            echo "not done yet: dispatching job $((DEPTH + 1))"
+            gh workflow run cpu_finetune.yml --ref "$GITHUB_REF_NAME" -f chain="$((DEPTH + 1))"
+          else
+            echo "::warning::chain depth $DEPTH reached; the 6-hourly schedule will continue"
+          fi

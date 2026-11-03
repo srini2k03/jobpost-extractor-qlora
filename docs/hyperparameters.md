@@ -44,3 +44,31 @@ runs are comparable.
 | Gradient checkpointing | on | on | Kept for headroom with long real postings and the in-loop generations used for JSON-F1. |
 | Optimiser | paged AdamW 8-bit | paged AdamW 8-bit | Unchanged. Paged states avoid OOM spikes on 12 GB. |
 | Resume | - | `resume: true` | Continues from the last `checkpoint-*` after an interruption. Laptops sleep. |
+
+## CPU route
+
+This is the route that is actually run. Configuration: [`configs/cpu/route.yaml`](../configs/cpu/route.yaml).
+It runs on GitHub-hosted `ubuntu-latest` runners (4 vCPU, 16 GB RAM, 6 h per job; usually AMD EPYC with
+AVX2).
+
+| Setting | Value | Why |
+|---|---|---|
+| Base model | Qwen2.5-0.5B-Instruct | Ungated: it downloads in Actions without a token. At ~0.5B parameters, an epoch over ~2.2k short examples takes hours on 4 CPU cores, not days. The Q4_K_M GGUF (~0.4 GB) is small enough to run in a browser. |
+| Prompt | compact system prompt | The fine-tune learns the labelling conventions from the data, so the long rule list (~400 tokens) is dead weight. A one-line instruction cuts sequences from ~690 to ~330 tokens (median, estimated), roughly halving training compute and in-browser prompt time. Baselines keep the full prompt; they need the rules. |
+| `max_length` | 512 (from measured p99) | The first job tokenises every training example and picks 512 if p99 fits, else p99 rounded up to 64 (cap 768). Longer examples are **dropped, not truncated**: cutting the prompt changes the task, and cutting the completion teaches broken JSON. The count is recorded in `plan.json` and the model card. |
+| LoRA | r=16, α=32, dropout 0.05, all linear projections | Same as the GPU route, so the two are comparable (see above for why). |
+| Precision | fp32 (bf16 only with AVX512-BF16/AMX) | Without native bf16 instructions, bf16 on CPU is emulated and slower than fp32. The planner detects the CPU flags. |
+| Batch | 8 × 2 accumulation = 16 | Same effective batch as the GPU route. 8 sequences of ≤ 512 tokens fit easily in 16 GB in fp32. |
+| Learning rate | 3e-4, cosine, 5% warmup | Slightly higher than the GPU route's 2e-4: the run has fewer optimiser steps (~130–270) and a smaller model, which tolerates it. Warmup is a bit longer for the same reason. |
+| Gradient checkpointing | off | RAM is not the constraint at 0.5B. Checkpointing would cost ~30% more compute. |
+| Epochs / data | planned from a measured benchmark | The first job times 4 optimiser steps (the first is discarded) and picks 2 epochs, else 1 epoch, else a **stratified subset** (proportional over template family × domain) that fits 3 chained jobs × 300 min × 85% (the rest is evals and saves). The choice and its reason are written to `results/training/qwen2.5-0.5b-lora-cpu/plan.json`. |
+| Evaluation | 4 times per run: loss on 64 val examples, JSON-F1 on 24 | Greedy generation on CPU is slow, so the JSON-F1 subset is small. It is a trend signal; the real evaluation is the full test split in `cpu_eval_release`. |
+| Threads | all cores (`torch.set_num_threads(nproc)`) | |
+
+**Expected cost before measuring.** The forward + backward pass of a 0.5B model is about 4 × 0.5e9 ×
+330 ≈ 0.7 TFLOP per example. At an effective ~100–200 GFLOPS of fp32 on 4 cores, that is ~3.5–7 s per
+example, or ~55–110 s per optimiser step of 16.
+- One epoch over ~2.2k examples is ~2–4 h.
+- The planner will most likely choose 2 epochs over all data in 2 chained jobs, or 1 epoch in 1 job on a
+  slower runner.
+- The measured numbers replace this estimate in `plan.json`.

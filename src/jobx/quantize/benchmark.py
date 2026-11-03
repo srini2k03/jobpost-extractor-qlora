@@ -54,10 +54,32 @@ def wait_ready(url: str, proc: subprocess.Popen[bytes], timeout: float = 600) ->
     raise TimeoutError("llama-server did not become ready")
 
 
+def cpu_name() -> str:
+    try:
+        for line in Path("/proc/cpuinfo").read_text().splitlines():
+            if line.startswith("model name"):
+                return line.split(":", 1)[1].strip()
+    except OSError:
+        pass
+    return platform.processor() or platform.machine()
+
+
 def run(a: argparse.Namespace) -> dict[str, Any]:
     import httpx
 
-    examples = eval_subset(read_jsonl(Path(a.root) / SPLIT_FILES[a.split]), a.max_examples)
+    examples = eval_subset(read_jsonl(Path(a.root) / SPLIT_FILES[a.split]), a.max_examples or None)
+    shots = (
+        prompts.select_few_shot(read_jsonl(Path(a.root) / SPLIT_FILES["train"]), k=a.shots) if a.shots else []
+    )
+    response_format = None
+    if a.guided:
+        from jobx.baselines.guided import inline_refs
+        from jobx.schema import json_schema
+
+        response_format = {
+            "type": "json_schema",
+            "json_schema": {"name": "JobPosting", "schema": inline_refs(json_schema())},
+        }
     port = a.port
     cmd = [
         a.server_bin,
@@ -84,7 +106,14 @@ def run(a: argparse.Namespace) -> dict[str, Any]:
         wait_ready(url, proc)
         with httpx.Client(timeout=600) as client, open(pred_path, "w", encoding="utf-8") as f:
             for e in examples:
-                body = {"messages": prompts.messages(e["text"]), "temperature": 0, "max_tokens": a.max_tokens}
+                body: dict[str, Any] = {
+                    "messages": prompts.messages(e["text"], shots, system=a.system),
+                    "temperature": 0,
+                    "max_tokens": a.max_tokens,
+                    "cache_prompt": True,  # system prompt (+ shots) prefix is reused across requests
+                }
+                if response_format is not None:
+                    body["response_format"] = response_format
                 t0 = time.perf_counter()
                 r = client.post(f"{url}/v1/chat/completions", json=body)
                 r.raise_for_status()
@@ -114,14 +143,20 @@ def run(a: argparse.Namespace) -> dict[str, Any]:
     date = datetime.now(UTC).strftime("%Y-%m-%d")
     meta = {
         "approach": a.approach,
-        "model": os.path.basename(a.model),
-        "decoding": "free",
-        "hardware": f"CPU ({platform.processor() or platform.machine()}, {a.threads} threads, GitHub Actions)",
+        "model": a.model_label or os.path.basename(a.model),
+        "gguf": os.path.basename(a.model),
+        "decoding": "guided (llama.cpp JSON-schema grammar)" if a.guided else "free",
+        "system_prompt": a.system,
+        "n_shots": len(shots),
+        "shot_ids": [s["id"] for s in shots],
+        "hardware": f"CPU ({cpu_name()}, {a.threads} threads, GitHub Actions)",
         "date": date,
         "commit": git_commit(a.root),
         "n_examples": len(examples),
     }
     Path(str(pred_path).removesuffix(".jsonl") + ".meta.json").write_text(json.dumps(meta, indent=2) + "\n")
+    if not a.variant:
+        return {"predictions": str(pred_path), "n": len(examples)}
     scores, _ = score_file(pred_path, a.root)
     agg = aggregate(scores, n_boot=0)
     row = {
@@ -150,10 +185,16 @@ def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--server-bin", required=True)
     ap.add_argument("--model", required=True)
-    ap.add_argument("--variant", required=True)
+    ap.add_argument("--variant", default=None, help="benchmark row name; omit to write predictions only")
+    ap.add_argument("--model-label", default=None, help="model name recorded in the meta (e.g. the HF id)")
+    ap.add_argument("--system", default="full", choices=["full", "compact"])
+    ap.add_argument("--shots", type=int, default=0)
+    ap.add_argument(
+        "--guided", action="store_true", help="JSON-schema constrained decoding (llama.cpp grammar)"
+    )
     ap.add_argument("--approach", required=True)
     ap.add_argument("--split", default="test_synth")
-    ap.add_argument("--max-examples", type=int, default=150)
+    ap.add_argument("--max-examples", type=int, default=150, help="0 = the whole split")
     ap.add_argument("--max-tokens", type=int, default=384)
     ap.add_argument("--threads", type=int, default=os.cpu_count() or 4)
     ap.add_argument("--ctx", type=int, default=4096)
