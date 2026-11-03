@@ -1,0 +1,8 @@
+{
+  "approach": "regex_baseline",
+  "model": "rules",
+  "decoding": "-",
+  "hardware": "CPU",
+  "date": "2026-11-03",
+  "commit": "902cc8a"
+}

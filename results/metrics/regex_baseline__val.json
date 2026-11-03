@@ -1,0 +1,154 @@
+{
+  "approach": "regex_baseline",
+  "split": "val",
+  "n_gold": 352,
+  "n_pred": 352,
+  "unknown_ids": 0,
+  "coverage": 1.0,
+  "mean_latency_s": 0.0044,
+  "meta": {
+    "approach": "regex_baseline",
+    "model": "rules",
+    "decoding": "-",
+    "hardware": "CPU",
+    "date": "2026-11-03",
+    "commit": "902cc8a"
+  },
+  "metrics": {
+    "n": 352,
+    "json_validity": 1.0,
+    "schema_validity": 1.0,
+    "field_em_mean": 0.925361570247934,
+    "record_exact_match": 0.5397727272727273,
+    "micro_precision": 0.9751373985867574,
+    "micro_recall": 0.9280199252801993,
+    "micro_f1": 0.9509954058192955,
+    "macro_f1": 0.9247232409130549,
+    "hallucination_rate": 0.0,
+    "per_field": {
+      "company": {
+        "em": 0.75,
+        "precision": 0.9863013698630136,
+        "recall": 0.7105263157894737,
+        "f1": 0.8260038240917782,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 304
+      },
+      "role": {
+        "em": 0.7329545454545454,
+        "precision": 0.7371428571428571,
+        "recall": 0.7329545454545454,
+        "f1": 0.7350427350427351,
+        "hallucination_rate": null,
+        "support_gold_stated": 352
+      },
+      "seniority": {
+        "em": 0.6960227272727273,
+        "precision": 1.0,
+        "recall": 0.4397905759162304,
+        "f1": 0.610909090909091,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 191
+      },
+      "skills": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 1403
+      },
+      "min_experience_years": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 299
+      },
+      "max_experience_years": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 287
+      },
+      "salary": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 214
+      },
+      "locations": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 392
+      },
+      "work_mode": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 214
+      },
+      "employment_type": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 184
+      },
+      "education": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 175
+      }
+    },
+    "ci95": {
+      "micro_f1": [
+        0.9438864994535476,
+        0.9575750075696222
+      ],
+      "macro_f1": [
+        0.913374603618697,
+        0.9353301227127007
+      ],
+      "field_em_mean": [
+        0.9155410640495867,
+        0.9349173553719009
+      ],
+      "json_validity": [
+        1.0,
+        1.0
+      ],
+      "schema_validity": [
+        1.0,
+        1.0
+      ],
+      "hallucination_rate": [
+        0.0,
+        0.0
+      ],
+      "record_exact_match": [
+        0.4914772727272727,
+        0.5881392045454544
+      ]
+    },
+    "bootstrap": {
+      "n_boot": 1000,
+      "seed": 0,
+      "method": "percentile, resampling examples"
+    }
+  }
+}
