@@ -1,0 +1,8 @@
+# Optional second fine-tune for comparison (same recipe). Llama 3.2 is gated:
+# accept the licence on its Hugging Face page with the account that owns HF_TOKEN first.
+run_name: llama3.2-1b-qlora-r16
+base_model: meta-llama/Llama-3.2-1B-Instruct
+hub_repo_kind: adapter_llama
+inherit: configs/train/qwen2.5-1.5b-qlora.yaml
+training:
+  output_dir: outputs/llama3.2-1b-qlora-r16
