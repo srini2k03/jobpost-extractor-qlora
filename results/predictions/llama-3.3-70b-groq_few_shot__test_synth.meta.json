@@ -1,6 +1,6 @@
 {
   "approach": "llama-3.3-70b-groq_few_shot",
-  "model": "llama-3.3-70b-versatile",
+  "model": "openai/gpt-oss-120b",
   "base_url": "https://api.groq.com/openai/v1",
   "hardware": "API",
   "decoding": "greedy (temperature 0), response_format=json_schema",
@@ -14,12 +14,12 @@
   ],
   "date": "2026-11-03",
   "n_examples": 200,
-  "n_completed": 6,
+  "n_completed": 25,
   "complete": false,
   "usage": {
-    "requests": 6,
-    "prompt_tokens": 10774,
-    "completion_tokens": 3098
+    "requests": 25,
+    "prompt_tokens": 44815,
+    "completion_tokens": 11546
   },
   "price_per_mtok": {
     "input": 0.0,
@@ -28,17 +28,14 @@
   "cost_usd": 0.0,
   "format_downgrades": [],
   "model_chain": [
-    "llama-3.3-70b-versatile",
     "openai/gpt-oss-120b",
     "qwen/qwen3-32b"
   ],
   "models_used": {
-    "openai/gpt-oss-120b": 6
+    "openai/gpt-oss-120b": 25
   },
-  "dropped_models": {
-    "llama-3.3-70b-versatile": "HTTP 404 (NotFoundError): Error code: 404 - The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."
-  },
+  "dropped_models": {},
   "model_switches": [],
-  "commit": "946c8b0",
+  "commit": "1b21db0",
   "provider": "groq"
 }
