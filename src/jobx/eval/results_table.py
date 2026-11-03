@@ -314,9 +314,9 @@ def update_readme(readme: str | Path, table_md: str) -> bool:
     text = p.read_text()
     if START not in text or END not in text:
         return False
-    new = re.sub(
-        re.escape(START) + r".*?" + re.escape(END), f"{START}\n{table_md}{END}", text, flags=re.DOTALL
-    )
+    block = f"{START}\n{table_md}{END}"
+    # a function replacement: the table is literal text, so backslashes in it must not be parsed as escapes
+    new = re.sub(re.escape(START) + r".*?" + re.escape(END), lambda _: block, text, flags=re.DOTALL)
     if new != text:
         p.write_text(new)
     return True
