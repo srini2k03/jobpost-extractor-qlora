@@ -95,7 +95,7 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 
 | Approach | Split | Model | Requests | Input tokens | Output tokens | Cost (USD) |
 |---|---|---|---|---|---|---|
-| Gemini Flash (API, few-shot) | - | `gemini-2.5-flash` | - | - | - | - (pending API run) |
+| Gemini Flash (API, few-shot) | - | `gemini-3.8-flash` | - | - | - | - (pending API run) |
 
 #### Size / speed / accuracy trade-off
 
@@ -157,9 +157,20 @@ with free decoding and with guided JSON decoding (lm-format-enforcer).
   [`api_baseline.yml`](.github/workflows/api_baseline.yml)). It calls Gemini's OpenAI-compatible endpoint
   with the `JobPosting` JSON Schema as `response_format`. If the provider rejects that, it falls back to
   JSON mode, then to prompt-only; the evaluator parses the output either way.
-  - Free-tier handling: client-side rate limiting (10 requests/min by default), backoff on 429, an on-disk
-    response cache and resumable runs. When the daily quota runs out, the workflow commits what it has and
-    the next dispatch continues.
+  - Models: `gemini-3.8-flash`, falling back to `gemini-3.7-flash`, then `gemini-3.5-flash`.
+    - After 2 consecutive 503s ("overloaded"), the runner moves to the next model and lets the overloaded
+      one cool down.
+    - A 403/404 drops a model from the chain. The run aborts only when no model is usable, or on a 401 (bad
+      key), and then writes nothing.
+    - Each prediction records the model that answered. The row name shows the actual mix, e.g.
+      "Gemini Flash (3.8 / 3.7 fallback)".
+  - Free-tier handling: client-side rate limiting (10 requests/min by default), backoff on 429, and resumable
+    runs. The on-disk response cache stores successful completions only. When the daily quota runs out, the
+    workflow commits what it has and the next dispatch continues.
+  - Failed runs are never shown as results.
+    - A predictions file with no completed request is not scored.
+    - A partial run, or one where more than 5% of requests failed, is listed as "incomplete (k/N)" in a
+      separate table, outside the comparison.
   - Accounting: token counts are recorded per request, and the cost is $0 on the free tier (see "API usage"
     in the results).
   - Other providers: the same runner works with Groq or OpenRouter (`--provider`, or

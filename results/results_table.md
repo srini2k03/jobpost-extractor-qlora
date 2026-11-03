@@ -52,7 +52,7 @@ _The real test set is pending: it needs the fetch + draft-label notebook and a h
 
 | Approach | Split | Model | Requests | Input tokens | Output tokens | Cost (USD) |
 |---|---|---|---|---|---|---|
-| Gemini Flash (API, few-shot) | - | `gemini-2.5-flash` | - | - | - | - (pending API run) |
+| Gemini Flash (API, few-shot) | - | `gemini-3.8-flash` | - | - | - | - (pending API run) |
 
 #### Size / speed / accuracy trade-off
 

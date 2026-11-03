@@ -49,12 +49,16 @@ class Provider:
     default_model: str
     price_in: float = 0.0  # USD per million tokens
     price_out: float = 0.0
+    default_fallbacks: tuple[str, ...] = ()
 
 
 # Default model ids are the providers' free-tier models at the time of writing; override with --model.
 PROVIDERS: dict[str, Provider] = {
     "gemini": Provider(
-        "https://generativelanguage.googleapis.com/v1beta/openai/", "GEMINI_API_KEY", "gemini-2.5-flash"
+        "https://generativelanguage.googleapis.com/v1beta/openai/",
+        "GEMINI_API_KEY",
+        "gemini-3.8-flash",
+        default_fallbacks=("gemini-3.7-flash", "gemini-3.5-flash"),
     ),
     "groq": Provider("https://api.groq.com/openai/v1", "GROQ_API_KEY", "llama-3.3-70b-versatile"),
     "openrouter": Provider(
@@ -67,6 +71,80 @@ SHOT_NAMES = {0: "zero_shot"}
 
 class QuotaExhausted(RuntimeError):
     """429s persisted through every retry: stop and resume later (free-tier daily quota)."""
+
+
+class FatalConfigError(RuntimeError):
+    """401/403/404: wrong key, no access or unknown model. Never retried; the run aborts without writing."""
+
+
+class ModelUnavailable(FatalConfigError):
+    """403/404 for one model: dropped from the fallback chain (fatal only when no model is left)."""
+
+
+class ModelOverloaded(RuntimeError):
+    """503 on one model: counted by the chain, which moves on after consecutive overloads."""
+
+
+class ModelChain:
+    """Primary model plus fallbacks.
+
+    After ``switch_after`` consecutive 503s a model cools down for ``cooldown_s`` and the next one is used;
+    when its cooldown ends the earlier (preferred) model is tried again. 403/404 drop a model for good.
+    """
+
+    def __init__(
+        self,
+        models: Sequence[str],
+        *,
+        switch_after: int = 2,
+        cooldown_s: float = 300.0,
+        clock: Callable[[], float] = time.monotonic,
+    ) -> None:
+        if not models:
+            raise ValueError("need at least one model")
+        self.models = list(dict.fromkeys(models))
+        self.switch_after = switch_after
+        self.cooldown_s = cooldown_s
+        self.clock = clock
+        self.dropped: dict[str, str] = {}
+        self.cool_until: dict[str, float] = dict.fromkeys(self.models, 0.0)
+        self.overloads: dict[str, int] = dict.fromkeys(self.models, 0)
+        self.switches: list[str] = []
+
+    @property
+    def alive(self) -> list[str]:
+        return [m for m in self.models if m not in self.dropped]
+
+    def current(self) -> tuple[str, float]:
+        """(model to use, seconds to wait first). Raises FatalConfigError when every model is dropped."""
+        alive = self.alive
+        if not alive:
+            raise FatalConfigError(
+                "every model in the chain is unavailable: "
+                + "; ".join(f"{m}: {r}" for m, r in self.dropped.items())
+            )
+        now = self.clock()
+        for m in alive:
+            if self.cool_until[m] <= now:
+                return m, 0.0
+        m = min(alive, key=lambda x: self.cool_until[x])
+        return m, self.cool_until[m] - now
+
+    def record_success(self, model: str) -> None:
+        self.overloads[model] = 0
+
+    def record_overload(self, model: str) -> None:
+        self.overloads[model] += 1
+        if self.overloads[model] >= self.switch_after:
+            self.overloads[model] = 0
+            self.cool_until[model] = self.clock() + self.cooldown_s
+            self.switches.append(f"{model} overloaded x{self.switch_after}: cooldown {self.cooldown_s:.0f}s")
+
+    def drop(self, model: str, reason: str) -> None:
+        self.dropped.setdefault(model, reason)
+
+
+EXIT_OK, EXIT_QUOTA_PARTIAL, EXIT_FATAL, EXIT_NOTHING_COMPLETED = 0, 4, 5, 6
 
 
 def approach_id(prefix: str, shots: int) -> str:
@@ -160,13 +238,23 @@ class ResponseCache:
             return None
         try:
             d: dict[str, Any] = json.loads(p.read_text())
-            return d
         except json.JSONDecodeError:
             return None
+        return d if self.is_success(d) else None  # never replay an error, even from an old cache
+
+    @staticmethod
+    def is_success(value: dict[str, Any]) -> bool:
+        return (
+            not value.get("error") and isinstance(value.get("output"), str) and bool(value["output"].strip())
+        )
 
     def put(self, key: str, value: dict[str, Any]) -> None:
-        if self.dir:
+        if self.dir and self.is_success(value):
             (self.dir / f"{key}.json").write_text(json.dumps(value, ensure_ascii=False))
+
+
+def _msg(err: Any) -> str:
+    return str(getattr(err, "message", "") or err)[:300]
 
 
 def _retry_after(err: Any) -> float | None:
@@ -189,7 +277,10 @@ async def call_with_retries(
     base_delay: float = 5.0,
     max_delay: float = 120.0,
     sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+    overload_raises: bool = False,
 ) -> Any:
+    """Retries 429/5xx/connection errors on one model. 401 -> FatalConfigError; 403/404 -> ModelUnavailable;
+    with ``overload_raises`` a 503 is raised as ModelOverloaded so a model chain can switch models."""
     import openai
 
     for attempt in range(max_attempts):
@@ -204,7 +295,13 @@ async def call_with_retries(
             if attempt == max_attempts - 1:
                 raise
             delay = min(base_delay * 2**attempt, max_delay)
+        except openai.AuthenticationError as e:
+            raise FatalConfigError(f"HTTP 401 (AuthenticationError): {_msg(e)}") from e
+        except (openai.PermissionDeniedError, openai.NotFoundError) as e:
+            raise ModelUnavailable(f"HTTP {e.status_code} ({type(e).__name__}): {_msg(e)}") from e
         except openai.APIStatusError as e:
+            if e.status_code == 503 and overload_raises:
+                raise ModelOverloaded(_msg(e)) from e
             if e.status_code < 500 or attempt == max_attempts - 1:
                 raise
             delay = _retry_after(e) or min(base_delay * 2**attempt, max_delay)
@@ -234,8 +331,19 @@ class RunStats:
     completion_tokens: int = 0
     cost_usd: float = 0.0
     quota_exhausted: bool = False
+    n_completed: int = 0
     response_format: str = ""
     format_downgrades: list[str] = field(default_factory=list)
+
+
+def models_used(rows: Sequence[dict[str, Any]], default: str) -> dict[str, int]:
+    """Which chain model answered each completed prediction (count per model, most used first)."""
+    c: dict[str, int] = {}
+    for r in rows:
+        if not r.get("error"):
+            m = str(r.get("model") or default)
+            c[m] = c.get(m, 0) + 1
+    return dict(sorted(c.items(), key=lambda kv: -kv[1]))
 
 
 async def run_split(
@@ -243,13 +351,14 @@ async def run_split(
     examples: Sequence[dict[str, Any]],
     *,
     base_url: str,
-    model: str,
+    model: str | ModelChain,
     approach_prefix: str,
     shots: Sequence[dict[str, Any]],
     split: str,
     out_dir: Path,
     limiter: RateLimiter,
     cache: ResponseCache,
+    max_overloads_per_example: int = 8,
     mode: str = "json_schema",
     max_tokens: int = 1024,
     concurrency: int = 2,
@@ -257,7 +366,10 @@ async def run_split(
     price_out: float = 0.0,
     meta_extra: dict[str, Any] | None = None,
     sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
-) -> tuple[Path, RunStats]:
+) -> tuple[Path | None, RunStats]:
+    """Returns (predictions path, stats); the path is None when no request completed."""
+    chain = model if isinstance(model, ModelChain) else ModelChain([model])
+    model = chain.models[0]  # primary: identifies the run for resuming
     approach = approach_id(approach_prefix, len(shots))
     stats = RunStats(approach, split, len(examples))
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -276,6 +388,7 @@ async def run_split(
     sem = asyncio.Semaphore(concurrency)
     lock = asyncio.Lock()
     stop = asyncio.Event()
+    fatal: list[str] = []
     results: dict[str, dict[str, Any]] = dict(done)
 
     async def append(row: dict[str, Any]) -> None:
@@ -290,20 +403,49 @@ async def run_split(
                 return
             t0 = time.perf_counter()
             row: dict[str, Any] = {"id": ex["id"]}
+            overloads = 0
             while True:
-                kwargs = build_request(model, ex["text"], shots, mode=state["mode"], max_tokens=max_tokens)
+                try:
+                    use, wait = chain.current()
+                except FatalConfigError as e:
+                    fatal.append(str(e))
+                    stop.set()
+                    return
+                kwargs = build_request(use, ex["text"], shots, mode=state["mode"], max_tokens=max_tokens)
                 ckey = ResponseCache.key(base_url, kwargs)
                 hit = cache.get(ckey)
                 if hit is not None:
                     stats.n_cached += 1
-                    row.update(hit)
+                    row.update({"model": use, **hit})
                     break
+                if wait > 0:
+                    await sleep(wait)
                 try:
                     resp = await call_with_retries(
-                        client.chat.completions.create, kwargs, limiter=limiter, sleep=sleep
+                        client.chat.completions.create,
+                        kwargs,
+                        limiter=limiter,
+                        sleep=sleep,
+                        overload_raises=True,
                     )
                 except QuotaExhausted:
                     stats.quota_exhausted = True
+                    stop.set()
+                    return
+                except ModelOverloaded:
+                    chain.record_overload(use)
+                    overloads += 1
+                    if overloads >= max_overloads_per_example:
+                        stats.n_errors += 1
+                        row.update({"output": "", "error": "ModelOverloaded", "model": use})
+                        break
+                    await sleep(2.0 + random.uniform(0, 1))
+                    continue
+                except ModelUnavailable as e:
+                    chain.drop(use, str(e))
+                    continue
+                except FatalConfigError as e:
+                    fatal.append(str(e))
                     stop.set()
                     return
                 except Exception as e:
@@ -313,8 +455,9 @@ async def run_split(
                         state["mode"] = nxt
                         continue
                     stats.n_errors += 1
-                    row.update({"output": "", "error": type(e).__name__})
+                    row.update({"output": "", "error": type(e).__name__, "model": use})
                     break
+                chain.record_success(use)
                 usage = getattr(resp, "usage", None)
                 choice = resp.choices[0]
                 value = {
@@ -322,18 +465,23 @@ async def run_split(
                     "finish_reason": getattr(choice, "finish_reason", None),
                     "prompt_tokens": int(getattr(usage, "prompt_tokens", 0) or 0),
                     "completion_tokens": int(getattr(usage, "completion_tokens", 0) or 0),
-                    "served_model": str(getattr(resp, "model", model) or model),
+                    "served_model": str(getattr(resp, "model", use) or use),
                     "response_format": state["mode"],
                 }
                 cache.put(ckey, value)
                 stats.n_new += 1
-                row.update(value)
+                row.update({"model": use, **value})
                 break
             row["latency_s"] = round(time.perf_counter() - t0, 3)
             await append(row)
 
     await asyncio.gather(*(one(e) for e in examples))
+    if fatal:
+        raise FatalConfigError(fatal[0])
     rows = [results[e["id"]] for e in examples if e["id"] in results]
+    stats.n_completed = sum(1 for r in rows if not r.get("error"))
+    if stats.n_completed == 0:
+        return None, stats  # nothing to score: leave any previous files untouched
     with open(pred, "w", encoding="utf-8") as f:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
@@ -363,6 +511,10 @@ async def run_split(
         "price_per_mtok": {"input": price_in, "output": price_out},
         "cost_usd": stats.cost_usd,
         "format_downgrades": stats.format_downgrades,
+        "model_chain": chain.models,
+        "models_used": models_used(rows, model),
+        "dropped_models": chain.dropped,
+        "model_switches": chain.switches[:50],
         **(meta_extra or {}),
     }
     meta_path.write_text(json.dumps(meta, indent=2) + "\n")
@@ -412,31 +564,51 @@ async def main_async(a: argparse.Namespace, client: Any = None) -> int:
             indent=2,
         )
     )
+    fallbacks = [
+        m.strip()
+        for m in (
+            a.model_fallbacks
+            if a.model_fallbacks is not None
+            else ",".join(prov.default_fallbacks if prov else ())
+        ).split(",")
+        if m.strip()
+    ]
+    chain = ModelChain([model, *fallbacks], switch_after=a.switch_after, cooldown_s=a.cooldown)
+    print(f"model chain: {' -> '.join(chain.models)}")
     meta_extra = {"commit": git_commit(root), "provider": a.provider}
-    exit_code = 0
+    total_completed = 0
     for split in splits:
         examples = eval_subset(read_jsonl(root / SPLIT_FILES[split]), a.max_examples)
         for k in shots_list:
             shots = prompts.select_few_shot(train, k=k) if k else []
-            pred, st = await run_split(
-                client,
-                examples,
-                base_url=base_url,
-                model=model,
-                approach_prefix=a.approach_prefix,
-                shots=shots,
-                split=split,
-                out_dir=root / "results" / "predictions",
-                limiter=limiter,
-                cache=cache,
-                mode=a.response_format,
-                max_tokens=a.max_tokens,
-                concurrency=a.concurrency,
-                price_in=price_in,
-                price_out=price_out,
-                meta_extra=meta_extra,
-            )
-            m = write_metrics(pred, root) if pred.stat().st_size else {}
+            try:
+                pred, st = await run_split(
+                    client,
+                    examples,
+                    base_url=base_url,
+                    model=chain,
+                    approach_prefix=a.approach_prefix,
+                    shots=shots,
+                    split=split,
+                    out_dir=root / "results" / "predictions",
+                    limiter=limiter,
+                    cache=cache,
+                    mode=a.response_format,
+                    max_tokens=a.max_tokens,
+                    concurrency=a.concurrency,
+                    price_in=price_in,
+                    price_out=price_out,
+                    meta_extra=meta_extra,
+                )
+            except FatalConfigError as e:
+                print(
+                    f"FATAL: {e}\nCheck the model id (--model / workflow input) and the API key; "
+                    "nothing was written.",
+                    file=sys.stderr,
+                )
+                return EXIT_FATAL
+            total_completed += st.n_completed
+            m = write_metrics(pred, root) if pred is not None else {}
             print(
                 f"{st.approach}/{split}: new {st.n_new}, cached {st.n_cached}, resumed {st.n_resumed}, "
                 f"errors {st.n_errors}, tokens {st.prompt_tokens}+{st.completion_tokens}, cost ${st.cost_usd}, "
@@ -444,8 +616,11 @@ async def main_async(a: argparse.Namespace, client: Any = None) -> int:
             )
             if st.quota_exhausted:
                 print("Quota exhausted (persistent 429): progress saved; rerun later to resume.")
-                return 4
-    return exit_code
+                return EXIT_QUOTA_PARTIAL if total_completed else EXIT_NOTHING_COMPLETED
+    if total_completed == 0:
+        print("ERROR: no request completed; nothing to score.", file=sys.stderr)
+        return EXIT_NOTHING_COMPLETED
+    return EXIT_OK
 
 
 def parser() -> argparse.ArgumentParser:
@@ -454,6 +629,14 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument("--base-url", default=None)
     ap.add_argument("--key-env", default=None, help="name of the env var holding the API key")
     ap.add_argument("--model", default=None)
+    ap.add_argument(
+        "--model-fallbacks",
+        default=None,
+        help="comma list tried in order when the model is overloaded (503) or unavailable (403/404); "
+        "default: the provider preset's list, '' for none",
+    )
+    ap.add_argument("--switch-after", type=int, default=2, help="consecutive 503s before switching model")
+    ap.add_argument("--cooldown", type=float, default=300.0, help="seconds an overloaded model is skipped")
     ap.add_argument(
         "--approach-prefix",
         default="gemini-flash",

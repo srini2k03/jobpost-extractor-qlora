@@ -6,6 +6,13 @@
   "unknown_ids": 0,
   "coverage": 1.0,
   "mean_latency_s": 0.0044,
+  "completion": {
+    "n_completed": 352,
+    "n_expected": 352,
+    "n_errors": 0,
+    "error_rate": 0.0,
+    "status": "complete"
+  },
   "meta": {
     "approach": "regex_baseline",
     "model": "rules",

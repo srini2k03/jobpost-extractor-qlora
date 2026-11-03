@@ -13,6 +13,8 @@ from typing import Any
 
 import yaml
 
+from jobx.eval.run import MAX_ERROR_RATE
+
 PENDING = "pending GPU run"
 START, END = "<!-- RESULTS:START -->", "<!-- RESULTS:END -->"
 
@@ -43,6 +45,50 @@ def load_metrics(metrics_dir: str | Path) -> dict[tuple[str, str], dict[str, Any
     return out
 
 
+def is_complete(d: dict[str, Any]) -> bool:
+    return (d.get("completion") or {}).get("status", "complete") == "complete"
+
+
+def incomplete_label(d: dict[str, Any]) -> str:
+    c = d.get("completion") or {}
+    return f"incomplete ({c.get('n_completed', '?')}/{c.get('n_expected', '?')})"
+
+
+def short_model_names(models: list[str]) -> dict[str, str]:
+    """Drop the id tokens shared by every model in the chain: gemini-3.8-flash, gemini-3.7-flash -> 3.8, 3.7."""
+    toks = {m: m.split("-") for m in models}
+    if len(models) > 1:
+        common = set.intersection(*(set(t) for t in toks.values()))
+        out = {m: "-".join(x for x in t if x not in common) or m for m, t in toks.items()}
+    else:
+        out = {}
+        for m, t in toks.items():
+            ver = next((x for x in t if re.fullmatch(r"\d+(\.\d+)*", x)), None)
+            out[m] = ver or m
+    return out
+
+
+def model_mix_label(meta: dict[str, Any]) -> str | None:
+    """'3.8 / 3.7 fallback' from the runner's model_chain + models_used (None if not a chain run)."""
+    used = meta.get("models_used") or {}
+    if not used:
+        return None
+    chain = list(meta.get("model_chain") or used)
+    short = short_model_names(list(dict.fromkeys([*chain, *used])))
+    ordered = [m for m in chain if m in used] + [m for m in used if m not in chain]
+    label = " / ".join(short[m] for m in ordered)
+    return label + (" fallback" if any(m != chain[0] for m in ordered) else "")
+
+
+def display_name(a: dict[str, Any], d: dict[str, Any] | None) -> str:
+    """Row name; with `name_template` in approaches.yaml the measured model mix is filled in."""
+    if d is not None and a.get("name_template"):
+        mix = model_mix_label(d.get("meta") or {})
+        if mix:
+            return str(a["name_template"]).format(models=mix)
+    return str(a["name"])
+
+
 def build_tables(root: str | Path = ".") -> tuple[str, dict[str, Any]]:
     root = Path(root)
     cfg = yaml.safe_load((root / "configs/approaches.yaml").read_text())
@@ -63,6 +109,7 @@ def build_tables(root: str | Path = ".") -> tuple[str, dict[str, Any]]:
         )
     md: list[str] = []
     data: dict[str, Any] = {"splits": {}, "benchmarks": []}
+    incomplete: list[tuple[str, str, dict[str, Any]]] = []
     split_titles = {
         "test_real": "Real postings (`test_real`, headline)",
         "test_synth": "Synthetic held-out families and companies (`test_synth`)",
@@ -91,19 +138,33 @@ def build_tables(root: str | Path = ".") -> tuple[str, dict[str, Any]]:
                 )
                 rows.append({"approach": a["id"], "name": a["name"], "status": "pending"})
                 continue
+            name = display_name(a, d)
+            if not is_complete(d):
+                label = incomplete_label(d)
+                md.append(f"| {name} | {a['hardware']} | - | - | - | - | - | - | - | {label} |")
+                rows.append(
+                    {
+                        "approach": a["id"],
+                        "name": name,
+                        "status": "incomplete",
+                        "completion": d.get("completion"),
+                    }
+                )
+                incomplete.append((split, name, d))
+                continue
             m = d["metrics"]
             date = (d.get("meta") or {}).get("date", "")
             commit = (d.get("meta") or {}).get("commit", "")
             status = "measured" + (f" {date}" if date else "") + (f" @{commit}" if commit else "")
             md.append(
-                f"| {a['name']} | {a['hardware']} | {m['n']} | {_pct(m['json_validity'])} | "
+                f"| {name} | {a['hardware']} | {m['n']} | {_pct(m['json_validity'])} | "
                 f"{_pct(m['schema_validity'])} | {_pct(m['field_em_mean'])} | {_ci(m, 'micro_f1')} | "
                 f"{_pct(m['macro_f1'])} | {_ci(m, 'hallucination_rate')} | {status} |"
             )
             rows.append(
                 {
                     "approach": a["id"],
-                    "name": a["name"],
+                    "name": name,
                     "status": "measured",
                     "n": m["n"],
                     "metrics": {
@@ -127,7 +188,11 @@ def build_tables(root: str | Path = ".") -> tuple[str, dict[str, Any]]:
         md.append("")
     # per-field table for every measured approach on the first split that has data
     for split in cfg["splits"]:
-        measured = [(a, metrics[(a["id"], split)]) for a in approaches if (a["id"], split) in metrics]
+        measured = [
+            (a, metrics[(a["id"], split)])
+            for a in approaches
+            if (a["id"], split) in metrics and is_complete(metrics[(a["id"], split)])
+        ]
         if not measured:
             continue
         fields = list(measured[0][1]["metrics"]["per_field"])
@@ -137,7 +202,24 @@ def build_tables(root: str | Path = ".") -> tuple[str, dict[str, Any]]:
         md.append("|---|" + "---|" * len(fields))
         for a, d in measured:
             pf = d["metrics"]["per_field"]
-            md.append(f"| {a['name']} | " + " | ".join(_pct(pf[f]["em"]) for f in fields) + " |")
+            md.append(f"| {display_name(a, d)} | " + " | ".join(_pct(pf[f]["em"]) for f in fields) + " |")
+        md.append("")
+    if incomplete:
+        md += [
+            "#### Incomplete runs (not part of the comparison above)",
+            "",
+            f"Partial runs, or runs with more than {int(MAX_ERROR_RATE * 100)}% failed requests, are scored on "
+            "what completed and shown here only.",
+            "",
+            "| Approach | Split | Status | Error rate % | n scored | Micro F1 % | JSON valid % |",
+            "|---|---|---|---|---|---|---|",
+        ]
+        for split, name, d in incomplete:
+            c, m = d.get("completion") or {}, d["metrics"]
+            md.append(
+                f"| {name} | {split} | {incomplete_label(d)} | {_pct(c.get('error_rate'))} | {m['n']} | "
+                f"{_pct(m['micro_f1'])} | {_pct(m['json_validity'])} |"
+            )
         md.append("")
     md += api_usage_table(approaches, metrics, cfg["splits"])
     md += benchmark_table(root, data)
@@ -170,8 +252,13 @@ def api_usage_table(
             tout = u.get("completion_tokens", u.get("output_tokens", "-"))
             req = u.get("requests", meta.get("n_examples", "-"))
             cost = meta.get("cost_usd")
+            used = meta.get("models_used") or {}
+            models = (
+                " / ".join(f"`{k}` ({v})" for k, v in used.items())
+                or f"`{meta.get('model', a.get('model'))}`"
+            )
             md.append(
-                f"| {a['name']} | {split} | `{meta.get('model', a.get('model'))}` | {req} | {tin} | {tout} | "
+                f"| {display_name(a, d)} | {split} | {models} | {req} | {tin} | {tout} | "
                 f"{'-' if cost is None else f'{cost:.2f}'} |"
             )
         if not found:
