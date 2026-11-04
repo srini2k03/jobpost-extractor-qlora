@@ -59,8 +59,10 @@ jobs:
       - name: Restore training state
         if: env.SKIP != '1'
         run: |
-          if [ "${{ inputs.restart }}" != "true" ] && gh release view "$STATE_TAG" > /dev/null 2>&1; then
-            if gh release download "$STATE_TAG" -p state.tar.gz -D /tmp --clobber; then tar xzf /tmp/state.tar.gz; fi
+          if [ "${{ inputs.restart }}" != "true" ]; then
+            if scripts/fetch_artifact.sh "$STATE_TAG" state.tar.gz cpu_finetune.yml train-state /tmp; then
+              tar xzf /tmp/state.tar.gz
+            fi
           fi
           ls -la outputs/cpu-lora 2>/dev/null || echo "no saved state: fresh start"
       - name: Status
@@ -76,18 +78,42 @@ jobs:
       - name: Train (stops and checkpoints at the time limit)
         if: env.SKIP != '1' && steps.st.outputs.done != 'true'
         run: python -m jobx.cpu.train train --max-minutes "${{ inputs.max_minutes || '300' }}" || [ $? -eq 3 ]
-      - name: Save state to the cpu-train-state release
+      - name: Package training state
         if: always() && env.SKIP != '1' && steps.st.outputs.done != 'true'
         run: |
           [ -d outputs/cpu-lora ] || exit 0
+          mkdir -p /tmp/state /tmp/adapter
+          tar czf /tmp/state/state.tar.gz --exclude='outputs/cpu-lora/bench' outputs/cpu-lora
+          if [ -f outputs/cpu-lora/final/adapter_config.json ]; then
+            tar czf /tmp/adapter/adapter.tar.gz -C outputs/cpu-lora final
+          fi
+      # Artifacts are the primary hand-off between chained jobs and cpu-eval-release: the
+      # workflow token is not allowed to create releases in this repository (HTTP 403).
+      - name: Save training state (artifact)
+        if: always() && env.SKIP != '1' && steps.st.outputs.done != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: train-state
+          path: /tmp/state/state.tar.gz
+          retention-days: 30
+          if-no-files-found: ignore
+      - name: Save trained adapter (artifact)
+        if: always() && env.SKIP != '1' && steps.st.outputs.done != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: lora-adapter
+          path: /tmp/adapter/adapter.tar.gz
+          retention-days: 30
+          if-no-files-found: ignore
+      - name: Also save state to the cpu-train-state release (best effort)
+        if: always() && env.SKIP != '1' && steps.st.outputs.done != 'true'
+        continue-on-error: true
+        run: |
+          [ -f /tmp/state/state.tar.gz ] || exit 0
           gh release view "$STATE_TAG" > /dev/null 2>&1 || gh release create "$STATE_TAG" --prerelease --target "$GITHUB_SHA" \
             --title "CPU training state (internal)" --notes "Checkpoints for the chained cpu-finetune jobs. Not a model release."
-          tar czf /tmp/state.tar.gz --exclude='outputs/cpu-lora/bench' outputs/cpu-lora
-          gh release upload "$STATE_TAG" /tmp/state.tar.gz --clobber
-          if [ -f outputs/cpu-lora/final/adapter_config.json ]; then
-            tar czf /tmp/adapter.tar.gz -C outputs/cpu-lora final
-            gh release upload "$STATE_TAG" /tmp/adapter.tar.gz --clobber
-          fi
+          gh release upload "$STATE_TAG" /tmp/state/state.tar.gz --clobber
+          if [ -f /tmp/adapter/adapter.tar.gz ]; then gh release upload "$STATE_TAG" /tmp/adapter/adapter.tar.gz --clobber; fi
       - name: Commit plan + curves
         if: always() && env.SKIP != '1' && steps.st.outputs.done != 'true'
         run: scripts/commit_results.sh "CPU fine-tune progress" results/training
