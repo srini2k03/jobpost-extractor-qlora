@@ -9,8 +9,9 @@ Messy Indian job postings in, one strict JSON object out.
   release and demo. It needs no GPU and no accounts beyond GitHub.
 - It is compared with prompting baselines (0.5B and 1.5B, zero/3-shot, free and JSON-grammar decoding), a
   rule-based baseline and a larger API model, GPT-OSS-120B via Groq.
-- The model is published as a [GitHub Release](https://github.com/srini2k03/jobpost-extractor-qlora/releases/tag/model-v1)
-  (adapter, merged weights, GGUF) and runs in your browser in the
+- The model files (adapter, merged weights, GGUF) are published by `cpu-eval-release`: as the GitHub Release
+  [`model-v1`](https://github.com/srini2k03/jobpost-extractor-qlora/releases/tag/model-v1) when the workflow
+  token may create releases, otherwise as that run's `model-v1-files` artifact. The Q4_K_M model runs in your browser in the
   **[live demo](https://srini2k03.github.io/jobpost-extractor-qlora/)**.
 
 A QLoRA 1.5B GPU path (Colab or a local GPU) is provided but **not run**; see
@@ -224,8 +225,10 @@ with free decoding and with guided JSON decoding (lm-format-enforcer).
 - Each quantisation is evaluated on every test split. A CPU benchmark records tokens/s, peak RAM, size and
   accuracy (the "size / speed / accuracy" table).
 - Results are committed.
-- The adapter, merged weights and GGUF files are published as the GitHub Release `model-v1`, with
-  [`MODEL_CARD.md`](MODEL_CARD.md) as the notes.
+- The adapter, merged weights and GGUF files are uploaded as the `model-v1-files` artifact of the
+  `cpu-eval-release` run, and also as the GitHub Release `model-v1` (with [`MODEL_CARD.md`](MODEL_CARD.md) as
+  the notes) when the workflow token is allowed to create releases. Chained training jobs hand their state
+  over through the `train-state` and `lora-adapter` artifacts.
 
 **Live demo** ([`pages.yml`](.github/workflows/pages.yml)).
 - The released Q4_K_M GGUF is split into < 95 MB parts and served from the `gh-pages` branch, because
@@ -267,7 +270,7 @@ except `GROQ_API_KEY` for the API row. Dispatch in this order:
 |---|---|---|---|
 | 1 | `cpu-baselines` | ~1–3 h (parallel jobs) | 0.5B/1.5B baseline predictions + metrics, committed |
 | 2 | `cpu-finetune` | 1–3 chained ~5 h jobs, automatic | plan, checkpoints (prerelease `cpu-train-state`), curves; then dispatches 3 |
-| 3 | `cpu-eval-release` | ~1–2 h, dispatched by 2 | fine-tune rows (F16/Q8_0/Q4_K_M), benchmark, Release `model-v1`, `MODEL_CARD.md`; then dispatches 4 |
+| 3 | `cpu-eval-release` | ~1–2 h, dispatched by 2 | fine-tune rows (F16/Q8_0/Q4_K_M), benchmark, model files (artifact, plus Release `model-v1` when permitted), `MODEL_CARD.md`; then dispatches 4 |
 | 4 | `pages` | ~15–30 min, dispatched by 1 and 3 | the live demo + results site on GitHub Pages (branch `gh-pages`) |
 | - | `api-baseline` | ~20–30 min/day until done | GPT-OSS-120B rows (resumes daily) |
 

@@ -1,5 +1,6 @@
 name: pages
-# GitHub Pages site: results table + charts + the in-browser demo. The demo serves the released Q4_K_M GGUF
+# GitHub Pages site: results table + charts + the in-browser demo. The demo serves the Q4_K_M GGUF (release
+# asset, or the cpu-eval-release artifact when no release exists)
 # from the gh-pages branch itself, split into < 95 MB parts (release asset downloads have no reliable CORS).
 # A Playwright check loads the model in headless Chromium and extracts valid JSON before publishing.
 on:
@@ -10,6 +11,7 @@ on:
 
 permissions:
   contents: write
+  actions: read  # download the model artifact from cpu-eval-release
 
 concurrency:
   group: pages
@@ -30,7 +32,8 @@ jobs:
       - run: pip install -e . matplotlib
       - name: Fetch the released Q4_K_M model
         run: |
-          if gh release view model-v1 > /dev/null 2>&1 && gh release download model-v1 -p '*-Q4_K_M.gguf' -D gguf; then
+          if scripts/fetch_artifact.sh model-v1 '*-Q4_K_M.gguf' cpu_eval_release.yml model-v1-files gguf \
+             && ls gguf/*-Q4_K_M.gguf > /dev/null 2>&1; then
             echo "HAVE_MODEL=1" >> "$GITHUB_ENV"
           else
             echo "no model-v1 release yet: the site shows a 'demo pending' note"
