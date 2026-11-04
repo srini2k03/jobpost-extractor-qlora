@@ -1,14 +1,14 @@
 {
   "plan": {
-    "seconds_per_step": 64.92,
-    "seconds_per_example": 4.057,
+    "seconds_per_step": 34.2,
+    "seconds_per_example": 2.137,
     "effective_batch": 16,
     "n_train_available": 2177,
     "n_train": 2177,
     "epochs": 2,
     "max_steps": 273,
-    "est_hours": 4.92,
-    "jobs_needed": 2,
+    "est_hours": 2.59,
+    "jobs_needed": 1,
     "max_length": 512,
     "dropped_too_long": 0,
     "reason": "2 epoch(s) over all 2177 training examples fit the budget"
@@ -22,14 +22,14 @@
     "n": 2177.0
   },
   "step_seconds": [
-    68.33,
-    69.56,
-    61.91,
-    63.28
+    30.3,
+    34.06,
+    33.92,
+    34.61
   ],
   "threads": 4,
-  "bf16": false,
-  "cpu": "INTEL(R) XEON(R) PLATINUM 8573C",
+  "bf16": true,
+  "cpu": "AMD EPYC 9V45 96-Core Processor",
   "base_model": "Qwen/Qwen2.5-0.5B-Instruct",
   "system_prompt": "compact"
 }

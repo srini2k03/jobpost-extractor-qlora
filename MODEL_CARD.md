@@ -38,9 +38,9 @@ decoding (temperature 0). To guarantee valid output, add the JSON-schema grammar
   family and company (`DATA_CARD.md`). Postings longer than 512 tokens were dropped, not truncated:
   0 of them.
 - **Recipe:** LoRA r=16/alpha=32, dropout 0.05, lr 0.0003 with a cosine
-  schedule, effective batch 16, completion-only loss (TRL SFTTrainer), fp32 on CPU.
-- **Run:** 2 epoch(s), 273 optimiser steps. Measured 64.92 s/step on
-  `INTEL(R) XEON(R) PLATINUM 8573C` (4 threads). Plan: 2 epoch(s) over all 2177 training examples fit the budget.
+  schedule, effective batch 16, completion-only loss (TRL SFTTrainer), bf16 on CPU.
+- **Run:** 2 epoch(s), 273 optimiser steps. Measured 34.2 s/step on
+  `AMD EPYC 9V45 96-Core Processor` (4 threads). Plan: 2 epoch(s) over all 2177 training examples fit the budget.
 - **Curves:** `results/training/qwen2.5-0.5b-lora-cpu/` (loss, learning rate, validation JSON-F1).
 
 ## Evaluation
