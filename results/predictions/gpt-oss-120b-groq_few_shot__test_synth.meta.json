@@ -12,14 +12,14 @@
     "syn-00006",
     "syn-00014"
   ],
-  "date": "2026-11-03",
+  "date": "2026-11-04",
   "n_examples": 200,
-  "n_completed": 25,
+  "n_completed": 39,
   "complete": false,
   "usage": {
-    "requests": 25,
-    "prompt_tokens": 44815,
-    "completion_tokens": 11546
+    "requests": 39,
+    "prompt_tokens": 70610,
+    "completion_tokens": 18916
   },
   "price_per_mtok": {
     "input": 0.0,
@@ -29,13 +29,13 @@
   "format_downgrades": [],
   "model_chain": [
     "openai/gpt-oss-120b",
-    "qwen/qwen3-32b"
+    "qwen/qwen3.8-27b"
   ],
   "models_used": {
-    "openai/gpt-oss-120b": 25
+    "openai/gpt-oss-120b": 39
   },
   "dropped_models": {},
   "model_switches": [],
-  "commit": "1b21db0",
+  "commit": "d0e4690",
   "provider": "groq"
 }
