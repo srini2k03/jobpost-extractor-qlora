@@ -276,7 +276,7 @@ def test_site_rejects_parts_over_95mb(tmp_path):
 def test_results_table_cpu_route_layout():
     md, _ = build_tables(".")
     synth = md.split("#### Synthetic held-out")[1].split("####")[0]
-    assert "Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M" in synth and "pending CPU run" in synth
+    assert "Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M" in synth  # measured or pending
     assert "GPT-OSS-120B via Groq" in synth
     assert "| Qwen2.5-7B-Instruct" not in synth and "optional GPU-route rows" in synth
     bench = md.split("#### Size / speed / accuracy trade-off")[1]
@@ -326,7 +326,7 @@ def test_workflows_static():
     assert "gh release create model-v1" in ev and "--notes-file MODEL_CARD.md" in ev and "2000000000" in ev
     pages = (WF / "pages.yml").read_text()
     assert "peaceiris/actions-gh-pages@v4" in pages and "force_orphan: true" in pages
-    assert "--split-max-size 90M" in pages and "check_demo.py" in pages and "playwright==" in pages
+    assert "split -b 50M" in pages and "check_demo.py" in pages and "playwright==" in pages
     for name in ("cpu_baselines.yml", "cpu_finetune.yml", "cpu_eval_release.yml"):
         t = (WF / name).read_text()
         assert "scripts/commit_results.sh" in t and "git push" not in t, name
