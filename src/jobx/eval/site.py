@@ -111,15 +111,20 @@ DEMO_PENDING = """<h2>Try it in your browser</h2>
 def write_demo_assets(
     root: Path, out: Path, model_dir: Path, wllama_version: str = WLLAMA_VERSION
 ) -> dict[str, object]:
-    """Copy split GGUF parts to out/model/, write the manifest and the demo's data files."""
+    """Copy the model's byte chunks to out/model/, write the manifest and the demo's data files.
+
+    ``model_dir`` holds ``<name>.gguf.partNNN`` byte chunks of one GGUF file (``split -b``); the
+    demo downloads them in order and joins them into a single file in the browser.
+    """
     import json
 
     from jobx import prompts, vocab
     from jobx.baselines.guided import guided_schema
 
-    parts = sorted(p for p in Path(model_dir).glob("*.gguf"))
+    parts = sorted(p for p in Path(model_dir).glob("*.gguf.part*"))
     if not parts:
-        raise FileNotFoundError(f"no .gguf parts in {model_dir}")
+        raise FileNotFoundError(f"no .gguf.partNNN chunks in {model_dir}")
+    file_name = parts[0].name.split(".part")[0]
     mdir = out / "model"
     mdir.mkdir(parents=True, exist_ok=True)
     for p in parts:
@@ -127,6 +132,7 @@ def write_demo_assets(
             raise ValueError(f"{p.name} is >= 95 MB; split it (GitHub Pages / git file limit)")
         shutil.copy(p, mdir / p.name)
     manifest = {
+        "file": file_name,
         "parts": [f"model/{p.name}" for p in parts],
         "size_mb": round(sum(p.stat().st_size for p in parts) / 1e6),
         "wllama": wllama_version,

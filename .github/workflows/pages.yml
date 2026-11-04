@@ -43,12 +43,14 @@ jobs:
         with:
           path: llama.cpp
           key: llama-cpp-${{ env.LLAMA_CPP_REF }}-avx2-v1
-      - name: Split the model into < 95 MB parts
+      # Byte chunks of the exact evaluated file (gguf-split cuts only between tensors, and the
+      # ~110 MB token-embedding tensor alone exceeds the 95 MB per-file limit). demo.js
+      # downloads the chunks and joins them into one GGUF in the browser.
+      - name: Cut the model into < 95 MB byte chunks
         if: env.HAVE_MODEL == '1'
         run: |
-          scripts/build_llama_cpp.sh "$LLAMA_CPP_REF" llama.cpp llama-gguf-split
           mkdir -p model_parts
-          llama.cpp/build/bin/llama-gguf-split --split --split-max-size 90M gguf/*-Q4_K_M.gguf model_parts/jobx-q4km
+          split -b 50M -d -a 3 gguf/*-Q4_K_M.gguf model_parts/jobx-q4km.gguf.part
           ls -lh model_parts
       - name: Build the site
         run: |
