@@ -33,12 +33,28 @@ async function loadModel() {
   if (wllama) return;
   $('load').disabled = true;
   setStatus('Loading the model…', 'loading');
-  const w = new Wllama(WASM, { parallelDownloads: 4 });
-  const first = new URL(manifest.parts[0], location.href).href;
-  await w.loadModelFromUrl(first, {
-    n_ctx: 2048,
-    progressCallback: ({ loaded, total }) => setStatus(`Downloading ${Math.round((100 * loaded) / total)}%`, 'loading'),
-  });
+  const w = new Wllama(WASM);
+  // The GGUF is served as byte chunks (GitHub Pages file-size limit); download and join them.
+  const total = manifest.size_mb * 1e6;
+  let loaded = 0;
+  const chunks = [];
+  for (const part of manifest.parts) {
+    const res = await fetch(new URL(part, location.href).href);
+    if (!res.ok) throw new Error(`${part}: HTTP ${res.status}`);
+    const reader = res.body.getReader();
+    const bufs = [];
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      bufs.push(value);
+      loaded += value.length;
+      setStatus(`Downloading ${Math.min(100, Math.round((100 * loaded) / total))}%`, 'loading');
+    }
+    chunks.push(new Blob(bufs));
+  }
+  setStatus('Starting the model…', 'loading');
+  const gguf = new File(chunks, manifest.file || 'model.gguf');
+  await w.loadModel([gguf], { n_ctx: 2048 });
   wllama = w;
   $('extract').disabled = false;
   setStatus('Model ready. Paste a posting or pick an example, then Extract.', 'ready');

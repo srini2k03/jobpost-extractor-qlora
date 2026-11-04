@@ -241,14 +241,15 @@ def _parse(bm, argv):
 def test_site_with_demo(tmp_path):
     parts = tmp_path / "parts"
     parts.mkdir()
-    for i in (1, 2):
-        (parts / f"jobx-q4km-0000{i}-of-00002.gguf").write_bytes(b"x" * 1000)
+    for i in (0, 1):
+        (parts / f"jobx-q4km.gguf.part00{i}").write_bytes(b"x" * 1000)
     out = tmp_path / "site"
     build_site(".", out, model_dir=parts)
     html = (out / "index.html").read_text()
     assert 'src="demo/demo.js"' in html and "Load model" in html and "<h2>Results</h2>" in html
     man = json.loads((out / "model" / "manifest.json").read_text())
-    assert man["parts"] == ["model/jobx-q4km-00001-of-00002.gguf", "model/jobx-q4km-00002-of-00002.gguf"]
+    assert man["parts"] == ["model/jobx-q4km.gguf.part000", "model/jobx-q4km.gguf.part001"]
+    assert man["file"] == "jobx-q4km.gguf"
     js = (out / "demo" / "demo.js").read_text()
     assert f"@wllama/wllama@{WLLAMA_VERSION}/" in js and "__WLLAMA_VERSION__" not in js
     assert re.fullmatch(r"\d+\.\d+\.\d+", WLLAMA_VERSION)
@@ -266,7 +267,7 @@ def test_site_with_demo(tmp_path):
 def test_site_rejects_parts_over_95mb(tmp_path):
     parts = tmp_path / "parts"
     parts.mkdir()
-    with open(parts / "big-00001-of-00001.gguf", "wb") as f:
+    with open(parts / "big.gguf.part000", "wb") as f:
         f.truncate(96 * 1024 * 1024)
     with pytest.raises(ValueError, match="95 MB"):
         build_site(".", tmp_path / "site", model_dir=parts)
