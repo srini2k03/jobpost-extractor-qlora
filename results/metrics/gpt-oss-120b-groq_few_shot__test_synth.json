@@ -2,12 +2,12 @@
   "approach": "gpt-oss-120b-groq_few_shot",
   "split": "test_synth",
   "n_gold": 471,
-  "n_pred": 39,
+  "n_pred": 53,
   "unknown_ids": 0,
-  "coverage": 0.0828,
-  "mean_latency_s": 14.8223,
+  "coverage": 0.1125,
+  "mean_latency_s": 19.2932,
   "completion": {
-    "n_completed": 39,
+    "n_completed": 53,
     "n_expected": 200,
     "n_errors": 0,
     "error_rate": 0.0,
@@ -29,12 +29,12 @@
     ],
     "date": "2026-11-04",
     "n_examples": 200,
-    "n_completed": 39,
+    "n_completed": 53,
     "complete": false,
     "usage": {
-      "requests": 39,
-      "prompt_tokens": 70610,
-      "completion_tokens": 18916
+      "requests": 53,
+      "prompt_tokens": 96570,
+      "completion_tokens": 25869
     },
     "price_per_mtok": {
       "input": 0.0,
@@ -47,56 +47,56 @@
       "qwen/qwen3.8-27b"
     ],
     "models_used": {
-      "openai/gpt-oss-120b": 39
+      "openai/gpt-oss-120b": 53
     },
     "dropped_models": {},
     "model_switches": [],
-    "commit": "d0e4690",
+    "commit": "6eb8644",
     "provider": "groq"
   },
   "metrics": {
-    "n": 39,
+    "n": 53,
     "json_validity": 1.0,
     "schema_validity": 1.0,
-    "field_em_mean": 0.965034965034965,
-    "record_exact_match": 0.6153846153846154,
-    "micro_precision": 0.9797297297297297,
-    "micro_recall": 0.9731543624161074,
-    "micro_f1": 0.9764309764309764,
-    "macro_f1": 0.9737317185971225,
-    "hallucination_rate": 0.015384615384615385,
+    "field_em_mean": 0.9691252144082333,
+    "record_exact_match": 0.660377358490566,
+    "micro_precision": 0.9817578772802653,
+    "micro_recall": 0.9785123966942149,
+    "micro_f1": 0.9801324503311258,
+    "macro_f1": 0.9765104331180307,
+    "hallucination_rate": 0.017341040462427744,
     "per_field": {
       "company": {
-        "em": 0.9487179487179487,
+        "em": 0.9622641509433962,
         "precision": 1.0,
-        "recall": 0.9428571428571428,
-        "f1": 0.9705882352941176,
+        "recall": 0.9555555555555556,
+        "f1": 0.9772727272727273,
         "hallucination_rate": 0.0,
-        "support_gold_stated": 35
+        "support_gold_stated": 45
       },
       "role": {
-        "em": 0.9743589743589743,
-        "precision": 0.9743589743589743,
-        "recall": 0.9743589743589743,
-        "f1": 0.9743589743589743,
+        "em": 0.9811320754716981,
+        "precision": 0.9811320754716981,
+        "recall": 0.9811320754716981,
+        "f1": 0.9811320754716981,
         "hallucination_rate": null,
-        "support_gold_stated": 39
+        "support_gold_stated": 53
       },
       "seniority": {
-        "em": 0.8717948717948718,
-        "precision": 0.9090909090909091,
-        "recall": 0.7142857142857143,
-        "f1": 0.8,
-        "hallucination_rate": 0.04,
-        "support_gold_stated": 14
+        "em": 0.8679245283018868,
+        "precision": 0.8823529411764706,
+        "recall": 0.75,
+        "f1": 0.8108108108108109,
+        "hallucination_rate": 0.06060606060606061,
+        "support_gold_stated": 20
       },
       "skills": {
-        "em": 0.8205128205128205,
-        "precision": 0.9606741573033708,
-        "recall": 0.9715909090909091,
-        "f1": 0.9661016949152542,
+        "em": 0.8490566037735849,
+        "precision": 0.9662447257383966,
+        "recall": 0.9786324786324786,
+        "f1": 0.9723991507430998,
         "hallucination_rate": 0.5,
-        "support_gold_stated": 176
+        "support_gold_stated": 234
       },
       "min_experience_years": {
         "em": 1.0,
@@ -104,7 +104,7 @@
         "recall": 1.0,
         "f1": 1.0,
         "hallucination_rate": 0.0,
-        "support_gold_stated": 34
+        "support_gold_stated": 46
       },
       "max_experience_years": {
         "em": 1.0,
@@ -112,7 +112,7 @@
         "recall": 1.0,
         "f1": 1.0,
         "hallucination_rate": 0.0,
-        "support_gold_stated": 29
+        "support_gold_stated": 41
       },
       "salary": {
         "em": 1.0,
@@ -120,7 +120,7 @@
         "recall": 1.0,
         "f1": 1.0,
         "hallucination_rate": 0.0,
-        "support_gold_stated": 20
+        "support_gold_stated": 29
       },
       "locations": {
         "em": 1.0,
@@ -128,7 +128,7 @@
         "recall": 1.0,
         "f1": 1.0,
         "hallucination_rate": 0.0,
-        "support_gold_stated": 37
+        "support_gold_stated": 48
       },
       "work_mode": {
         "em": 1.0,
@@ -136,7 +136,7 @@
         "recall": 1.0,
         "f1": 1.0,
         "hallucination_rate": 0.0,
-        "support_gold_stated": 21
+        "support_gold_stated": 28
       },
       "employment_type": {
         "em": 1.0,
@@ -144,7 +144,7 @@
         "recall": 1.0,
         "f1": 1.0,
         "hallucination_rate": 0.0,
-        "support_gold_stated": 20
+        "support_gold_stated": 29
       },
       "education": {
         "em": 1.0,
@@ -152,21 +152,21 @@
         "recall": 1.0,
         "f1": 1.0,
         "hallucination_rate": 0.0,
-        "support_gold_stated": 22
+        "support_gold_stated": 32
       }
     },
     "ci95": {
       "micro_f1": [
-        0.9658026113671275,
-        0.9863021499672355
+        0.970770334457342,
+        0.9882721530508942
       ],
       "macro_f1": [
-        0.9543782063201328,
-        0.9881628218033177
+        0.960427372401987,
+        0.987608734580702
       ],
       "field_em_mean": [
-        0.951048951048951,
-        0.9767482517482519
+        0.9571183533447684,
+        0.9811320754716981
       ],
       "json_validity": [
         1.0,
@@ -178,11 +178,11 @@
       ],
       "hallucination_rate": [
         0.0,
-        0.038710927731932986
+        0.038267304189435324
       ],
       "record_exact_match": [
-        0.46153846153846156,
-        0.7442307692307687
+        0.5283018867924528,
+        0.7924528301886793
       ]
     },
     "bootstrap": {
