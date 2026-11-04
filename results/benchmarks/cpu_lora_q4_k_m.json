@@ -1,0 +1,18 @@
+{
+  "rows": [
+    {
+      "variant": "LoRA 0.5B GGUF Q4_K_M (llama.cpp)",
+      "hardware": "CPU (AMD EPYC 7763 64-Core Processor, 4 threads, GitHub Actions)",
+      "size_gb": 0.398,
+      "micro_f1": 0.9899362939710091,
+      "json_validity": 1.0,
+      "tokens_per_s": 56.11,
+      "mean_latency_s": 2.758,
+      "peak_ram_gb": 0.514,
+      "n_examples": 471,
+      "split": "test_synth",
+      "date": "2026-11-04",
+      "commit": "fcdc48b"
+    }
+  ]
+}

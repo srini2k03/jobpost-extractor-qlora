@@ -1,0 +1,13 @@
+{
+  "approach": "qwen2.5-0.5b-lora-cpu_q8_0",
+  "model": "jobx-qwen2.5-0.5b-lora (GGUF Q8_0, llama.cpp)",
+  "gguf": "jobx-qwen2.5-0.5b-Q8_0.gguf",
+  "decoding": "free",
+  "system_prompt": "compact",
+  "n_shots": 0,
+  "shot_ids": [],
+  "hardware": "CPU (AMD EPYC 7763 64-Core Processor, 4 threads, GitHub Actions)",
+  "date": "2026-11-04",
+  "commit": "fcdc48b",
+  "n_examples": 471
+}

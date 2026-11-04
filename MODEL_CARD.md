@@ -45,11 +45,19 @@ decoding (temperature 0). To guarantee valid output, add the JSON-schema grammar
 
 ## Evaluation
 
-_pending: no measured result yet_
+| approach | split | n | micro F1 % [95% CI] | JSON valid % | hallucination % |
+|---|---|---|---|---|---|
+| qwen2.5-0.5b-lora-cpu_f16 | test_synth | 471 | 99.3 [99.1, 99.5] | 100.0 | 1.9 |
+| qwen2.5-0.5b-lora-cpu_q8_0 | test_synth | 471 | 99.3 [99.1, 99.5] | 100.0 | 1.7 |
+| qwen2.5-0.5b-lora-cpu_q4_k_m | test_synth | 471 | 99.0 [98.8, 99.2] | 100.0 | 2.0 |
 
 ## CPU speed / size / accuracy (llama.cpp, GitHub-hosted runner)
 
-_pending: the evaluation workflow has not run yet_
+| variant | size (GB) | micro F1 % | tokens/s | mean latency (s) | peak RAM (GB) |
+|---|---|---|---|---|---|
+| LoRA 0.5B GGUF F16 (llama.cpp) | 0.994 | 99.3 | 25.06 | 5.29 | 1.042 |
+| LoRA 0.5B GGUF Q4_K_M (llama.cpp) | 0.398 | 99.0 | 56.11 | 2.758 | 0.514 |
+| LoRA 0.5B GGUF Q8_0 (llama.cpp) | 0.531 | 99.3 | 52.19 | 2.779 | 0.611 |
 
 Metric definitions are in the repository README:
 - field exact match after normalisation;
