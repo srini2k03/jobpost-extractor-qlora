@@ -84,7 +84,7 @@ _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF F16 | CPU (GitHub Actions) | 471 | 100.0 | 99.6 | 98.8 | 99.3 [99.1, 99.5] | 99.0 | 1.9 [1.2, 2.6] | measured 2026-11-04 @fcdc48b |
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q8_0 | CPU (GitHub Actions) | 471 | 100.0 | 99.8 | 98.8 | 99.3 [99.1, 99.5] | 98.9 | 1.7 [1.0, 2.3] | measured 2026-11-04 @fcdc48b |
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo) | CPU (GitHub Actions) | 471 | 100.0 | 99.8 | 98.5 | 99.0 [98.8, 99.2] | 98.5 | 2.0 [1.3, 2.7] | measured 2026-11-04 @fcdc48b |
-| GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | incomplete (39/200) |
+| GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | incomplete (53/200) |
 
 _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus Hugging Face and W&B accounts) were not run; see `docs/gpu_route.md`._
 
@@ -109,13 +109,13 @@ Partial runs, or runs with more than 5% failed requests, are scored on what comp
 
 | Approach | Split | Status | Error rate % | n scored | Micro F1 % | JSON valid % |
 |---|---|---|---|---|---|---|
-| GPT-OSS-120B via Groq (API, few-shot) | test_synth | incomplete (39/200) | 0.0 | 39 | 97.6 | 100.0 |
+| GPT-OSS-120B via Groq (API, few-shot) | test_synth | incomplete (53/200) | 0.0 | 53 | 98.0 | 100.0 |
 
 #### API usage
 
 | Approach | Split | Model | Requests | Input tokens | Output tokens | Cost (USD) |
 |---|---|---|---|---|---|---|
-| GPT-OSS-120B via Groq (API, few-shot) | test_synth | `openai/gpt-oss-120b` (39) | 39 | 70610 | 18916 | 0.00 |
+| GPT-OSS-120B via Groq (API, few-shot) | test_synth | `openai/gpt-oss-120b` (53) | 53 | 96570 | 25869 | 0.00 |
 
 #### Size / speed / accuracy trade-off
 
