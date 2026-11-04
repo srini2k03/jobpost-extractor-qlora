@@ -1,0 +1,18 @@
+{
+  "rows": [
+    {
+      "variant": "LoRA 0.5B GGUF F16 (llama.cpp)",
+      "hardware": "CPU (INTEL(R) XEON(R) PLATINUM 8573C, 4 threads, GitHub Actions)",
+      "size_gb": 0.994,
+      "micro_f1": 0.9925214661619426,
+      "json_validity": 1.0,
+      "tokens_per_s": 25.06,
+      "mean_latency_s": 5.29,
+      "peak_ram_gb": 1.042,
+      "n_examples": 471,
+      "split": "test_synth",
+      "date": "2026-11-04",
+      "commit": "fcdc48b"
+    }
+  ]
+}

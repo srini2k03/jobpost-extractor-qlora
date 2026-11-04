@@ -1,0 +1,13 @@
+{
+  "approach": "qwen2.5-0.5b-lora-cpu_f16",
+  "model": "jobx-qwen2.5-0.5b-lora (GGUF F16, llama.cpp)",
+  "gguf": "jobx-qwen2.5-0.5b-F16.gguf",
+  "decoding": "free",
+  "system_prompt": "compact",
+  "n_shots": 0,
+  "shot_ids": [],
+  "hardware": "CPU (INTEL(R) XEON(R) PLATINUM 8573C, 4 threads, GitHub Actions)",
+  "date": "2026-11-04",
+  "commit": "fcdc48b",
+  "n_examples": 471
+}
