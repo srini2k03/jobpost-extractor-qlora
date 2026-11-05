@@ -2,12 +2,12 @@
   "approach": "gpt-oss-120b-groq_few_shot",
   "split": "test_synth",
   "n_gold": 471,
-  "n_pred": 137,
+  "n_pred": 150,
   "unknown_ids": 0,
-  "coverage": 0.2909,
-  "mean_latency_s": 109.7721,
+  "coverage": 0.3185,
+  "mean_latency_s": 101.9223,
   "completion": {
-    "n_completed": 137,
+    "n_completed": 150,
     "n_expected": 200,
     "n_errors": 0,
     "error_rate": 0.0,
@@ -29,12 +29,12 @@
     ],
     "date": "2026-11-05",
     "n_examples": 200,
-    "n_completed": 137,
+    "n_completed": 150,
     "complete": false,
     "usage": {
-      "requests": 137,
-      "prompt_tokens": 251942,
-      "completion_tokens": 66750
+      "requests": 150,
+      "prompt_tokens": 276051,
+      "completion_tokens": 73940
     },
     "price_per_mtok": {
       "input": 0.0,
@@ -47,56 +47,56 @@
       "qwen/qwen3.8-27b"
     ],
     "models_used": {
-      "openai/gpt-oss-120b": 137
+      "openai/gpt-oss-120b": 150
     },
     "dropped_models": {},
     "model_switches": [],
-    "commit": "68b4f13",
+    "commit": "488f909",
     "provider": "groq"
   },
   "metrics": {
-    "n": 137,
+    "n": 150,
     "json_validity": 1.0,
     "schema_validity": 1.0,
-    "field_em_mean": 0.9714664897146649,
-    "record_exact_match": 0.7153284671532847,
-    "micro_precision": 0.9836580766813325,
-    "micro_recall": 0.9793491864831039,
-    "micro_f1": 0.9814989024772656,
-    "macro_f1": 0.979840858710829,
-    "hallucination_rate": 0.007211538461538462,
+    "field_em_mean": 0.9703030303030303,
+    "record_exact_match": 0.7133333333333334,
+    "micro_precision": 0.9834285714285714,
+    "micro_recall": 0.9783968163729392,
+    "micro_f1": 0.9809062410943289,
+    "macro_f1": 0.9785336591347176,
+    "hallucination_rate": 0.006607929515418502,
     "per_field": {
       "company": {
-        "em": 0.9854014598540146,
+        "em": 0.9866666666666667,
         "precision": 1.0,
-        "recall": 0.9826086956521739,
-        "f1": 0.9912280701754386,
+        "recall": 0.984,
+        "f1": 0.9919354838709677,
         "hallucination_rate": 0.0,
-        "support_gold_stated": 115
+        "support_gold_stated": 125
       },
       "role": {
-        "em": 0.9781021897810219,
-        "precision": 0.9781021897810219,
-        "recall": 0.9781021897810219,
-        "f1": 0.9781021897810219,
+        "em": 0.98,
+        "precision": 0.98,
+        "recall": 0.98,
+        "f1": 0.98,
         "hallucination_rate": null,
-        "support_gold_stated": 137
+        "support_gold_stated": 150
       },
       "seniority": {
-        "em": 0.9051094890510949,
-        "precision": 0.9701492537313433,
-        "recall": 0.8552631578947368,
-        "f1": 0.9090909090909091,
-        "hallucination_rate": 0.03278688524590164,
-        "support_gold_stated": 76
+        "em": 0.9,
+        "precision": 0.958904109589041,
+        "recall": 0.8433734939759037,
+        "f1": 0.8974358974358975,
+        "hallucination_rate": 0.029850746268656716,
+        "support_gold_stated": 83
       },
       "skills": {
-        "em": 0.8978102189781022,
-        "precision": 0.9722222222222222,
-        "recall": 0.9867330016583747,
-        "f1": 0.9794238683127572,
+        "em": 0.8933333333333333,
+        "precision": 0.971976401179941,
+        "recall": 0.9865269461077845,
+        "f1": 0.9791976225854383,
         "hallucination_rate": 0.1111111111111111,
-        "support_gold_stated": 603
+        "support_gold_stated": 668
       },
       "min_experience_years": {
         "em": 1.0,
@@ -104,7 +104,7 @@
         "recall": 1.0,
         "f1": 1.0,
         "hallucination_rate": 0.0,
-        "support_gold_stated": 115
+        "support_gold_stated": 126
       },
       "max_experience_years": {
         "em": 1.0,
@@ -112,23 +112,23 @@
         "recall": 1.0,
         "f1": 1.0,
         "hallucination_rate": 0.0,
-        "support_gold_stated": 109
+        "support_gold_stated": 120
       },
       "salary": {
-        "em": 0.9854014598540146,
-        "precision": 0.9746835443037974,
-        "recall": 0.9746835443037974,
-        "f1": 0.9746835443037974,
+        "em": 0.9866666666666667,
+        "precision": 0.9772727272727273,
+        "recall": 0.9772727272727273,
+        "f1": 0.9772727272727273,
         "hallucination_rate": 0.0,
-        "support_gold_stated": 79
+        "support_gold_stated": 88
       },
       "locations": {
-        "em": 0.9854014598540146,
-        "precision": 0.9855072463768116,
+        "em": 0.9866666666666667,
+        "precision": 0.9865771812080537,
         "recall": 1.0,
-        "f1": 0.9927007299270073,
+        "f1": 0.9932432432432432,
         "hallucination_rate": 0.0,
-        "support_gold_stated": 136
+        "support_gold_stated": 147
       },
       "work_mode": {
         "em": 1.0,
@@ -136,7 +136,7 @@
         "recall": 1.0,
         "f1": 1.0,
         "hallucination_rate": 0.0,
-        "support_gold_stated": 75
+        "support_gold_stated": 83
       },
       "employment_type": {
         "em": 1.0,
@@ -144,29 +144,29 @@
         "recall": 1.0,
         "f1": 1.0,
         "hallucination_rate": 0.0,
-        "support_gold_stated": 75
+        "support_gold_stated": 83
       },
       "education": {
-        "em": 0.948905109489051,
+        "em": 0.94,
         "precision": 1.0,
-        "recall": 0.9102564102564102,
-        "f1": 0.9530201342281879,
+        "recall": 0.8953488372093024,
+        "f1": 0.9447852760736196,
         "hallucination_rate": 0.0,
-        "support_gold_stated": 78
+        "support_gold_stated": 86
       }
     },
     "ci95": {
       "micro_f1": [
-        0.9758448797579232,
-        0.9867171713335054
+        0.9750828142695357,
+        0.986239911464682
       ],
       "macro_f1": [
-        0.9729406607728707,
-        0.9863889918923553
+        0.9712723538115066,
+        0.9846473388226938
       ],
       "field_em_mean": [
-        0.9635036496350365,
-        0.9787823490378236
+        0.9624242424242424,
+        0.9781818181818182
       ],
       "json_validity": [
         1.0,
@@ -178,11 +178,11 @@
       ],
       "hallucination_rate": [
         0.0,
-        0.01639344262295082
+        0.014830508474576272
       ],
       "record_exact_match": [
-        0.6423357664233577,
-        0.7883211678832117
+        0.64,
+        0.78
       ]
     },
     "bootstrap": {
