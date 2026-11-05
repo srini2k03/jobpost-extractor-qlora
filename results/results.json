@@ -1665,7 +1665,7 @@
         "name": "GPT-OSS-120B via Groq (API, few-shot)",
         "status": "incomplete",
         "completion": {
-          "n_completed": 109,
+          "n_completed": 137,
           "n_expected": 200,
           "n_errors": 0,
           "error_rate": 0.0,
