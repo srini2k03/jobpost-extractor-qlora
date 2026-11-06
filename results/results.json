@@ -1663,13 +1663,177 @@
       {
         "approach": "gpt-oss-120b-groq_few_shot",
         "name": "GPT-OSS-120B via Groq (API, few-shot)",
-        "status": "incomplete",
-        "completion": {
-          "n_completed": 180,
-          "n_expected": 200,
-          "n_errors": 0,
-          "error_rate": 0.0,
-          "status": "incomplete"
+        "status": "measured",
+        "n": 200,
+        "metrics": {
+          "json_validity": 1.0,
+          "schema_validity": 1.0,
+          "field_em_mean": 0.9690909090909089,
+          "micro_f1": 0.979469632164243,
+          "macro_f1": 0.9773088624359755,
+          "hallucination_rate": 0.009884678747940691,
+          "record_exact_match": 0.705
+        },
+        "ci95": {
+          "micro_f1": [
+            0.9740077083144123,
+            0.9844189606395667
+          ],
+          "macro_f1": [
+            0.9703194750790691,
+            0.9832083604257672
+          ],
+          "field_em_mean": [
+            0.961806818181818,
+            0.9759090909090911
+          ],
+          "json_validity": [
+            1.0,
+            1.0
+          ],
+          "schema_validity": [
+            1.0,
+            1.0
+          ],
+          "hallucination_rate": [
+            0.003215434083601286,
+            0.017857868757259
+          ],
+          "record_exact_match": [
+            0.64,
+            0.765
+          ]
+        },
+        "per_field": {
+          "company": {
+            "em": 0.99,
+            "precision": 1.0,
+            "recall": 0.9880239520958084,
+            "f1": 0.9939759036144579,
+            "hallucination_rate": 0.0,
+            "support_gold_stated": 167
+          },
+          "role": {
+            "em": 0.975,
+            "precision": 0.975,
+            "recall": 0.975,
+            "f1": 0.975,
+            "hallucination_rate": null,
+            "support_gold_stated": 200
+          },
+          "seniority": {
+            "em": 0.9,
+            "precision": 0.9484536082474226,
+            "recall": 0.8518518518518519,
+            "f1": 0.8975609756097561,
+            "hallucination_rate": 0.043478260869565216,
+            "support_gold_stated": 108
+          },
+          "skills": {
+            "em": 0.885,
+            "precision": 0.9689922480620154,
+            "recall": 0.9853603603603603,
+            "f1": 0.977107761027359,
+            "hallucination_rate": 0.09090909090909091,
+            "support_gold_stated": 888
+          },
+          "min_experience_years": {
+            "em": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "hallucination_rate": 0.0,
+            "support_gold_stated": 165
+          },
+          "max_experience_years": {
+            "em": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "hallucination_rate": 0.0,
+            "support_gold_stated": 155
+          },
+          "salary": {
+            "em": 0.98,
+            "precision": 0.9663865546218487,
+            "recall": 0.9663865546218487,
+            "f1": 0.9663865546218487,
+            "hallucination_rate": 0.0,
+            "support_gold_stated": 119
+          },
+          "locations": {
+            "em": 0.985,
+            "precision": 0.9852941176470589,
+            "recall": 1.0,
+            "f1": 0.9925925925925926,
+            "hallucination_rate": 0.0,
+            "support_gold_stated": 201
+          },
+          "work_mode": {
+            "em": 0.995,
+            "precision": 0.9917355371900827,
+            "recall": 1.0,
+            "f1": 0.995850622406639,
+            "hallucination_rate": 0.0125,
+            "support_gold_stated": 120
+          },
+          "employment_type": {
+            "em": 1.0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "hallucination_rate": 0.0,
+            "support_gold_stated": 108
+          },
+          "education": {
+            "em": 0.95,
+            "precision": 1.0,
+            "recall": 0.908256880733945,
+            "f1": 0.9519230769230769,
+            "hallucination_rate": 0.0,
+            "support_gold_stated": 109
+          }
+        },
+        "meta": {
+          "approach": "gpt-oss-120b-groq_few_shot",
+          "model": "openai/gpt-oss-120b",
+          "base_url": "https://api.groq.com/openai/v1",
+          "hardware": "API",
+          "decoding": "greedy (temperature 0), response_format=json_schema",
+          "response_format": "json_schema",
+          "split": "test_synth",
+          "n_shots": 3,
+          "shot_ids": [
+            "syn-00007",
+            "syn-00006",
+            "syn-00014"
+          ],
+          "date": "2026-11-06",
+          "n_examples": 200,
+          "n_completed": 200,
+          "complete": true,
+          "usage": {
+            "requests": 200,
+            "prompt_tokens": 368572,
+            "completion_tokens": 99223
+          },
+          "price_per_mtok": {
+            "input": 0.0,
+            "output": 0.0
+          },
+          "cost_usd": 0.0,
+          "format_downgrades": [],
+          "model_chain": [
+            "openai/gpt-oss-120b",
+            "qwen/qwen3.8-27b"
+          ],
+          "models_used": {
+            "openai/gpt-oss-120b": 200
+          },
+          "dropped_models": {},
+          "model_switches": [],
+          "commit": "dd40a42",
+          "provider": "groq"
         }
       },
       {

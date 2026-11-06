@@ -84,7 +84,7 @@ _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF F16 | CPU (GitHub Actions) | 471 | 100.0 | 99.6 | 98.8 | 99.3 [99.1, 99.5] | 99.0 | 1.9 [1.2, 2.6] | measured 2026-11-04 @fcdc48b |
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q8_0 | CPU (GitHub Actions) | 471 | 100.0 | 99.8 | 98.8 | 99.3 [99.1, 99.5] | 98.9 | 1.7 [1.0, 2.3] | measured 2026-11-04 @fcdc48b |
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo) | CPU (GitHub Actions) | 471 | 100.0 | 99.8 | 98.5 | 99.0 [98.8, 99.2] | 98.5 | 2.0 [1.3, 2.7] | measured 2026-11-04 @fcdc48b |
-| GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | incomplete (180/200) |
+| GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | 200 | 100.0 | 100.0 | 96.9 | 97.9 [97.4, 98.4] | 97.7 | 1.0 [0.3, 1.8] | measured 2026-11-06 @dd40a42 |
 
 _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus Hugging Face and W&B accounts) were not run; see `docs/gpu_route.md`._
 
@@ -102,20 +102,13 @@ _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF F16 | 96.8 | 97.9 | 99.6 | 99.4 | 99.6 | 99.8 | 98.5 | 99.4 | 96.2 | 99.8 | 100.0 |
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q8_0 | 96.8 | 97.9 | 99.6 | 99.4 | 99.8 | 100.0 | 98.1 | 99.4 | 96.4 | 99.8 | 100.0 |
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo) | 96.6 | 98.1 | 99.4 | 99.4 | 99.8 | 100.0 | 95.8 | 99.4 | 95.5 | 99.8 | 100.0 |
-
-#### Incomplete runs (not part of the comparison above)
-
-Partial runs, or runs with more than 5% failed requests, are scored on what completed and shown here only.
-
-| Approach | Split | Status | Error rate % | n scored | Micro F1 % | JSON valid % |
-|---|---|---|---|---|---|---|
-| GPT-OSS-120B via Groq (API, few-shot) | test_synth | incomplete (180/200) | 0.0 | 180 | 97.9 | 100.0 |
+| GPT-OSS-120B via Groq (API, few-shot) | 99.0 | 97.5 | 90.0 | 88.5 | 100.0 | 100.0 | 98.0 | 98.5 | 99.5 | 100.0 | 95.0 |
 
 #### API usage
 
 | Approach | Split | Model | Requests | Input tokens | Output tokens | Cost (USD) |
 |---|---|---|---|---|---|---|
-| GPT-OSS-120B via Groq (API, few-shot) | test_synth | `openai/gpt-oss-120b` (180) | 180 | 331624 | 89397 | 0.00 |
+| GPT-OSS-120B via Groq (API, few-shot) | test_synth | `openai/gpt-oss-120b` (200) | 200 | 368572 | 99223 | 0.00 |
 
 #### Size / speed / accuracy trade-off
 

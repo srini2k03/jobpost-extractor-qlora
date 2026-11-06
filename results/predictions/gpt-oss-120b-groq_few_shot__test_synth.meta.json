@@ -14,12 +14,12 @@
   ],
   "date": "2026-11-06",
   "n_examples": 200,
-  "n_completed": 180,
-  "complete": false,
+  "n_completed": 200,
+  "complete": true,
   "usage": {
-    "requests": 180,
-    "prompt_tokens": 331624,
-    "completion_tokens": 89397
+    "requests": 200,
+    "prompt_tokens": 368572,
+    "completion_tokens": 99223
   },
   "price_per_mtok": {
     "input": 0.0,
@@ -32,10 +32,10 @@
     "qwen/qwen3.8-27b"
   ],
   "models_used": {
-    "openai/gpt-oss-120b": 180
+    "openai/gpt-oss-120b": 200
   },
   "dropped_models": {},
   "model_switches": [],
-  "commit": "1e2ff15",
+  "commit": "dd40a42",
   "provider": "groq"
 }
