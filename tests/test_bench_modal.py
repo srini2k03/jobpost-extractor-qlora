@@ -266,7 +266,9 @@ def test_prometheus_parsing_and_summary() -> None:
 def test_scraper_against_fake_server() -> None:
     import httpx
 
-    with running_fake_server(FakeConfig(ttft_s=0.0, itl_s=0.0, output_tokens=2)) as server:
+    with running_fake_server(
+        FakeConfig(ttft_s=0.0, itl_s=0.0, output_tokens=2, prefix_cache_factor=0.5)
+    ) as server:
         url = f"http://127.0.0.1:{server.port}"
         with MetricsScraper(f"{url}/metrics", interval_s=0.05) as sc:
             for _ in range(3):

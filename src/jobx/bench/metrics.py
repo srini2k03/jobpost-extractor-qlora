@@ -115,6 +115,8 @@ def summarize_run(rows: Sequence[dict[str, Any]], sla: SLA = SLA()) -> dict[str,
     )
     out["gpu_mem_peak_mib"] = _f(first.get("gpu_mem_peak_mib"))
     out["gpu_util_mean"] = _f(first.get("gpu_util_mean"))
+    for k in ("kv_cache_usage_mean", "kv_cache_usage_max", "prefix_cache_hit_rate", "num_preemptions"):
+        out[k] = _f(first.get(k))
     return out
 
 

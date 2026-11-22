@@ -223,3 +223,64 @@ def plan_cmd(
             f.write(f"ok={'true' if sel.decision.ok else 'false'}\n")
     if not sel.decision.ok:
         raise typer.Exit(2)
+
+
+@bench_app.command("report")
+def report_cmd(
+    raw_dir: Path = Path("results/bench/raw"),
+    manifest_dir: Path = Path("results/bench/manifests"),
+    metrics_dir: Path = Path("results/metrics"),
+    out_dir: Path = Path("results/bench"),
+    matrix: Path = DEFAULT_MATRIX,
+    charts: Annotated[bool, typer.Option(help="draw charts (needs matplotlib)")] = True,
+) -> None:
+    """All raw CSVs + manifests -> results/bench/summary.csv, recommendation.json and charts/."""
+    from jobx.bench.report import report
+
+    res = report(
+        raw_dir=raw_dir,
+        manifest_dir=manifest_dir,
+        metrics_dir=metrics_dir,
+        out_dir=out_dir,
+        matrix_path=matrix,
+        charts=charts,
+    )
+    if res["summary"] is None:
+        typer.echo(f"no raw CSVs under {raw_dir}: nothing to report (run bench.yml first)")
+        return
+    typer.echo(f"wrote {res['summary']}, {res['recommendation']}")
+    for p in res["charts"]:
+        typer.echo(f"wrote {p}")
+
+
+@bench_app.command("recommend")
+def recommend_cmd(
+    ttft_p95: Annotated[float, typer.Option(help="target TTFT p95, seconds")] = 1.0,
+    e2e_p95: Annotated[float, typer.Option(help="target end-to-end p95, seconds")] = 5.0,
+    rps: Annotated[float, typer.Option(help="required requests per second")] = 10.0,
+    workload: str = "extract-full",
+    summary: Path = Path("results/bench/summary.csv"),
+    top: int = 5,
+) -> None:
+    """Cheapest measured config that meets a TTFT p95 / E2E p95 target at a request rate."""
+    from jobx.bench.metrics import read_rows
+    from jobx.bench.report import recommend
+
+    if not summary.exists():
+        typer.echo(f"{summary} not found: run `jobx bench report` after a benchmark run")
+        raise typer.Exit(1)
+    recs = recommend(read_rows([summary]), ttft_p95_s=ttft_p95, e2e_p95_s=e2e_p95, rps=rps, workload=workload)
+    if not recs:
+        typer.echo("no measured config meets this target")
+        raise typer.Exit(1)
+    typer.echo(
+        "| config | level | sustainable req/s | TTFT p95 ms | E2E p95 ms | replicas | USD/h | USD/1K req | F1 |"
+    )
+    typer.echo("|---|---|---|---|---|---|---|---|---|")
+    for r in recs[:top]:
+        f1 = "-" if r.micro_f1 is None else f"{100 * r.micro_f1:.1f}"
+        typer.echo(
+            f"| {r.display} | {r.level} | {r.sustainable_rps} | {r.ttft_p95_ms} | {r.e2e_p95_ms} | {r.replicas} | "
+            f"{r.usd_per_hour:.3f} | {r.usd_per_1k_requests:.4f} | {f1} |"
+        )
+    typer.echo(f"recommended: {recs[0].display} ({recs[0].config})")

@@ -1,0 +1,1 @@
+{"approach": "vllm-qwen2.5-1.5b-awq_few_shot", "split": "test_synth", "note": "fixture, not a measurement", "metrics": {"micro_f1": 0.88, "json_validity": 0.97}}

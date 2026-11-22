@@ -1,0 +1,61 @@
+{
+  "config": "q15-bf16-noapc",
+  "label": "1.5B BF16, prefix caching off",
+  "group": "prefix_caching",
+  "engine": "vllm",
+  "engine_version": "fake",
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "model_revision": null,
+  "request_model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "gpu": "none (fake server fixture)",
+  "argv": [
+    "fake_server"
+  ],
+  "settings": {
+    "name": "q15-bf16-noapc",
+    "model": "Qwen/Qwen2.5-1.5B-Instruct",
+    "engine": "vllm",
+    "group": "prefix_caching",
+    "label": "1.5B BF16, prefix caching off",
+    "revision": null,
+    "quantization": null,
+    "dtype": "bfloat16",
+    "max_num_seqs": 64,
+    "enable_prefix_caching": false,
+    "gpu_memory_utilization": 0.9,
+    "max_model_len": "auto",
+    "seed": 0,
+    "system": "full",
+    "workloads": [
+      "extract-full"
+    ],
+    "concurrency": [
+      1,
+      4,
+      16
+    ],
+    "rates": [],
+    "duration_s": 0.6,
+    "warmup": 1,
+    "max_requests_per_level": 3000,
+    "quality": false,
+    "quality_guided": false,
+    "quality_approach": null,
+    "lora": null,
+    "gguf_file": null,
+    "n_gpu_layers": 99,
+    "parallel": 16,
+    "ctx_per_slot": 4096
+  },
+  "started_utc": "2026-01-01T00:00:00Z",
+  "wall_s": 10.0,
+  "gpu_minutes": 0.17,
+  "estimate_minutes": null,
+  "usd_per_hour": 1.1168,
+  "estimated_cost_usd": 0.0031,
+  "files": [
+    "raw/q15-bf16-noapc/extract-full.csv.gz"
+  ],
+  "status": "ok",
+  "error": null
+}

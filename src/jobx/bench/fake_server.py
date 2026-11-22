@@ -111,7 +111,9 @@ class FakeServer:
             return
         msgs = req.get("messages") or []
         prefix = hashlib.sha256(json.dumps(msgs[:-1], sort_keys=True).encode()).hexdigest()
-        hit = prefix in self._prefixes and len(msgs) > 1
+        hit = (
+            prefix in self._prefixes and len(msgs) > 1 and cfg.prefix_cache_factor < 1.0
+        )  # 1.0 = caching off
         self._prefixes.add(prefix)
         self.prefix_hits += hit
         max_tokens = int(req.get("max_tokens") or cfg.output_tokens)

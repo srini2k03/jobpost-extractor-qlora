@@ -101,10 +101,8 @@ jobs:
       - name: Report, metrics, tables
         if: steps.secrets.outputs.ok == 'true' && steps.run.outputs.code != '2'
         run: |
-          shopt -s nullglob
-          RAW=(results/bench/raw/*/*.csv.gz)
-          if [ ${#RAW[@]} -gt 0 ]; then jobx bench summarize "${RAW[@]}" --gpu L4 --out results/bench/summary.csv; fi
           jobx eval > /dev/null
+          jobx bench report
           jobx results-table
       - name: Commit results
         if: steps.secrets.outputs.ok == 'true' && steps.run.outputs.code != '2'

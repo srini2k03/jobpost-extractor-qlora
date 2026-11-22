@@ -1,0 +1,61 @@
+{
+  "config": "q15-awq",
+  "label": "1.5B AWQ int4",
+  "group": "quantization",
+  "engine": "vllm",
+  "engine_version": "fake",
+  "model": "Qwen/Qwen2.5-1.5B-Instruct-AWQ",
+  "model_revision": null,
+  "request_model": "Qwen/Qwen2.5-1.5B-Instruct-AWQ",
+  "gpu": "none (fake server fixture)",
+  "argv": [
+    "fake_server"
+  ],
+  "settings": {
+    "name": "q15-awq",
+    "model": "Qwen/Qwen2.5-1.5B-Instruct-AWQ",
+    "engine": "vllm",
+    "group": "quantization",
+    "label": "1.5B AWQ int4",
+    "revision": null,
+    "quantization": "awq_marlin",
+    "dtype": "float16",
+    "max_num_seqs": 64,
+    "enable_prefix_caching": true,
+    "gpu_memory_utilization": 0.9,
+    "max_model_len": "auto",
+    "seed": 0,
+    "system": "full",
+    "workloads": [
+      "extract-full"
+    ],
+    "concurrency": [
+      1,
+      4,
+      16
+    ],
+    "rates": [],
+    "duration_s": 0.6,
+    "warmup": 1,
+    "max_requests_per_level": 3000,
+    "quality": true,
+    "quality_guided": true,
+    "quality_approach": "vllm-qwen2.5-1.5b-awq",
+    "lora": null,
+    "gguf_file": null,
+    "n_gpu_layers": 99,
+    "parallel": 16,
+    "ctx_per_slot": 4096
+  },
+  "started_utc": "2026-01-01T00:00:00Z",
+  "wall_s": 10.0,
+  "gpu_minutes": 0.17,
+  "estimate_minutes": null,
+  "usd_per_hour": 1.1168,
+  "estimated_cost_usd": 0.0031,
+  "files": [
+    "raw/q15-awq/extract-full.csv.gz"
+  ],
+  "status": "ok",
+  "error": null
+}
