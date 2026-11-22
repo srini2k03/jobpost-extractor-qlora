@@ -1,0 +1,174 @@
+"""`jobx bench ...`: serving load tests (see docs/serving_benchmark.md)."""
+
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+from typing import Annotated
+
+import typer
+
+bench_app = typer.Typer(
+    add_completion=False,
+    no_args_is_help=True,
+    help="Serving benchmark: load tests against OpenAI-compatible servers.",
+)
+
+DEFAULT_MATRIX = Path("configs/bench/matrix.yaml")
+
+
+def _ints(s: str) -> list[int]:
+    return [int(x) for x in s.split(",") if x.strip()]
+
+
+def _floats(s: str) -> list[float]:
+    return [float(x) for x in s.split(",") if x.strip()]
+
+
+@bench_app.command("run")
+def run(
+    model: Annotated[
+        str, typer.Option(help="model name the server expects (vLLM: --served-model-name or LoRA name)")
+    ],
+    out: Annotated[Path, typer.Option(help="raw per-request CSV, e.g. results/bench/raw/<name>.csv")],
+    base_url: Annotated[str, typer.Option(help="OpenAI-compatible base URL")] = "http://127.0.0.1:8000/v1",
+    workload: Annotated[
+        str, typer.Option(help="extract-full | extract-compact | synthetic-long[-compact]")
+    ] = "extract-full",
+    concurrency: Annotated[str, typer.Option(help="closed-loop levels, comma-separated")] = "1,2,4,8",
+    rate: Annotated[str, typer.Option(help="open-loop Poisson rates in req/s, comma-separated")] = "",
+    num_requests: Annotated[int, typer.Option(help="measured requests per level")] = 64,
+    duration: Annotated[float | None, typer.Option(help="seconds per level instead of a fixed count")] = None,
+    warmup: Annotated[int, typer.Option(help="warm-up requests per level (excluded)")] = 4,
+    max_concurrency: Annotated[int | None, typer.Option(help="open-loop cap on requests in flight")] = None,
+    seed: int = 0,
+    max_tokens: int = 384,
+    output_median: Annotated[int, typer.Option(help="synthetic workloads: median output tokens")] = 256,
+    output_cap: Annotated[int, typer.Option(help="synthetic workloads: max output tokens")] = 1024,
+    label: Annotated[str | None, typer.Option(help="run label (default: output file stem)")] = None,
+    api_key_env: Annotated[
+        str | None, typer.Option(help="env var holding a bearer token, if the server needs one")
+    ] = None,
+    timeout: float = 600.0,
+    trust_env: Annotated[
+        bool, typer.Option(help="honour HTTP(S)_PROXY (off by default: proxies distort timing)")
+    ] = False,
+    gpu: Annotated[
+        bool, typer.Option(help="sample local GPU memory/utilisation (no-op without a GPU)")
+    ] = True,
+) -> None:
+    """Closed-loop sweep over concurrency levels and/or open-loop Poisson rates; writes one CSV row per request."""
+    import asyncio
+
+    from jobx.bench.gpu import GpuSampler
+    from jobx.bench.loadgen import RunResult, StreamingClient, sweep, write_csv
+    from jobx.bench.metrics import markdown_table, summarize_rows
+    from jobx.bench.workload import OutputLengths, build_workload
+
+    levels_c, levels_r = _ints(concurrency), _floats(rate)
+    if not levels_c and not levels_r:
+        raise typer.BadParameter("give --concurrency and/or --rate")
+    per_level = num_requests
+    n_levels = len(levels_c) + len(levels_r)
+    requests = build_workload(
+        workload,
+        (warmup + per_level) * n_levels,
+        seed=seed,
+        max_tokens=max_tokens,
+        lengths=OutputLengths(median=output_median, cap=output_cap),
+    )
+    api_key = os.environ.get(api_key_env) if api_key_env else None
+    # Connection pool: one connection per request in flight. Uncapped open loop -> unlimited, so the client
+    # never queues requests itself (that would be counted as server latency).
+    pool = None if levels_r and not max_concurrency else max([*levels_c, max_concurrency or 0, 1])
+
+    async def go() -> list[RunResult]:
+        async with StreamingClient(
+            base_url, model, api_key=api_key, timeout_s=timeout, max_connections=pool, trust_env=trust_env
+        ) as client:
+            return await sweep(
+                client,
+                requests,
+                label=label or out.stem,
+                workload=workload,
+                concurrencies=levels_c,
+                rates=levels_r,
+                per_level=per_level,
+                warmup=warmup,
+                duration_s=duration,
+                seed=seed,
+                max_concurrency=max_concurrency,
+                gpu_sampler_factory=GpuSampler if gpu else None,
+            )
+
+    runs = asyncio.run(go())
+    write_csv(out, runs)
+    rows = [row for r in runs for row in r.rows()]
+    typer.echo(markdown_table(summarize_rows(rows)))
+    typer.echo(f"wrote {out} ({len(rows)} requests, {n_levels} levels)")
+
+
+@bench_app.command("summarize")
+def summarize(
+    csvs: Annotated[list[Path], typer.Argument(help="raw CSVs from `jobx bench run`")],
+    out: Path = Path("results/bench/summary.csv"),
+    gpu_price: Annotated[float | None, typer.Option(help="GPU USD per hour (overrides --gpu)")] = None,
+    gpu: Annotated[
+        str | None, typer.Option(help="GPU name to look up in the matrix price table, e.g. L4")
+    ] = None,
+    matrix: Path = DEFAULT_MATRIX,
+    sla_ttft: Annotated[float, typer.Option(help="goodput SLA: max TTFT seconds")] = 1.0,
+    sla_e2e: Annotated[float, typer.Option(help="goodput SLA: max end-to-end seconds")] = 5.0,
+    markdown: Annotated[Path | None, typer.Option(help="also write the Markdown table here")] = None,
+) -> None:
+    """One summary row per run: latency percentiles, throughput, goodput, GPU memory and cost."""
+    from jobx.bench.cost import gpu_price as lookup_price
+    from jobx.bench.metrics import SLA, markdown_table, read_rows, summarize_rows, write_summary
+
+    price = gpu_price if gpu_price is not None else (lookup_price(matrix, gpu) if gpu else None)
+    summaries = summarize_rows(read_rows(csvs), sla=SLA(sla_ttft, sla_e2e), gpu_usd_per_hour=price)
+    write_summary(out, summaries)
+    table = markdown_table(summaries)
+    if markdown is not None:
+        markdown.parent.mkdir(parents=True, exist_ok=True)
+        markdown.write_text(table + "\n")
+    typer.echo(table)
+    typer.echo(f"wrote {out} ({len(summaries)} runs)")
+
+
+@bench_app.command("workload")
+def workload_cmd(
+    workload: str = "extract-full",
+    num_requests: int = 256,
+    seed: int = 0,
+    tokenizer: Annotated[
+        str | None, typer.Option(help="HF tokenizer id for token counts (needs transformers)")
+    ] = None,
+) -> None:
+    """Print the prompt-length distribution of a workload (chars; tokens with --tokenizer)."""
+    from jobx.bench.workload import build_workload, hf_token_counter, prompt_stats
+
+    reqs = build_workload(workload, num_requests, seed=seed)
+    counter = hf_token_counter(tokenizer) if tokenizer else None
+    typer.echo(json.dumps({"workload": workload, **prompt_stats(reqs, counter)}, indent=2))
+
+
+@bench_app.command("fake-server")
+def fake_server(
+    host: str = "127.0.0.1",
+    port: int = 8000,
+    ttft: float = 0.05,
+    itl: float = 0.01,
+    output_tokens: int = 32,
+    prefix_cache_factor: float = 1.0,
+    max_num_seqs: int | None = None,
+    fail_every: int = 0,
+) -> None:
+    """Run the fake OpenAI-compatible streaming server (for smoke tests of the harness)."""
+    import asyncio
+
+    from jobx.bench.fake_server import FakeConfig, serve
+
+    cfg = FakeConfig(ttft, itl, output_tokens, prefix_cache_factor, max_num_seqs, fail_every)
+    asyncio.run(serve(cfg, host, port))

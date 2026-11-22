@@ -9,7 +9,10 @@ from typing import Annotated
 
 import typer
 
+from jobx.bench.cli import bench_app
+
 app = typer.Typer(add_completion=False, no_args_is_help=True, help="Job-posting extraction toolkit.")
+app.add_typer(bench_app, name="bench")
 
 
 @app.command("schema")
