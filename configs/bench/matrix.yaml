@@ -1,0 +1,93 @@
+# Serving benchmark plan (docs/serving_benchmark.md). Phase 1 only describes the matrix; the Modal runner that
+# executes it comes in phase 2. Nothing here is executed by CI.
+#
+# One "config" = one vLLM server launch. For each config the load generator runs every workload in
+# `workloads` at every closed-loop concurrency level (and the open-loop rates), then the repo's own eval
+# (jobx eval) scores one greedy pass over test_synth to check quality per quantization.
+
+gpu: L4                      # default GPU for every config (Modal gpu="L4": 24 GB, Ada, FP8-capable)
+
+defaults:
+  engine: vllm
+  max_model_len: 4096        # extract-full prompts are ~1.8K tokens + up to 384 (1024 synthetic) out
+  gpu_memory_utilization: 0.90
+  dtype: bfloat16
+  max_num_seqs: 64
+  enable_prefix_caching: true
+  seed: 0
+
+load:
+  workloads: [extract-full, synthetic-long]
+  concurrency: [1, 4, 16, 64, 128, 256]   # closed loop; levels above max_num_seqs measure queueing
+  rates: [2, 8, 32]                        # open loop, Poisson req/s
+  num_requests: 256                        # measured requests per level
+  warmup: 8
+  sla: {ttft_s: 1.0, e2e_s: 5.0}           # goodput thresholds (per request)
+
+configs:
+  # --- Qwen2.5-1.5B-Instruct: precision / quantization -------------------------------------------------
+  - {name: q15-bf16, model: Qwen/Qwen2.5-1.5B-Instruct, quantization: null}
+  - {name: q15-fp8, model: Qwen/Qwen2.5-1.5B-Instruct, quantization: fp8}   # online dynamic FP8 (W8A8) on Ada
+  - {name: q15-awq, model: Qwen/Qwen2.5-1.5B-Instruct-AWQ, quantization: awq_marlin, dtype: float16}
+  - {name: q15-gptq, model: Qwen/Qwen2.5-1.5B-Instruct-GPTQ-Int4, quantization: gptq_marlin, dtype: float16}
+
+  # --- scheduler width: max_num_seqs (BF16 and the best 4-bit) ---------------------------------------
+  - {name: q15-bf16-seqs16, model: Qwen/Qwen2.5-1.5B-Instruct, max_num_seqs: 16}
+  - {name: q15-bf16-seqs256, model: Qwen/Qwen2.5-1.5B-Instruct, max_num_seqs: 256}
+  - {name: q15-awq-seqs16, model: Qwen/Qwen2.5-1.5B-Instruct-AWQ, quantization: awq_marlin, dtype: float16, max_num_seqs: 16}
+  - {name: q15-awq-seqs256, model: Qwen/Qwen2.5-1.5B-Instruct-AWQ, quantization: awq_marlin, dtype: float16, max_num_seqs: 256}
+
+  # --- automatic prefix caching off (extract-full: 91 % of the prompt is a shared system + 3-shot prefix) ---------
+  - {name: q15-bf16-noapc, model: Qwen/Qwen2.5-1.5B-Instruct, enable_prefix_caching: false}
+  - {name: q15-awq-noapc, model: Qwen/Qwen2.5-1.5B-Instruct-AWQ, quantization: awq_marlin, dtype: float16, enable_prefix_caching: false}
+
+  # --- 3B check (does the picture change with size?). Note: Qwen2.5-3B uses the Qwen Research licence. --
+  - {name: q3-bf16, model: Qwen/Qwen2.5-3B-Instruct}
+  - {name: q3-awq, model: Qwen/Qwen2.5-3B-Instruct-AWQ, quantization: awq_marlin, dtype: float16}
+
+  # --- the repo's own fine-tune: 0.5B base + LoRA adapter served with --enable-lora ---------------------
+  - name: q05-lora
+    model: Qwen/Qwen2.5-0.5B-Instruct
+    enable_lora: true
+    # Adapter from GitHub Release model-v1 (jobx-qwen2.5-0.5b-lora-adapter.tar.gz, unpacked into the container).
+    lora_modules: {jobx-lora: /adapters/jobx-qwen2.5-0.5b-lora}
+    max_lora_rank: 16                                                   # configs/cpu/route.yaml lora.r
+    served_model: jobx-lora                                             # requests use the adapter's name
+    workloads: [extract-compact, synthetic-long-compact]                # the fine-tune's compact prompt
+
+  # --- baseline: llama.cpp server, GGUF Q4_K_M (OpenAI-compatible /v1/chat/completions) ----------------
+  - name: q15-llamacpp-q4km
+    engine: llama.cpp
+    model: Qwen/Qwen2.5-1.5B-Instruct-GGUF
+    gguf_file: qwen2.5-1.5b-instruct-q4_k_m.gguf
+    n_gpu_layers: 99
+    parallel: 16              # llama-server --parallel (slots); ctx-size = parallel * 4096
+    cont_batching: true
+    concurrency: [1, 4, 16, 64]
+
+# USD per GPU-hour. To verify against the provider's pricing page before quoting any cost number.
+gpu_prices:
+  L4:
+    usd_per_hour: 0.80
+    provider: modal
+    source: https://modal.com/pricing
+    checked: 2026-11
+    status: to-verify
+  T4:
+    usd_per_hour: 0.59
+    provider: modal
+    source: https://modal.com/pricing
+    checked: 2026-11
+    status: to-verify
+  A10G:
+    usd_per_hour: 1.10
+    provider: modal
+    source: https://modal.com/pricing
+    checked: 2026-11
+    status: to-verify
+  L40S:
+    usd_per_hour: 1.95
+    provider: modal
+    source: https://modal.com/pricing
+    checked: 2026-11
+    status: to-verify
