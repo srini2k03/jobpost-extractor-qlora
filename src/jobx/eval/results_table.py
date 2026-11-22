@@ -357,3 +357,7 @@ def write_all(root: str | Path = ".") -> None:
     (root / "results/results_table.md").write_text(md)
     (root / "results/results.json").write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
     update_readme(root / "README.md", md)
+    if (root / "configs/bench/matrix.yaml").exists():
+        from jobx.bench import readme as bench_readme
+
+        bench_readme.update_readme(root / "README.md", bench_readme.bench_block(root))

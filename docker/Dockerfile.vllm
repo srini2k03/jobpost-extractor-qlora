@@ -1,0 +1,27 @@
+# GPU image: vLLM's OpenAI-compatible server for the extractor, pinned to the serving benchmark's vLLM release
+# (configs/bench/matrix.yaml: vllm_version). Needs an NVIDIA GPU and the NVIDIA container toolkit.
+#   docker build -f docker/Dockerfile.vllm -t jobx-vllm .
+#   docker run --gpus all -p 8000:8000 -v hf:/models jobx-vllm
+#   docker run --gpus all -p 8000:8000 -e MODEL=Qwen/Qwen2.5-1.5B-Instruct -e QUANTIZATION= -e DTYPE=bfloat16 jobx-vllm
+# Defaults = matrix config q15-awq (AWQ int4, max_num_seqs 64, prefix caching on). This is a provisional pick
+# until a benchmark run exists: `jobx bench report` writes the measured recommendation to
+# results/bench/recommendation.json (also shown in the README); set the env vars below to match it.
+# Clients use the full SYSTEM_PROMPT + 3 shots from src/jobx/prompts.py (the shared prefix prefix caching reuses).
+FROM vllm/vllm-openai:v0.33.0
+
+ENV MODEL=Qwen/Qwen2.5-1.5B-Instruct-AWQ \
+    QUANTIZATION=awq_marlin \
+    DTYPE=float16 \
+    MAX_NUM_SEQS=64 \
+    MAX_MODEL_LEN=3072 \
+    GPU_MEMORY_UTILIZATION=0.90 \
+    PREFIX_CACHING=--enable-prefix-caching \
+    PORT=8000 \
+    HF_HOME=/models
+
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=300s --retries=3 \
+    CMD python3 -c "import os, urllib.request; urllib.request.urlopen('http://127.0.0.1:%s/health' % os.environ.get('PORT', '8000'))"
+
+# Shell wrapper so the env vars above become flags; extra `docker run ... jobx-vllm <flags>` are appended.
+ENTRYPOINT ["/bin/sh", "-c", "exec vllm serve \"$MODEL\" --host 0.0.0.0 --port \"$PORT\" --dtype \"$DTYPE\" ${QUANTIZATION:+--quantization \"$QUANTIZATION\"} --max-num-seqs \"$MAX_NUM_SEQS\" --max-model-len \"$MAX_MODEL_LEN\" --gpu-memory-utilization \"$GPU_MEMORY_UTILIZATION\" $PREFIX_CACHING \"$@\"", "--"]

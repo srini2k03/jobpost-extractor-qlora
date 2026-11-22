@@ -30,3 +30,11 @@ jobs:
           jobx eval
           jobx results-table
           git diff --exit-code -- results README.md
+
+  hadolint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: docker/Dockerfile.vllm
