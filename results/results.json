@@ -1870,6 +1870,56 @@
         "approach": "qwen2.5-1.5b_gguf_q4_k_m",
         "name": "Fine-tune merged, GGUF Q4_K_M (llama.cpp)",
         "status": "pending"
+      },
+      {
+        "approach": "vllm-qwen2.5-1.5b-bf16_few_shot",
+        "name": "Qwen2.5-1.5B-Instruct 3-shot, vLLM BF16",
+        "status": "pending"
+      },
+      {
+        "approach": "vllm-qwen2.5-1.5b-bf16-guided_few_shot",
+        "name": "Qwen2.5-1.5B-Instruct 3-shot, vLLM BF16 + guided JSON",
+        "status": "pending"
+      },
+      {
+        "approach": "vllm-qwen2.5-1.5b-fp8_few_shot",
+        "name": "Qwen2.5-1.5B-Instruct 3-shot, vLLM FP8 (dynamic)",
+        "status": "pending"
+      },
+      {
+        "approach": "vllm-qwen2.5-1.5b-awq_few_shot",
+        "name": "Qwen2.5-1.5B-Instruct 3-shot, vLLM AWQ int4",
+        "status": "pending"
+      },
+      {
+        "approach": "vllm-qwen2.5-1.5b-awq-guided_few_shot",
+        "name": "Qwen2.5-1.5B-Instruct 3-shot, vLLM AWQ int4 + guided JSON",
+        "status": "pending"
+      },
+      {
+        "approach": "vllm-qwen2.5-1.5b-gptq_few_shot",
+        "name": "Qwen2.5-1.5B-Instruct 3-shot, vLLM GPTQ int4",
+        "status": "pending"
+      },
+      {
+        "approach": "vllm-qwen2.5-3b-bf16_few_shot",
+        "name": "Qwen2.5-3B-Instruct 3-shot, vLLM BF16",
+        "status": "pending"
+      },
+      {
+        "approach": "vllm-qwen2.5-3b-awq_few_shot",
+        "name": "Qwen2.5-3B-Instruct 3-shot, vLLM AWQ int4",
+        "status": "pending"
+      },
+      {
+        "approach": "vllm-qwen2.5-0.5b-lora_zero_shot",
+        "name": "Qwen2.5-0.5B LoRA fine-tune (ours), vLLM --enable-lora",
+        "status": "pending"
+      },
+      {
+        "approach": "llamacpp-qwen2.5-1.5b-q4km_few_shot",
+        "name": "Qwen2.5-1.5B-Instruct 3-shot, llama.cpp GGUF Q4_K_M (GPU)",
+        "status": "pending"
       }
     ]
   },

@@ -189,6 +189,9 @@ def plan_cmd(
     github_output: Annotated[
         Path | None, typer.Option(help="append key=value outputs for GitHub Actions")
     ] = None,
+    quality_only: Annotated[
+        bool, typer.Option(help="only configs with a quality pass, no load test")
+    ] = False,
 ) -> None:
     """Print the GPU-minute / dollar estimate of a selection; exit 2 if it exceeds the cap without --yes."""
     from jobx.bench import plan
@@ -204,6 +207,7 @@ def plan_cmd(
         levels=json.loads(levels) if levels else None,
         yes=yes,
         cap_minutes=max_gpu_minutes,
+        quality_only=quality_only,
     )
     typer.echo(plan.format_estimate(sel.decision, str(m.get("gpu", "L4"))))
     if github_output is not None:
@@ -213,8 +217,8 @@ def plan_cmd(
             f.write(f"configs={','.join(c.name for c in sel.configs)}\n")
             f.write(f"levels={json.dumps(overrides, separators=(',', ':'))}\n")
             f.write(f"yes={'true' if (yes or (r and r.yes)) else 'false'}\n")
-            f.write(f"skip_load={'true' if r and r.skip_load else 'false'}\n")
-            f.write(f"skip_quality={'true' if r and r.skip_quality else 'false'}\n")
+            f.write(f"skip_load={'true' if sel.skip_load else 'false'}\n")
+            f.write(f"skip_quality={'true' if sel.skip_quality else 'false'}\n")
             f.write(f"minutes={sel.decision.total_minutes}\nusd={sel.decision.total_usd}\n")
             f.write(f"ok={'true' if sel.decision.ok else 'false'}\n")
     if not sel.decision.ok:

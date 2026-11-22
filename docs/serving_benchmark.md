@@ -145,3 +145,25 @@ inside the ~7 L4-hour target. To keep the total there, the matrix was pruned:
 - llama.cpp runs 4 concurrency levels and 2 rates;
 - quality passes run only where the weights differ (not for scheduler or caching variants), and guided JSON
   only for BF16 and AWQ.
+
+## Quality per quantization
+
+A faster server only helps if the answers stay as good. Every config with `quality: true` therefore runs the
+repo's own eval path against its local server once the load test is done. That path is
+[`openai_compat_runner.py`](../src/jobx/baselines/openai_compat_runner.py) with greedy decoding and
+`max_tokens` 384, over **all 471 `test_synth` postings** (no subset is needed: about 3 minutes per pass). The
+base models get the same `SYSTEM_PROMPT` and 3 shots as the CPU baselines; the LoRA row gets the compact
+prompt with zero shots, as it was trained.
+
+- Output: the standard prediction files, `results/predictions/<approach>__test_synth.jsonl` plus `.meta.json`,
+  with hardware, vLLM version and commit recorded.
+- Scoring: `jobx eval` gives JSON validity, schema validity, field F1 and bootstrap CIs.
+- Guided JSON: BF16 and AWQ get a second, guided pass (the JSON schema sent as `response_format`, which vLLM
+  enforces with structured outputs), reported as a separate `-guided` row.
+- Approach ids: `quality_approach` from the matrix plus `_few_shot` / `_zero_shot`.
+- Table: the rows are listed in `configs/approaches.yaml` with `route: vllm` and `splits: [test_synth]`. While
+  no predictions exist, the results table shows them as one "pending" line, so the CI tables check stays
+  green.
+
+`modal run -m jobx.bench.modal_app --matrix all --quality-only` (`jobx bench plan --quality-only`: 61
+L4-minutes) runs only these passes.

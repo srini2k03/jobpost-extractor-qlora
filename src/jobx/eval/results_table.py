@@ -1,7 +1,9 @@
 """Build the results tables (markdown + JSON) from results/metrics and results/benchmarks.
 
 Every planned approach (configs/approaches.yaml) gets a row; rows without a metrics file
-say "pending GPU run". Nothing here invents numbers.
+say "pending GPU run". Pending rows of the optional routes (`route: gpu`, `route: vllm`) are summarised in
+one line instead, and `splits: [...]` limits a row to the splits it is planned for. Nothing here invents
+numbers.
 """
 
 from __future__ import annotations
@@ -143,12 +145,18 @@ def build_tables(root: str | Path = ".") -> tuple[str, dict[str, Any]]:
         md.append("|---|---|---|---|---|---|---|---|---|---|")
         rows = []
         not_run: list[str] = []
+        serving_pending: list[str] = []
         for a in approaches:
+            if a.get("splits") and split not in a["splits"]:
+                continue  # planned for other splits only (e.g. the serving benchmark scores test_synth)
             d = metrics.get((a["id"], split))
             if d is None:
                 rows.append({"approach": a["id"], "name": a["name"], "status": "pending"})
                 if a.get("route") == "gpu":
                     not_run.append(a["name"])
+                    continue
+                if a.get("route") == "vllm":
+                    serving_pending.append(a["name"])
                     continue
                 md.append(
                     f"| {a['name']} | {a['hardware']} | - | - | - | - | - | - | - | {pending_label(a)} |"
@@ -206,6 +214,13 @@ def build_tables(root: str | Path = ".") -> tuple[str, dict[str, Any]]:
             md.append(
                 f"_{len(not_run)} optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus "
                 "Hugging Face and W&B accounts) were not run; see `docs/gpu_route.md`._"
+            )
+        if serving_pending:
+            md.append("")
+            md.append(
+                f"_{len(serving_pending)} serving-benchmark quality rows (vLLM BF16/FP8/AWQ/GPTQ, 3B, the LoRA served "
+                "by vLLM, llama.cpp Q4_K_M on an L4) are pending: they run with `bench.yml` once the Modal token is "
+                "added; see `docs/serving_benchmark.md`._"
             )
         md.append("")
     # per-field table for every measured approach on the first split that has data

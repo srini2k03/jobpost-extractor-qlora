@@ -4,6 +4,7 @@
     modal run -m jobx.bench.modal_app --matrix all               # every config (refused above the cap ...)
     modal run -m jobx.bench.modal_app --matrix all --yes         # ... unless --yes
     modal run -m jobx.bench.modal_app --request .github/bench-request.json
+    modal run -m jobx.bench.modal_app --matrix all --quality-only   # quality per quantization only
 
 Needs a Modal account (``MODAL_TOKEN_ID`` / ``MODAL_TOKEN_SECRET`` or ``modal token new``). Before anything
 starts it prints the GPU-minute and dollar estimate and refuses to run above ``MAX_GPU_MINUTES`` (env var,
@@ -133,8 +134,10 @@ def main(
     quality_max_examples: int = 0,
     out: str = ".",
     dry_run: bool = False,
+    quality_only: bool = False,
 ) -> None:
-    """Estimate, check the budget, then run the selected configs (``--matrix all`` = every config)."""
+    """Estimate, check the budget, then run the selected configs (``--matrix all`` = every config).
+    ``--quality-only``: serve each config that has a quality pass and run only the eval (no load test)."""
     req = json.loads(Path(request).read_text()) if request else None
     sel = plan.plan_selection(
         MATRIX,
@@ -143,14 +146,16 @@ def main(
         levels=json.loads(levels) if levels else None,
         yes=yes,
         cap_minutes=max_gpu_minutes or MAX_GPU_MINUTES,
+        skip_load=skip_load,
+        skip_quality=skip_quality,
+        quality_only=quality_only,
     )
     print(plan.format_estimate(sel.decision, GPU))
     if not sel.decision.ok:
         raise SystemExit(2)
     if dry_run:
         return
-    skip_load = skip_load or bool(sel.request and sel.request.skip_load)
-    skip_quality = skip_quality or bool(sel.request and sel.request.skip_quality)
+    skip_load, skip_quality = sel.skip_load, sel.skip_quality
     stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
     rate = plan.hourly_rate(MATRIX)["total"]
     estimates = {e["config"]: float(e["minutes"]) for e in sel.decision.estimates}

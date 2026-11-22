@@ -36,6 +36,8 @@ _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus
 
 _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus Hugging Face and W&B accounts) were not run; see `docs/gpu_route.md`._
 
+_10 serving-benchmark quality rows (vLLM BF16/FP8/AWQ/GPTQ, 3B, the LoRA served by vLLM, llama.cpp Q4_K_M on an L4) are pending: they run with `bench.yml` once the Modal token is added; see `docs/serving_benchmark.md`._
+
 #### Per-field exact match % (`test_synth`)
 
 | Approach | company | role | seniority | skills | min_experience_years | max_experience_years | salary | locations | work_mode | employment_type | education |

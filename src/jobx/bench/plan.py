@@ -288,13 +288,15 @@ def hourly_rate(matrix: dict[str, Any], gpu: str | None = None) -> dict[str, flo
     return {"gpu": g, "cpu": round(cpu, 4), "memory": round(mem, 4), "total": round(g + cpu + mem, 4)}
 
 
-def estimate(cfg: ServeConfig, matrix: dict[str, Any]) -> dict[str, Any]:
+def estimate(
+    cfg: ServeConfig, matrix: dict[str, Any], *, skip_load: bool = False, skip_quality: bool = False
+) -> dict[str, Any]:
     """GPU minutes and USD for one config: startup + workloads x levels x (duration + overhead) + quality."""
     est = matrix.get("estimate") or {}
     startup = float((est.get("startup_min") or {}).get(cfg.engine, 4.0))
     overhead = float(est.get("level_overhead_s", 20))
-    load_min = len(cfg.workloads) * cfg.n_levels * (cfg.duration_s + overhead) / 60.0
-    quality_min = len(cfg.quality_passes()) * float(est.get("quality_pass_min", 3.0))
+    load_min = 0.0 if skip_load else len(cfg.workloads) * cfg.n_levels * (cfg.duration_s + overhead) / 60.0
+    quality_min = 0.0 if skip_quality else len(cfg.quality_passes()) * float(est.get("quality_pass_min", 3.0))
     minutes = startup + load_min + quality_min
     rate = hourly_rate(matrix)
     return {
@@ -330,10 +332,12 @@ def budget(
     *,
     cap_minutes: float | None = None,
     yes: bool = False,
+    skip_load: bool = False,
+    skip_quality: bool = False,
 ) -> BudgetDecision:
     """Refuse (ok=False) when the estimate exceeds the cap, unless ``yes``."""
     cap = float(cap_minutes or matrix.get("max_gpu_minutes", 420))
-    ests = [estimate(c, matrix) for c in configs]
+    ests = [estimate(c, matrix, skip_load=skip_load, skip_quality=skip_quality) for c in configs]
     total = round(sum(e["minutes"] for e in ests), 1)
     usd_gpu = round(sum(e["usd_gpu"] for e in ests), 2)
     usd = round(sum(e["usd_total"] for e in ests), 2)
@@ -481,6 +485,8 @@ class Selection:
     configs: list[ServeConfig]
     decision: BudgetDecision
     request: BenchRequestFile | None = None
+    skip_load: bool = False
+    skip_quality: bool = False
 
 
 def plan_selection(
@@ -491,8 +497,12 @@ def plan_selection(
     levels: dict[str, Any] | None = None,
     yes: bool = False,
     cap_minutes: float | None = None,
+    skip_load: bool = False,
+    skip_quality: bool = False,
+    quality_only: bool = False,
 ) -> Selection:
-    """Resolve what to run from CLI arguments and/or a request file (CLI arguments win)."""
+    """Resolve what to run from CLI arguments and/or a request file (CLI arguments win). ``quality_only``
+    keeps only configs with a quality pass and skips their load test."""
     all_cfgs = expand(matrix)
     req = parse_request(request, all_cfgs) if request is not None else None
     spec = config or (",".join(req.configs) if req else "")
@@ -501,7 +511,16 @@ def plan_selection(
     chosen = apply_overrides(chosen, overrides)
     yes = yes or bool(req and req.yes)
     cap = cap_minutes or (req.max_gpu_minutes if req else None)
-    return Selection(chosen, budget(chosen, matrix, cap_minutes=cap, yes=yes), req)
+    skip_load = skip_load or quality_only or bool(req and req.skip_load)
+    skip_quality = skip_quality or bool(req and req.skip_quality)
+    if quality_only:
+        chosen = [c for c in chosen if c.quality]
+        if not chosen:
+            raise ValueError("none of the selected configs has a quality pass")
+    decision = budget(
+        chosen, matrix, cap_minutes=cap, yes=yes, skip_load=skip_load, skip_quality=skip_quality
+    )
+    return Selection(chosen, decision, req, skip_load, skip_quality)
 
 
 def run_scheduled(

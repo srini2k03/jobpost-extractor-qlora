@@ -36,6 +36,19 @@ approaches:
   - {id: qwen2.5-1.5b_awq, name: "Fine-tune merged, AWQ 4-bit", model: "jobx-qwen2.5-1.5b-awq", decoding: free, hardware: "GPU", produced_by: "notebooks/05_awq_benchmark", route: gpu}
   - {id: qwen2.5-1.5b_gguf_q8_0, name: "Fine-tune merged, GGUF Q8_0 (llama.cpp)", model: "jobx-qwen2.5-1.5b-gguf", decoding: "free", hardware: "CPU (GitHub Actions)", produced_by: ".github/workflows/quantize_benchmark.yml", route: gpu}
   - {id: qwen2.5-1.5b_gguf_q4_k_m, name: "Fine-tune merged, GGUF Q4_K_M (llama.cpp)", model: "jobx-qwen2.5-1.5b-gguf", decoding: "free", hardware: "CPU (GitHub Actions)", produced_by: ".github/workflows/quantize_benchmark.yml", route: gpu}
+  # Serving benchmark (vLLM / llama.cpp on a Modal L4, .github/workflows/bench.yml): quality per quantization on
+  # test_synth, same SYSTEM_PROMPT + 3 shots and greedy decoding as the baselines (compact prompt for the LoRA).
+  # Ids = quality_approach in configs/bench/matrix.yaml + _few_shot / _zero_shot. Pending until a Modal run.
+  - {id: vllm-qwen2.5-1.5b-bf16_few_shot, name: "Qwen2.5-1.5B-Instruct 3-shot, vLLM BF16", model: Qwen/Qwen2.5-1.5B-Instruct, decoding: free, hardware: "L4 (Modal), vLLM", produced_by: ".github/workflows/bench.yml", route: vllm, splits: [test_synth]}
+  - {id: vllm-qwen2.5-1.5b-bf16-guided_few_shot, name: "Qwen2.5-1.5B-Instruct 3-shot, vLLM BF16 + guided JSON", model: Qwen/Qwen2.5-1.5B-Instruct, decoding: guided, hardware: "L4 (Modal), vLLM", produced_by: ".github/workflows/bench.yml", route: vllm, splits: [test_synth]}
+  - {id: vllm-qwen2.5-1.5b-fp8_few_shot, name: "Qwen2.5-1.5B-Instruct 3-shot, vLLM FP8 (dynamic)", model: Qwen/Qwen2.5-1.5B-Instruct, decoding: free, hardware: "L4 (Modal), vLLM", produced_by: ".github/workflows/bench.yml", route: vllm, splits: [test_synth]}
+  - {id: vllm-qwen2.5-1.5b-awq_few_shot, name: "Qwen2.5-1.5B-Instruct 3-shot, vLLM AWQ int4", model: Qwen/Qwen2.5-1.5B-Instruct-AWQ, decoding: free, hardware: "L4 (Modal), vLLM", produced_by: ".github/workflows/bench.yml", route: vllm, splits: [test_synth]}
+  - {id: vllm-qwen2.5-1.5b-awq-guided_few_shot, name: "Qwen2.5-1.5B-Instruct 3-shot, vLLM AWQ int4 + guided JSON", model: Qwen/Qwen2.5-1.5B-Instruct-AWQ, decoding: guided, hardware: "L4 (Modal), vLLM", produced_by: ".github/workflows/bench.yml", route: vllm, splits: [test_synth]}
+  - {id: vllm-qwen2.5-1.5b-gptq_few_shot, name: "Qwen2.5-1.5B-Instruct 3-shot, vLLM GPTQ int4", model: Qwen/Qwen2.5-1.5B-Instruct-GPTQ-Int4, decoding: free, hardware: "L4 (Modal), vLLM", produced_by: ".github/workflows/bench.yml", route: vllm, splits: [test_synth]}
+  - {id: vllm-qwen2.5-3b-bf16_few_shot, name: "Qwen2.5-3B-Instruct 3-shot, vLLM BF16", model: Qwen/Qwen2.5-3B-Instruct, decoding: free, hardware: "L4 (Modal), vLLM", produced_by: ".github/workflows/bench.yml", route: vllm, splits: [test_synth]}
+  - {id: vllm-qwen2.5-3b-awq_few_shot, name: "Qwen2.5-3B-Instruct 3-shot, vLLM AWQ int4", model: Qwen/Qwen2.5-3B-Instruct-AWQ, decoding: free, hardware: "L4 (Modal), vLLM", produced_by: ".github/workflows/bench.yml", route: vllm, splits: [test_synth]}
+  - {id: vllm-qwen2.5-0.5b-lora_zero_shot, name: "Qwen2.5-0.5B LoRA fine-tune (ours), vLLM --enable-lora", model: "Qwen/Qwen2.5-0.5B-Instruct + jobx LoRA", decoding: free, hardware: "L4 (Modal), vLLM", produced_by: ".github/workflows/bench.yml", route: vllm, splits: [test_synth]}
+  - {id: llamacpp-qwen2.5-1.5b-q4km_few_shot, name: "Qwen2.5-1.5B-Instruct 3-shot, llama.cpp GGUF Q4_K_M (GPU)", model: Qwen/Qwen2.5-1.5B-Instruct-GGUF, decoding: free, hardware: "L4 (Modal), llama.cpp", produced_by: ".github/workflows/bench.yml", route: vllm, splits: [test_synth]}
 splits: [test_real, test_synth]
 # Size / speed / accuracy table rows (variant names as written by jobx.quantize.benchmark / gpu_bench).
 benchmarks:
