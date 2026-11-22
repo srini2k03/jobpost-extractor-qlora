@@ -115,3 +115,33 @@ Before starting anything it prints the estimate (startup + workloads x levels x 
 passes). It refuses to start above `MAX_GPU_MINUTES` (default 420) unless `--yes` is given. Each container
 times out at 1.5 x its estimate + 15 min. A runtime guard launches a config only while actual plus in-flight
 minutes stay within the cap.
+
+## Orchestration (`bench.yml`)
+
+[`.github/workflows/bench.yml`](../.github/workflows/bench.yml) runs on a push that changes
+[`.github/bench-request.json`](../.github/bench-request.json), or on dispatch. Its first step checks for the
+`MODAL_TOKEN_ID` / `MODAL_TOKEN_SECRET` repository secrets. If either is missing it prints a `::notice::`
+and every later step is skipped, so nothing runs and nothing is billed. With the secrets it:
+
+1. runs `jobx bench plan` on the request (estimate in the job summary; refused above the cap unless `yes`);
+2. runs `modal run -m jobx.bench.modal_app` with up to 4 containers at once;
+3. summarises, scores and regenerates the tables;
+4. commits `results/bench/`, the predictions and metrics back to the branch, with a pull-rebase-push retry.
+
+If some configs fail, the others are still committed and the job then fails.
+
+Request file fields: `configs` (`"all"`, a list of names or `"group:<name>"`), `levels` (overrides for every
+selected config: `concurrency`, `rates`, `duration_s`, `warmup`, `workloads`, `max_requests_per_level`),
+`yes`, `skip_load`, `skip_quality`, `max_gpu_minutes`. Bump `id` to re-run the same request.
+
+### Budget
+
+`jobx bench plan` puts the full matrix at **303.5 L4-minutes (5.1 h)**. That is **$4.07 for the GPU** at
+$0.80/h, or $5.64 with the 4 vCPU / 16 GiB the container also bills (Modal list prices, to verify). Both are
+inside the ~7 L4-hour target. To keep the total there, the matrix was pruned:
+
+- the `max_num_seqs` 16/256 variants run only the levels around the limit (16/64/256) and no Poisson rates;
+- the prefix-caching-off pair runs only `extract-full`, the workload with a shared prefix;
+- llama.cpp runs 4 concurrency levels and 2 rates;
+- quality passes run only where the weights differ (not for scheduler or caching variants), and guided JSON
+  only for BF16 and AWQ.

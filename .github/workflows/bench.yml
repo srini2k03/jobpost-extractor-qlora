@@ -1,0 +1,130 @@
+name: bench
+# Serving benchmark on Modal (docs/serving_benchmark.md): vLLM on one L4 per config from
+# configs/bench/matrix.yaml, plus the llama.cpp baseline, the LoRA row and a quality eval per quantization.
+#
+# Triggers: push a change to .github/bench-request.json (configs, level overrides, yes), or dispatch.
+# Needs the repository secrets MODAL_TOKEN_ID and MODAL_TOKEN_SECRET; without them every step after the check
+# is skipped with a notice, so nothing runs on a GPU and nothing costs money.
+# The estimate is printed first; above max_gpu_minutes (default 420) the run is refused unless yes=true.
+# Results (raw CSVs, manifests, predictions, summary, charts, tables) are committed back to the branch.
+on:
+  push:
+    paths:
+      - ".github/bench-request.json"
+  workflow_dispatch:
+    inputs:
+      configs:
+        description: "'all', comma-separated config names, or group:<name> (blank = the request file)"
+        required: false
+        default: ""
+      levels:
+        description: 'JSON level overrides, e.g. {"duration_s": 30, "concurrency": [1, 16]} (blank = none)'
+        required: false
+        default: ""
+      yes:
+        description: "run even if the estimate exceeds max_gpu_minutes"
+        type: boolean
+        default: false
+      max_parallel:
+        description: "containers at once"
+        required: false
+        default: "4"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bench-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+      CONFIGS: ${{ inputs.configs || '' }}
+      LEVELS: ${{ inputs.levels || '' }}
+      YES: ${{ inputs.yes && 'true' || 'false' }}
+      MAX_PARALLEL: ${{ inputs.max_parallel || '4' }}
+    steps:
+      - name: Check the Modal secrets
+        id: secrets
+        run: |
+          if [ -z "$MODAL_TOKEN_ID" ] || [ -z "$MODAL_TOKEN_SECRET" ]; then
+            echo "::notice::MODAL_TOKEN_ID / MODAL_TOKEN_SECRET are not set: skipping the serving benchmark (nothing ran, nothing was billed). Add them under Settings -> Secrets and variables -> Actions, then push .github/bench-request.json again."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.ok == 'true'
+      - uses: actions/setup-python@v5
+        if: steps.secrets.outputs.ok == 'true'
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        if: steps.secrets.outputs.ok == 'true'
+        run: pip install -e ".[dev,bench,modal]"
+      - name: Plan and estimate
+        id: plan
+        if: steps.secrets.outputs.ok == 'true'
+        run: |
+          ARGS=(--request .github/bench-request.json --github-output "$GITHUB_OUTPUT")
+          if [ -n "$CONFIGS" ]; then ARGS+=(--config "$CONFIGS"); fi
+          if [ -n "$LEVELS" ]; then ARGS+=(--levels "$LEVELS"); fi
+          if [ "$YES" = "true" ]; then ARGS+=(--yes); fi
+          jobx bench plan "${ARGS[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Run on Modal
+        id: run
+        if: steps.secrets.outputs.ok == 'true'
+        env:
+          SEL_CONFIGS: ${{ steps.plan.outputs.configs }}
+          SEL_LEVELS: ${{ steps.plan.outputs.levels }}
+          SEL_YES: ${{ steps.plan.outputs.yes }}
+          SEL_SKIP_LOAD: ${{ steps.plan.outputs.skip_load }}
+          SEL_SKIP_QUALITY: ${{ steps.plan.outputs.skip_quality }}
+        run: |
+          set +e
+          ARGS=(--config "$SEL_CONFIGS" --levels "$SEL_LEVELS" --max-parallel "$MAX_PARALLEL")
+          if [ "$SEL_YES" = "true" ]; then ARGS+=(--yes); fi
+          if [ "$SEL_SKIP_LOAD" = "true" ]; then ARGS+=(--skip-load); fi
+          if [ "$SEL_SKIP_QUALITY" = "true" ]; then ARGS+=(--skip-quality); fi
+          modal run -m jobx.bench.modal_app "${ARGS[@]}"
+          CODE=$?
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          # 0 all ok | 1 some configs failed (the others are still committed) | 2 refused by the budget
+          if [ $CODE -eq 2 ]; then echo "::error::refused: the estimate exceeds the cap (set yes=true)"; exit 1; fi
+          exit 0
+      - name: Report, metrics, tables
+        if: steps.secrets.outputs.ok == 'true' && steps.run.outputs.code != '2'
+        run: |
+          shopt -s nullglob
+          RAW=(results/bench/raw/*/*.csv.gz)
+          if [ ${#RAW[@]} -gt 0 ]; then jobx bench summarize "${RAW[@]}" --gpu L4 --out results/bench/summary.csv; fi
+          jobx eval > /dev/null
+          jobx results-table
+      - name: Commit results
+        if: steps.secrets.outputs.ok == 'true' && steps.run.outputs.code != '2'
+        env:
+          SEL_CONFIGS: ${{ steps.plan.outputs.configs }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add results/bench results/predictions results/metrics results/results.json results/results_table.md README.md
+          if git diff --cached --quiet; then echo "nothing to commit"; exit 0; fi
+          git commit -m "Serving benchmark: $SEL_CONFIGS ($GITHUB_EVENT_NAME)"
+          for i in 1 2 3 4 5; do
+            if git pull --rebase origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME"; then exit 0; fi
+            git rebase --abort 2>/dev/null || true
+            sleep $((i * 15))
+          done
+          echo "::error::could not push the results after 5 attempts"
+          exit 1
+      - name: Fail if a config failed
+        if: steps.secrets.outputs.ok == 'true' && steps.run.outputs.code == '1'
+        run: |
+          echo "::error::at least one config failed; see its manifest (status/error/server_log_tail) in results/bench/manifests/"
+          exit 1
