@@ -1,93 +1,127 @@
-# Serving benchmark plan (docs/serving_benchmark.md). Phase 1 only describes the matrix; the Modal runner that
-# executes it comes in phase 2. Nothing here is executed by CI.
+# Serving benchmark matrix (docs/serving_benchmark.md). Executed by src/jobx/bench/modal_app.py on Modal, one
+# configuration per container, via .github/workflows/bench.yml. `jobx bench plan` prints the estimate.
 #
-# One "config" = one vLLM server launch. For each config the load generator runs every workload in
-# `workloads` at every closed-loop concurrency level (and the open-loop rates), then the repo's own eval
-# (jobx eval) scores one greedy pass over test_synth to check quality per quantization.
+# One config = one server launch. For each config the load generator runs every workload at every closed-loop
+# concurrency level and every open-loop Poisson rate for `duration_s` seconds (after `warmup` excluded
+# requests), and, when `quality: true`, the repo's own eval scores one greedy pass over test_synth.
 
-gpu: L4                      # default GPU for every config (Modal gpu="L4": 24 GB, Ada, FP8-capable)
+gpu: L4                                  # Modal gpu="L4": 24 GB, Ada (sm_89), FP8-capable
+vllm_version: "0.33.0"                   # image vllm/vllm-openai:v0.33.0 (same tag as docker/Dockerfile.vllm)
+llama_cpp_image: ghcr.io/ggml-org/llama.cpp:server-cuda-b6000   # same llama.cpp build as the CPU route
+max_gpu_minutes: 420                     # global cap on estimated GPU minutes per invocation (override: --yes)
+container: {cpu: 4, memory_gib: 16}      # vLLM API server + engine core + load generator share these cores
+
+# How `jobx bench plan` estimates a config: startup + workloads x levels x (duration + overhead) + quality.
+estimate:
+  startup_min: {vllm: 4.0, llama.cpp: 3.0}   # image start, weight download/load, CUDA graph capture
+  level_overhead_s: 20                         # warm-up requests + draining requests in flight
+  quality_pass_min: 3.0                        # 471 test_synth postings at concurrency 32, incl. scoring
+  max_requests_per_level: 3000                 # caps CSV size; a level stops at duration or this count
 
 defaults:
   engine: vllm
-  max_model_len: 4096        # extract-full prompts are ~1.8K tokens + up to 384 (1024 synthetic) out
-  gpu_memory_utilization: 0.90
   dtype: bfloat16
   max_num_seqs: 64
   enable_prefix_caching: true
+  gpu_memory_utilization: 0.90
+  max_model_len: auto                      # from the workloads: prompt budget + max output tokens
   seed: 0
+  system: full                             # prompts.SYSTEM_PROMPT + 3 shots; 'compact' for the fine-tune
+  quality: false
+  quality_guided: false
 
 load:
   workloads: [extract-full, synthetic-long]
-  concurrency: [1, 4, 16, 64, 128, 256]   # closed loop; levels above max_num_seqs measure queueing
+  concurrency: [1, 4, 16, 64, 256]         # closed loop; levels above max_num_seqs measure queueing
   rates: [2, 8, 32]                        # open loop, Poisson req/s
-  num_requests: 256                        # measured requests per level
+  duration_s: 60
   warmup: 8
-  sla: {ttft_s: 1.0, e2e_s: 5.0}           # goodput thresholds (per request)
+  sla: {ttft_s: 1.0, e2e_s: 5.0}           # goodput and recommender defaults (per request)
 
 configs:
-  # --- Qwen2.5-1.5B-Instruct: precision / quantization -------------------------------------------------
-  - {name: q15-bf16, model: Qwen/Qwen2.5-1.5B-Instruct, quantization: null}
-  - {name: q15-fp8, model: Qwen/Qwen2.5-1.5B-Instruct, quantization: fp8}   # online dynamic FP8 (W8A8) on Ada
-  - {name: q15-awq, model: Qwen/Qwen2.5-1.5B-Instruct-AWQ, quantization: awq_marlin, dtype: float16}
-  - {name: q15-gptq, model: Qwen/Qwen2.5-1.5B-Instruct-GPTQ-Int4, quantization: gptq_marlin, dtype: float16}
+  # --- Qwen2.5-1.5B-Instruct: precision / quantization (full sweep + quality) -------------------------
+  - name: q15-bf16
+    group: quantization
+    label: "1.5B BF16"
+    model: Qwen/Qwen2.5-1.5B-Instruct
+    quality: true
+    quality_guided: true
+    quality_approach: vllm-qwen2.5-1.5b-bf16
+  - name: q15-fp8
+    group: quantization
+    label: "1.5B FP8 (dynamic)"
+    model: Qwen/Qwen2.5-1.5B-Instruct
+    quantization: fp8                      # online dynamic W8A8 FP8 (Ada tensor cores)
+    quality: true
+    quality_approach: vllm-qwen2.5-1.5b-fp8
+  - name: q15-awq
+    group: quantization
+    label: "1.5B AWQ int4"
+    model: Qwen/Qwen2.5-1.5B-Instruct-AWQ
+    quantization: awq_marlin
+    dtype: float16
+    quality: true
+    quality_guided: true
+    quality_approach: vllm-qwen2.5-1.5b-awq
+  - name: q15-gptq
+    group: quantization
+    label: "1.5B GPTQ int4"
+    model: Qwen/Qwen2.5-1.5B-Instruct-GPTQ-Int4
+    quantization: gptq_marlin
+    dtype: float16
+    quality: true
+    quality_approach: vllm-qwen2.5-1.5b-gptq
 
-  # --- scheduler width: max_num_seqs (BF16 and the best 4-bit) ---------------------------------------
-  - {name: q15-bf16-seqs16, model: Qwen/Qwen2.5-1.5B-Instruct, max_num_seqs: 16}
-  - {name: q15-bf16-seqs256, model: Qwen/Qwen2.5-1.5B-Instruct, max_num_seqs: 256}
-  - {name: q15-awq-seqs16, model: Qwen/Qwen2.5-1.5B-Instruct-AWQ, quantization: awq_marlin, dtype: float16, max_num_seqs: 16}
-  - {name: q15-awq-seqs256, model: Qwen/Qwen2.5-1.5B-Instruct-AWQ, quantization: awq_marlin, dtype: float16, max_num_seqs: 256}
+  # --- scheduler width (64 is the default above): levels around the limit only -------------------------
+  - {name: q15-bf16-seqs16, group: max_num_seqs, label: "1.5B BF16, max_num_seqs 16", model: Qwen/Qwen2.5-1.5B-Instruct, max_num_seqs: 16, concurrency: [16, 64, 256], rates: []}
+  - {name: q15-bf16-seqs256, group: max_num_seqs, label: "1.5B BF16, max_num_seqs 256", model: Qwen/Qwen2.5-1.5B-Instruct, max_num_seqs: 256, concurrency: [16, 64, 256], rates: []}
+  - {name: q15-awq-seqs16, group: max_num_seqs, label: "1.5B AWQ, max_num_seqs 16", model: Qwen/Qwen2.5-1.5B-Instruct-AWQ, quantization: awq_marlin, dtype: float16, max_num_seqs: 16, concurrency: [16, 64, 256], rates: []}
+  - {name: q15-awq-seqs256, group: max_num_seqs, label: "1.5B AWQ, max_num_seqs 256", model: Qwen/Qwen2.5-1.5B-Instruct-AWQ, quantization: awq_marlin, dtype: float16, max_num_seqs: 256, concurrency: [16, 64, 256], rates: []}
 
-  # --- automatic prefix caching off (extract-full: 91 % of the prompt is a shared system + 3-shot prefix) ---------
-  - {name: q15-bf16-noapc, model: Qwen/Qwen2.5-1.5B-Instruct, enable_prefix_caching: false}
-  - {name: q15-awq-noapc, model: Qwen/Qwen2.5-1.5B-Instruct-AWQ, quantization: awq_marlin, dtype: float16, enable_prefix_caching: false}
+  # --- automatic prefix caching off, on the shared-prefix workload (compare with q15-bf16 / q15-awq) ---
+  - {name: q15-bf16-noapc, group: prefix_caching, label: "1.5B BF16, prefix caching off", model: Qwen/Qwen2.5-1.5B-Instruct, enable_prefix_caching: false, workloads: [extract-full]}
+  - {name: q15-awq-noapc, group: prefix_caching, label: "1.5B AWQ, prefix caching off", model: Qwen/Qwen2.5-1.5B-Instruct-AWQ, quantization: awq_marlin, dtype: float16, enable_prefix_caching: false, workloads: [extract-full]}
 
-  # --- 3B check (does the picture change with size?). Note: Qwen2.5-3B uses the Qwen Research licence. --
-  - {name: q3-bf16, model: Qwen/Qwen2.5-3B-Instruct}
-  - {name: q3-awq, model: Qwen/Qwen2.5-3B-Instruct-AWQ, quantization: awq_marlin, dtype: float16}
+  # --- 3B check (Qwen2.5-3B uses the Qwen Research licence, not Apache-2.0) ----------------------------
+  - {name: q3-bf16, group: size, label: "3B BF16", model: Qwen/Qwen2.5-3B-Instruct, quality: true, quality_approach: vllm-qwen2.5-3b-bf16}
+  - {name: q3-awq, group: size, label: "3B AWQ int4", model: Qwen/Qwen2.5-3B-Instruct-AWQ, quantization: awq_marlin, dtype: float16, quality: true, quality_approach: vllm-qwen2.5-3b-awq}
 
-  # --- the repo's own fine-tune: 0.5B base + LoRA adapter served with --enable-lora ---------------------
+  # --- the repo's fine-tune: Qwen2.5-0.5B-Instruct + the CPU-trained LoRA adapter (release model-v1) ----
   - name: q05-lora
+    group: lora
+    label: "0.5B + LoRA (ours)"
     model: Qwen/Qwen2.5-0.5B-Instruct
-    enable_lora: true
-    # Adapter from GitHub Release model-v1 (jobx-qwen2.5-0.5b-lora-adapter.tar.gz, unpacked into the container).
-    lora_modules: {jobx-lora: /adapters/jobx-qwen2.5-0.5b-lora}
-    max_lora_rank: 16                                                   # configs/cpu/route.yaml lora.r
-    served_model: jobx-lora                                             # requests use the adapter's name
-    workloads: [extract-compact, synthetic-long-compact]                # the fine-tune's compact prompt
+    system: compact
+    workloads: [extract-compact, synthetic-long-compact]
+    lora:
+      name: jobx-lora                      # requests use this model name
+      url: https://github.com/srini2k03/jobpost-extractor-qlora/releases/download/model-v1/jobx-qwen2.5-0.5b-lora-adapter.tar.gz
+      subdir: final                        # the tarball holds final/adapter_config.json + adapter_model.safetensors
+      max_lora_rank: 16                    # configs/cpu/route.yaml lora.r
+    quality: true
+    quality_approach: vllm-qwen2.5-0.5b-lora
 
-  # --- baseline: llama.cpp server, GGUF Q4_K_M (OpenAI-compatible /v1/chat/completions) ----------------
+  # --- baseline: llama.cpp llama-server, GGUF Q4_K_M of the same 1.5B base, all layers on the GPU --------
   - name: q15-llamacpp-q4km
+    group: baseline
+    label: "1.5B GGUF Q4_K_M (llama.cpp)"
     engine: llama.cpp
     model: Qwen/Qwen2.5-1.5B-Instruct-GGUF
     gguf_file: qwen2.5-1.5b-instruct-q4_k_m.gguf
     n_gpu_layers: 99
-    parallel: 16              # llama-server --parallel (slots); ctx-size = parallel * 4096
-    cont_batching: true
+    parallel: 16                           # llama-server slots; context = parallel x ctx_per_slot
+    ctx_per_slot: 4096
     concurrency: [1, 4, 16, 64]
+    rates: [2, 8]
+    quality: true
+    quality_approach: llamacpp-qwen2.5-1.5b-q4km
 
-# USD per GPU-hour. To verify against the provider's pricing page before quoting any cost number.
-gpu_prices:
-  L4:
-    usd_per_hour: 0.80
-    provider: modal
-    source: https://modal.com/pricing
-    checked: 2026-11
-    status: to-verify
-  T4:
-    usd_per_hour: 0.59
-    provider: modal
-    source: https://modal.com/pricing
-    checked: 2026-11
-    status: to-verify
-  A10G:
-    usd_per_hour: 1.10
-    provider: modal
-    source: https://modal.com/pricing
-    checked: 2026-11
-    status: to-verify
-  L40S:
-    usd_per_hour: 1.95
-    provider: modal
-    source: https://modal.com/pricing
-    checked: 2026-11
-    status: to-verify
+# Hourly prices (USD). To verify against the provider's pricing page before quoting any cost number.
+prices:
+  gpu:
+    L4: {usd_per_hour: 0.80, provider: modal, source: "https://modal.com/pricing", checked: 2026-11, status: to-verify}
+    T4: {usd_per_hour: 0.59, provider: modal, source: "https://modal.com/pricing", checked: 2026-11, status: to-verify}
+    A10G: {usd_per_hour: 1.10, provider: modal, source: "https://modal.com/pricing", checked: 2026-11, status: to-verify}
+    L40S: {usd_per_hour: 1.95, provider: modal, source: "https://modal.com/pricing", checked: 2026-11, status: to-verify}
+  cpu_core: {usd_per_hour: 0.0472, provider: modal, source: "https://modal.com/pricing", checked: 2026-11, status: to-verify}
+  memory_gib: {usd_per_hour: 0.008, provider: modal, source: "https://modal.com/pricing", checked: 2026-11, status: to-verify}

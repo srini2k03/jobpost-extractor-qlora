@@ -26,9 +26,10 @@ def usd_per_1m_output_tokens(gpu_usd_per_hour: float, output_tokens_per_s: float
 
 
 def gpu_prices(matrix_path: str | Path) -> dict[str, dict[str, Any]]:
-    """The ``gpu_prices`` table of ``configs/bench/matrix.yaml`` keyed by GPU name."""
+    """The ``prices.gpu`` table of ``configs/bench/matrix.yaml`` keyed by GPU name."""
     data = yaml.safe_load(Path(matrix_path).read_text())
-    return {str(k): dict(v) for k, v in (data.get("gpu_prices") or {}).items()}
+    table = (data.get("prices") or {}).get("gpu") or data.get("gpu_prices") or {}
+    return {str(k): dict(v) for k, v in table.items()}
 
 
 def gpu_price(matrix_path: str | Path, gpu: str) -> float:

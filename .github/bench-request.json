@@ -1,0 +1,9 @@
+{
+  "id": 1,
+  "note": "Edit and push this file (e.g. bump id) to run the serving benchmark with .github/workflows/bench.yml. Needs the MODAL_TOKEN_ID and MODAL_TOKEN_SECRET repository secrets; without them the workflow only prints a notice. Fields: configs ('all', names or 'group:<name>', see configs/bench/matrix.yaml), levels (optional overrides: concurrency, rates, duration_s, warmup, workloads), yes (run even if the estimate exceeds max_gpu_minutes), skip_load, skip_quality.",
+  "configs": "all",
+  "levels": {},
+  "yes": false,
+  "skip_load": false,
+  "skip_quality": false
+}

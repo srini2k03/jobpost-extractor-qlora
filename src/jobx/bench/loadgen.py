@@ -18,14 +18,15 @@ from __future__ import annotations
 
 import asyncio
 import csv
-import itertools
+import gzip
+import io
 import json
 import random
 import time
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
-from typing import Any
+from typing import IO, Any, Protocol
 
 import httpx
 import numpy as np
@@ -74,12 +75,26 @@ class RunConfig:
     warmup: int = 0
 
 
+class LevelMonitor(Protocol):
+    """Something sampled while one level runs (GPU sampler, server-metrics scraper)."""
+
+    def __enter__(self) -> Any: ...
+
+    def __exit__(self, *exc: Any) -> Any: ...
+
+    def stats(self) -> dict[str, Any]: ...
+
+
+SERVER_FIELDS = ("kv_cache_usage_mean", "kv_cache_usage_max", "prefix_cache_hit_rate", "num_preemptions")
+
+
 @dataclass
 class RunResult:
     config: RunConfig
     results: list[RequestResult]
     duration_s: float
     gpu: dict[str, Any] = field(default_factory=dict)
+    server: dict[str, Any] = field(default_factory=dict)
 
     def rows(self) -> list[dict[str, Any]]:
         base = {
@@ -89,6 +104,7 @@ class RunResult:
             "gpu_mem_peak_mib": self.gpu.get("mem_peak_mib"),
             "gpu_mem_total_mib": self.gpu.get("mem_total_mib"),
             "gpu_util_mean": self.gpu.get("util_mean"),
+            **{k: self.server.get(k) for k in SERVER_FIELDS},
         }
         out = []
         for r in self.results:
@@ -104,14 +120,36 @@ CSV_FIELDS: list[str] = [
     "gpu_mem_peak_mib",
     "gpu_mem_total_mib",
     "gpu_util_mean",
+    *SERVER_FIELDS,
     *(f.name for f in fields(RequestResult) if f.name != "gaps_s"),
 ]
 
 
+def open_csv(path: str | Path, mode: str = "r") -> IO[str]:
+    """Text handle for a CSV; ``.gz`` paths are gzip-compressed with a fixed mtime (reproducible bytes)."""
+    p = Path(path)
+    if p.suffix == ".gz":
+        raw = open(p, mode + "b")  # noqa: SIM115 - closed with the wrapper
+        gz = gzip.GzipFile(fileobj=raw, mode=mode + "b", mtime=0)
+        return _ClosingWrapper(gz, raw)
+    return open(p, mode, newline="", encoding="utf-8")
+
+
+class _ClosingWrapper(io.TextIOWrapper):
+    def __init__(self, gz: gzip.GzipFile, raw: IO[bytes]) -> None:
+        super().__init__(gz, encoding="utf-8", newline="")
+        self._raw = raw
+
+    def close(self) -> None:
+        super().close()
+        self._raw.close()
+
+
 def write_csv(path: str | Path, runs: Sequence[RunResult]) -> Path:
+    """One row per request; a ``.csv.gz`` path writes it gzip-compressed."""
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
-    with open(p, "w", newline="", encoding="utf-8") as f:
+    with open_csv(p, "w") as f:
         w = csv.DictWriter(f, fieldnames=CSV_FIELDS)
         w.writeheader()
         for run in runs:
@@ -282,12 +320,12 @@ async def run_closed_loop(
     *,
     duration_s: float | None = None,
 ) -> RunResult:
-    """``concurrency`` workers. The first ``config.warmup`` requests warm up and are dropped; then either every
-    remaining request is sent once, or (with ``duration_s``) they are cycled until the deadline (requests in
-    flight at the deadline still complete and count)."""
+    """``concurrency`` workers. The first ``config.warmup`` requests warm up and are dropped; then every remaining
+    request is sent once, or (with ``duration_s``) until the deadline, whichever comes first (requests in flight
+    at the deadline still complete and count). Size the pool for the duration; it also caps the CSV size."""
     warm, measured = _split(requests, config.warmup)
     await _warmup(client, warm, concurrency)
-    it: Iterator[BenchRequest] = itertools.cycle(measured) if duration_s else iter(measured)
+    it: Iterator[BenchRequest] = iter(measured)
     t0 = time.perf_counter()
     deadline = t0 + duration_s if duration_s else None
     results = await _closed(client, it, concurrency, t0, deadline)
@@ -328,7 +366,7 @@ async def run_open_loop(
         return r
 
     tasks: list[asyncio.Task[RequestResult]] = []
-    it: Iterator[BenchRequest] = itertools.cycle(measured) if duration_s else iter(measured)
+    it: Iterator[BenchRequest] = iter(measured)
     t0 = time.perf_counter()
     next_at = t0
     for req in it:
@@ -357,11 +395,12 @@ async def sweep(
     seed: int = 0,
     max_concurrency: int | None = None,
     gpu_sampler_factory: Callable[[], GpuSampler] | None = None,
+    server_monitor_factory: Callable[[], LevelMonitor] | None = None,
 ) -> list[RunResult]:
     """One run per concurrency level (closed loop) and per rate (open loop). ``requests`` is split into
     consecutive slices of ``warmup + per_level`` so levels do not resend the same postings while the pool lasts.
     ``gpu_sampler_factory`` builds a fresh :class:`~jobx.bench.gpu.GpuSampler` per level (its window includes the
-    level's warm-up)."""
+    level's warm-up); ``server_monitor_factory`` likewise for a server-metrics scraper (vLLM ``/metrics``)."""
     levels: list[tuple[str, float]] = [("closed", c) for c in concurrencies] + [("poisson", r) for r in rates]
     size = warmup + per_level
     if len(requests) < size * len(levels):
@@ -382,19 +421,27 @@ async def sweep(
             warmup=warmup,
         )
         sampler = gpu_sampler_factory() if gpu_sampler_factory else GpuSampler(enabled=False)
-        with sampler:
-            if mode == "closed":
-                run = await run_closed_loop(client, chunk, int(level), cfg, duration_s=duration_s)
-            else:
-                run = await run_open_loop(
-                    client,
-                    chunk,
-                    level,
-                    cfg,
-                    duration_s=duration_s,
-                    seed=seed + i,
-                    max_concurrency=max_concurrency,
-                )
+        monitor = server_monitor_factory() if server_monitor_factory else None
+        if monitor is not None:
+            monitor.__enter__()
+        try:
+            with sampler:
+                if mode == "closed":
+                    run = await run_closed_loop(client, chunk, int(level), cfg, duration_s=duration_s)
+                else:
+                    run = await run_open_loop(
+                        client,
+                        chunk,
+                        level,
+                        cfg,
+                        duration_s=duration_s,
+                        seed=seed + i,
+                        max_concurrency=max_concurrency,
+                    )
+        finally:
+            if monitor is not None:
+                monitor.__exit__(None, None, None)
         run.gpu = sampler.stats()
+        run.server = monitor.stats() if monitor is not None else {}
         runs.append(run)
     return runs

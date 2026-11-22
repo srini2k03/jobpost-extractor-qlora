@@ -183,16 +183,19 @@ def test_connection_error_is_an_error_row() -> None:
     assert all(r.status == 0 and r.error and r.ttft_s is None for r in run.results)
 
 
-def test_closed_loop_duration_mode_cycles_requests() -> None:
+def test_closed_loop_duration_mode_stops_at_deadline_or_pool_end() -> None:
     cfg = FakeConfig(ttft_s=0.01, itl_s=0.005, output_tokens=4)
 
-    async def go(client: StreamingClient) -> RunResult:
-        return await run_closed_loop(client, _reqs(3), 2, _cfg(concurrency=2), duration_s=0.4)
+    async def go(client: StreamingClient) -> tuple[RunResult, RunResult]:
+        long_pool = await run_closed_loop(client, _reqs(500), 2, _cfg(concurrency=2), duration_s=0.4)
+        short_pool = await run_closed_loop(client, _reqs(3), 2, _cfg(concurrency=2), duration_s=5.0)
+        return long_pool, short_pool
 
-    _, run = asyncio.run(_with_server(cfg, go))
-    assert len(run.results) > 3  # cycled past the 3 distinct requests
+    _, (run, short) = asyncio.run(_with_server(cfg, go))
+    assert 3 < len(run.results) < 500
     assert 0.35 <= run.duration_s <= 1.0
     assert max(r.start_s for r in run.results) < 0.4
+    assert len(short.results) == 3 and short.duration_s < 1.0  # pool exhausted before the deadline
 
 
 def test_open_loop_poisson_arrivals() -> None:
@@ -327,11 +330,15 @@ def test_matrix_describes_plan_and_prices() -> None:
     assert {16, 64, 256} <= seqs
     assert {c.get("enable_prefix_caching", True) for c in m["configs"]} == {True, False}
     assert any(c.get("quantization") == "fp8" for c in m["configs"])
-    assert any(c.get("enable_lora") for c in m["configs"]) and any(
+    assert any(c.get("lora") for c in m["configs"]) and any(
         c.get("engine") == "llama.cpp" for c in m["configs"]
     )
     assert all(w in WORKLOADS for c in m["configs"] for w in c.get("workloads", m["load"]["workloads"]))
-    for name, p in m["gpu_prices"].items():
+    for name, p in [
+        *m["prices"]["gpu"].items(),
+        ("cpu", m["prices"]["cpu_core"]),
+        ("mem", m["prices"]["memory_gib"]),
+    ]:
         assert {"usd_per_hour", "source", "checked"} <= set(p), name
     assert gpu_price(MATRIX, "L4") == pytest.approx(0.80)
     with pytest.raises(KeyError):

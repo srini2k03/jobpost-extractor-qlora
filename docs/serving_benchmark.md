@@ -90,9 +90,28 @@ the numbers are not dominated by the network; the client ignores `HTTP(S)_PROXY`
 to change that). vLLM pre-allocates `--gpu-memory-utilization` of the card, so peak GPU memory mostly
 reflects that setting; weight and KV-cache sizes come from vLLM's startup log.
 
-## Phase 2 (not yet)
+## Running on Modal
 
-A Modal app that launches each matrix config on an L4, runs the load generator in the same container,
-pulls the raw CSVs back into `results/bench/raw/` and runs the quality pass. It will need Modal credentials
-as `MODAL_TOKEN_ID` / `MODAL_TOKEN_SECRET` (environment variables, or GitHub Actions secrets for a manual
-workflow); the owner will create them, and they are never committed.
+`src/jobx/bench/modal_app.py` runs one config per L4 container. The vLLM image is `vllm==0.33.0`
+(`vllm_version` in the matrix) on `nvidia/cuda:12.8.1-devel-ubuntu24.04`; the llama.cpp image is
+`ghcr.io/ggml-org/llama.cpp:server-cuda-b6000`, the same llama.cpp build as the CPU route. Hugging Face weights
+are cached in the `jobx-hf-cache` Volume and every run is written to the `jobx-bench-results` Volume.
+
+Each container ([`remote.py`](../src/jobx/bench/remote.py)) downloads the weights (plus the LoRA adapter from
+release `model-v1`, or the GGUF), starts `vllm serve` / `llama-server` on localhost with the config's flags,
+waits for `/health`, and runs the load generator in-process. Per level it samples GPU memory and scrapes
+`/metrics` for KV-cache usage and the prefix-cache hit rate. When `quality: true` it then runs the eval.
+It writes `results/bench/raw/<config>/<workload>.csv.gz` and `results/bench/manifests/<config>.json`
+(vLLM version, GPU name, model revision, argv, wall time, estimated cost).
+
+```bash
+pip install -e ".[bench,modal]" && modal token new          # or MODAL_TOKEN_ID / MODAL_TOKEN_SECRET
+jobx bench plan --config all                                 # estimate only, no account needed
+modal run -m jobx.bench.modal_app --config q15-bf16
+modal run -m jobx.bench.modal_app --matrix all [--yes]
+```
+
+Before starting anything it prints the estimate (startup + workloads x levels x (duration + 20 s) + quality
+passes). It refuses to start above `MAX_GPU_MINUTES` (default 420) unless `--yes` is given. Each container
+times out at 1.5 x its estimate + 15 min. A runtime guard launches a config only while actual plus in-flight
+minutes stay within the cap.

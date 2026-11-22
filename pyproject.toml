@@ -39,6 +39,8 @@ guided = ["lm-format-enforcer>=0.11"]
 api = ["openai>=1.40", "anthropic>=2.4,<3"]
 # Serving load tests (jobx bench). GPU sampling optionally uses nvidia-ml-py, else nvidia-smi, else nothing.
 bench = ["httpx>=0.27"]
+# Runs the benchmark matrix on Modal GPUs (jobx.bench.modal_app); needs a Modal account and token.
+modal = ["modal>=1.6,<2"]
 dev = [
   "ruff>=0.6",
   "mypy>=1.10",
@@ -86,7 +88,7 @@ module = [
   "torch", "torch.*", "transformers", "transformers.*", "trl", "trl.*", "peft", "peft.*",
   "datasets", "datasets.*", "wandb", "wandb.*", "huggingface_hub", "huggingface_hub.*",
   "llama_cpp", "llama_cpp.*", "gradio", "gradio.*", "lmformatenforcer", "lmformatenforcer.*",
-  "awq", "awq.*", "pynvml", "bitsandbytes", "tqdm", "tqdm.*", "matplotlib", "matplotlib.*", "google.colab", "google.colab.*",
+  "awq", "awq.*", "pynvml", "modal", "modal.*", "bitsandbytes", "tqdm", "tqdm.*", "matplotlib", "matplotlib.*", "google.colab", "google.colab.*",
 ]
 ignore_missing_imports = true
 

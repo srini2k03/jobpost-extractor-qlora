@@ -172,3 +172,50 @@ def fake_server(
 
     cfg = FakeConfig(ttft, itl, output_tokens, prefix_cache_factor, max_num_seqs, fail_every)
     asyncio.run(serve(cfg, host, port))
+
+
+@bench_app.command("plan")
+def plan_cmd(
+    config: Annotated[str, typer.Option(help="'all', comma-separated names or group:<name>")] = "",
+    request: Annotated[
+        Path | None, typer.Option(help="request file, e.g. .github/bench-request.json")
+    ] = None,
+    levels: Annotated[str, typer.Option(help='JSON level overrides, e.g. {"duration_s": 30}')] = "",
+    yes: Annotated[bool, typer.Option(help="accept an estimate above the cap")] = False,
+    max_gpu_minutes: Annotated[
+        float | None, typer.Option(help="cap (default: matrix max_gpu_minutes)")
+    ] = None,
+    matrix: Path = DEFAULT_MATRIX,
+    github_output: Annotated[
+        Path | None, typer.Option(help="append key=value outputs for GitHub Actions")
+    ] = None,
+) -> None:
+    """Print the GPU-minute / dollar estimate of a selection; exit 2 if it exceeds the cap without --yes."""
+    from jobx.bench import plan
+
+    m = plan.load_matrix(matrix)
+    req = json.loads(request.read_text()) if request else None
+    if not config and req is None:
+        config = "all"
+    sel = plan.plan_selection(
+        m,
+        config=config,
+        request=req,
+        levels=json.loads(levels) if levels else None,
+        yes=yes,
+        cap_minutes=max_gpu_minutes,
+    )
+    typer.echo(plan.format_estimate(sel.decision, str(m.get("gpu", "L4"))))
+    if github_output is not None:
+        r = sel.request
+        overrides = {**(r.overrides if r else {}), **(json.loads(levels) if levels else {})}
+        with open(github_output, "a", encoding="utf-8") as f:
+            f.write(f"configs={','.join(c.name for c in sel.configs)}\n")
+            f.write(f"levels={json.dumps(overrides, separators=(',', ':'))}\n")
+            f.write(f"yes={'true' if (yes or (r and r.yes)) else 'false'}\n")
+            f.write(f"skip_load={'true' if r and r.skip_load else 'false'}\n")
+            f.write(f"skip_quality={'true' if r and r.skip_quality else 'false'}\n")
+            f.write(f"minutes={sel.decision.total_minutes}\nusd={sel.decision.total_usd}\n")
+            f.write(f"ok={'true' if sel.decision.ok else 'false'}\n")
+    if not sel.decision.ok:
+        raise typer.Exit(2)

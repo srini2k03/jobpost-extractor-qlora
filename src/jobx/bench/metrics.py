@@ -23,6 +23,7 @@ from typing import Any
 import numpy as np
 
 from jobx.bench.cost import usd_per_1k_requests, usd_per_1m_output_tokens
+from jobx.bench.loadgen import open_csv
 
 PCTS = (50, 95, 99)
 GROUP_KEYS = ("run_id", "label", "model", "workload", "mode", "concurrency", "rate")
@@ -37,7 +38,7 @@ class SLA:
 def read_rows(paths: Iterable[str | Path]) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     for p in paths:
-        with open(p, newline="", encoding="utf-8") as f:
+        with open_csv(p) as f:
             rows.extend(csv.DictReader(f))
     return rows
 

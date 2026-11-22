@@ -2,7 +2,7 @@
 
 Pure ``asyncio`` (no web framework), HTTP/1.1 with keep-alive and chunked SSE responses. It implements just
 enough of ``/v1/chat/completions`` for the load generator: ``stream`` (with ``stream_options.include_usage``)
-and non-streaming replies, ``max_tokens``, vLLM's ``ignore_eos``, plus ``GET /v1/models`` and ``GET /health``.
+and non-streaming replies, ``max_tokens``, vLLM's ``ignore_eos``, plus ``GET /v1/models``, ``GET /health`` and vLLM-style ``GET /metrics``.
 
 Timing model per request: optional queueing behind ``max_num_seqs`` concurrent sequences, then
 ``ttft_s`` (multiplied by ``prefix_cache_factor`` when the request's prefix, every message but the last, was
@@ -44,6 +44,10 @@ class FakeServer:
         self.config = config or FakeConfig()
         self.requests_seen = 0
         self.prefix_hits = 0
+        self.running = 0
+        self.waiting = 0
+        self.prompt_tokens_total = 0
+        self.cached_tokens_total = 0
         self._prefixes: set[str] = set()
         self._sem = asyncio.Semaphore(self.config.max_num_seqs) if self.config.max_num_seqs else None
         self._server: asyncio.Server | None = None
@@ -88,6 +92,8 @@ class FakeServer:
     async def _route(self, method: str, path: str, body: bytes, writer: asyncio.StreamWriter) -> None:
         if method == "GET" and path in ("/health", "/v1/health"):
             await _send_json(writer, 200, {"status": "ok"})
+        elif method == "GET" and path == "/metrics":
+            await _send_text(writer, 200, self.metrics_text())
         elif method == "GET" and path == "/v1/models":
             await _send_json(
                 writer, 200, {"object": "list", "data": [{"id": self.config.model, "object": "model"}]}
@@ -111,6 +117,9 @@ class FakeServer:
         max_tokens = int(req.get("max_tokens") or cfg.output_tokens)
         n_out = max_tokens if req.get("ignore_eos") else min(cfg.output_tokens, max_tokens)
         prompt_tokens = sum(len(str(m.get("content", ""))) for m in msgs) // 4
+        self.prompt_tokens_total += prompt_tokens
+        if hit:
+            self.cached_tokens_total += sum(len(str(m.get("content", ""))) for m in msgs[:-1]) // 4
         ttft = cfg.ttft_s * (cfg.prefix_cache_factor if hit else 1.0)
         rid = f"chatcmpl-fake-{self.requests_seen}"
         usage = {
@@ -153,11 +162,34 @@ class FakeServer:
             writer.write(b"0\r\n\r\n")
             await writer.drain()
 
-        if self._sem is None:
-            await generate()
-        else:
-            async with self._sem:
+        async def tracked() -> None:
+            self.running += 1
+            try:
                 await generate()
+            finally:
+                self.running -= 1
+
+        if self._sem is None:
+            await tracked()
+        else:
+            self.waiting += 1
+            async with self._sem:
+                self.waiting -= 1
+                await tracked()
+
+    def metrics_text(self) -> str:
+        """vLLM-style Prometheus metrics (names as in vLLM's V1 engine)."""
+        cap = self.config.max_num_seqs or 256
+        lines = [
+            "# TYPE vllm:kv_cache_usage_perc gauge",
+            f'vllm:kv_cache_usage_perc{{model_name="{self.config.model}"}} {min(1.0, self.running / cap)}',
+            f'vllm:num_requests_running{{model_name="{self.config.model}"}} {self.running}',
+            f'vllm:num_requests_waiting{{model_name="{self.config.model}"}} {self.waiting}',
+            f'vllm:prefix_cache_queries_total{{model_name="{self.config.model}"}} {self.prompt_tokens_total}',
+            f'vllm:prefix_cache_hits_total{{model_name="{self.config.model}"}} {self.cached_tokens_total}',
+            f'vllm:num_preemptions_total{{model_name="{self.config.model}"}} 0',
+        ]
+        return "\n".join(lines) + "\n"
 
 
 def _token(i: int) -> str:
@@ -175,6 +207,16 @@ def _sse(rid: str, delta: dict[str, Any], finish: str | None = None) -> bytes:
 
 async def _chunk(writer: asyncio.StreamWriter, data: bytes) -> None:
     writer.write(f"{len(data):x}\r\n".encode() + data + b"\r\n")
+    await writer.drain()
+
+
+async def _send_text(writer: asyncio.StreamWriter, status: int, text: str) -> None:
+    body = text.encode()
+    writer.write(
+        f"HTTP/1.1 {status} OK\r\ncontent-type: text/plain; version=0.0.4\r\ncontent-length: {len(body)}\r\n"
+        f"connection: keep-alive\r\n\r\n".encode()
+        + body
+    )
     await writer.drain()
 
 

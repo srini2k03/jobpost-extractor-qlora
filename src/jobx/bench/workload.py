@@ -11,8 +11,9 @@ Workloads (all greedy, ``temperature=0``):
   ``min_tokens``), to stress the decode phase independently of what the model would write.
 
 Postings are sampled without replacement (reshuffled passes once the pool is exhausted), so a sweep over
-several concurrency levels sends distinct postings as long as the pool is large enough; otherwise prefix
-caching would also hit the posting itself and flatter the later levels.
+several concurrency levels sends distinct postings as long as the pool is large enough. Repeats (needed for
+long, duration-based levels) get a unique "Job ID" line appended, so prefix caching can never hit a whole
+earlier prompt and flatter the later levels.
 """
 
 from __future__ import annotations
@@ -137,7 +138,12 @@ def build_workload(
     lengths = lengths or OutputLengths()
     out: list[BenchRequest] = []
     for i, post in enumerate(sample_without_replacement(pool, n, rng)):
-        msgs = prompts.messages(post["text"], shot_list, system=spec.system)
+        text = post["text"]
+        if i >= len(pool):
+            # Repeat pass: a job-id line (common in real postings) keeps the full prompt unique, so prefix caching
+            # reuses only the genuinely shared system/few-shot prefix, never a whole earlier request.
+            text = f"{text.rstrip()}\nJob ID: JX-{i:06d}"
+        msgs = prompts.messages(text, shot_list, system=spec.system)
         if spec.synthetic_output:
             k = lengths.sample(rng)
             out.append(BenchRequest(f"{i:05d}-{post['id']}", msgs, k, {"ignore_eos": True, "min_tokens": k}))

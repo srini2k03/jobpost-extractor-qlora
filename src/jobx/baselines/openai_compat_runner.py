@@ -200,11 +200,17 @@ def response_format(mode: str) -> dict[str, Any] | None:
 
 
 def build_request(
-    model: str, text: str, shots: Sequence[dict[str, Any]], *, mode: str, max_tokens: int
+    model: str,
+    text: str,
+    shots: Sequence[dict[str, Any]],
+    *,
+    mode: str,
+    max_tokens: int,
+    system: str = "full",
 ) -> dict[str, Any]:
     kwargs: dict[str, Any] = {
         "model": model,
-        "messages": prompts.messages(text, shots),
+        "messages": prompts.messages(text, shots, system=system),
         "temperature": 0,
         "max_tokens": max_tokens,
     }
@@ -404,6 +410,7 @@ async def run_split(
     price_out: float = 0.0,
     meta_extra: dict[str, Any] | None = None,
     sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+    system: str = "full",
 ) -> tuple[Path | None, RunStats]:
     """Returns (predictions path, stats); the path is None when no request completed."""
     chain = model if isinstance(model, ModelChain) else ModelChain([model])
@@ -449,7 +456,9 @@ async def run_split(
                     fatal.append(str(e))
                     stop.set()
                     return
-                kwargs = build_request(use, ex["text"], shots, mode=state["mode"], max_tokens=max_tokens)
+                kwargs = build_request(
+                    use, ex["text"], shots, mode=state["mode"], max_tokens=max_tokens, system=system
+                )
                 ckey = ResponseCache.key(base_url, kwargs)
                 hit = cache.get(ckey)
                 if hit is not None:
@@ -536,6 +545,7 @@ async def run_split(
         "response_format": state["mode"],
         "split": split,
         "n_shots": len(shots),
+        "system_prompt": system,
         "shot_ids": [s["id"] for s in shots],
         "date": datetime.now(UTC).strftime("%Y-%m-%d"),
         "n_examples": len(examples),
@@ -647,7 +657,9 @@ async def main_async(a: argparse.Namespace, client: Any = None) -> int:
     ]
     chain = ModelChain([model, *fallbacks], switch_after=a.switch_after, cooldown_s=a.cooldown)
     print(f"model chain: {' -> '.join(chain.models)}")
-    meta_extra = {"commit": git_commit(root), "provider": a.provider}
+    meta_extra: dict[str, Any] = {"commit": a.commit or git_commit(root), "provider": a.provider}
+    if a.hardware:
+        meta_extra["hardware"] = a.hardware
     total_completed = 0
     for split in splits:
         examples = eval_subset(read_jsonl(root / SPLIT_FILES[split]), a.max_examples)
@@ -671,6 +683,7 @@ async def main_async(a: argparse.Namespace, client: Any = None) -> int:
                     price_in=price_in,
                     price_out=price_out,
                     meta_extra=meta_extra,
+                    system=a.system,
                 )
             except FatalConfigError as e:
                 print(
@@ -732,6 +745,14 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument("--price-in", type=float, default=None, help="USD per million input tokens")
     ap.add_argument("--price-out", type=float, default=None, help="USD per million output tokens")
     ap.add_argument("--root", default=str(REPO_ROOT))
+    ap.add_argument(
+        "--system",
+        default="full",
+        choices=sorted(prompts.SYSTEM_PROMPTS),
+        help="system prompt (compact: fine-tune)",
+    )
+    ap.add_argument("--hardware", default=None, help="hardware label for the meta file (default: API)")
+    ap.add_argument("--commit", default=None, help="commit recorded in the meta file (default: git HEAD)")
     return ap
 
 
