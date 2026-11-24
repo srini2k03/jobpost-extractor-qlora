@@ -237,7 +237,7 @@ def robustness_report() -> None:
 
 
 @app.command("calibrate")
-def calibrate_cmd(approach: str = "qwen2.5-0.5b-lora-cpu_q4_k_m", target: float = 0.95) -> None:
+def calibrate_cmd(approach: str = "qwen2.5-0.5b-lora-cpu_q4_k_m", target: float = 0.99) -> None:
     """Fit field-confidence calibration on val (needs --logprobs predictions); report held-out reliability."""
     from jobx.eval.calibration import calibrate
 

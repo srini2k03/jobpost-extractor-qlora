@@ -1,6 +1,6 @@
 {
   "approach": "qwen2.5-0.5b-lora-cpu_q4_k_m",
-  "threshold": 0.002,
+  "threshold": 0.419,
   "features": [
     "mean_lp",
     "min_lp",

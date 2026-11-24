@@ -168,14 +168,14 @@ _Micro-F1 % per category (gold by construction). "Not a job post": share of outp
 
 #### Field-confidence calibration (`qwen2.5-0.5b-lora-cpu_q4_k_m`)
 
-_Fitted on val (3872 fields); abstention threshold 0.00 = smallest with 95% selective accuracy on val. Held-out splits not used for fitting._
+_Fitted on val (3872 fields); abstention threshold 0.42 = smallest with 99% selective accuracy on val. Held-out splits not used for fitting._
 
 | Split | Fields | ECE raw | ECE calibrated | Brier calibrated | AUROC | Kept at threshold % | Accuracy kept % | Accuracy all % |
 |---|---|---|---|---|---|---|---|---|
-| val | 3872 | 0.014 | 0.007 | 0.009 | 0.956 | 100.0 | 98.1 | 98.1 |
-| test_synth | 5181 | 0.012 | 0.008 | 0.007 | 0.9131 | 100.0 | 98.5 | 98.5 |
-| test_real | 1353 | 0.199 | 0.101 | 0.112 | 0.8797 | 96.8 | 78.9 | 76.4 |
-| robustness | 1848 | 0.021 | 0.011 | 0.017 | 0.7186 | 100.0 | 97.6 | 97.6 |
+| val | 3872 | 0.014 | 0.007 | 0.009 | 0.956 | 99.1 | 99.0 | 98.1 |
+| test_synth | 5181 | 0.012 | 0.008 | 0.007 | 0.9131 | 99.4 | 99.1 | 98.5 |
+| test_real | 1353 | 0.199 | 0.101 | 0.112 | 0.8797 | 87.9 | 86.0 | 76.4 |
+| robustness | 1848 | 0.021 | 0.011 | 0.017 | 0.7186 | 98.9 | 98.5 | 97.6 |
 
 #### Quantisation sweep (one runner, all variants)
 
@@ -200,16 +200,16 @@ _CPU (Intel(R) Xeon(R) 6975P-C, 4 threads, GitHub Actions), llama.cpp b6000, mea
 
 #### LoRA study (reduced budget, validation only)
 
-_Reduced-budget sweep: 640 training examples, 40 steps (effective batch 16) per configuration; the released model used 2,177 examples x 2 epochs (273 steps). Selected: `r16_lr6e-4` (within its 95% CI: none)._
+_Reduced-budget sweep: 640 training examples, 40 steps (effective batch 16) per configuration; the released model used 2,177 examples x 2 epochs (273 steps). Selected: `r16_lr6e-4` (within its 95% CI: none). Seconds per step depend on the runner's CPU (listed); compare speed only between rows on the same CPU._
 
-| Config | r / alpha | Targets | LR | Trainable params | % of total | Adapter (MB) | s/step | Peak RAM (GB) | Val loss | Val micro-F1 % [95% CI] | JSON valid % | Hallucination % |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| r16_lr6e-4 | 16 / 32 | all linear | 0.0006 | 8,798,208 | 1.78 | 35.24 | 47.8 | 4.58 | 0.0248 | 96.5 [95.8, 97.3] | 100.0 | 4.1 |
-| r32_all | 32 / 64 | all linear | 0.0003 | 17,596,416 | 3.56 | 70.43 | 50.33 | 4.94 | 0.024 | 95.5 [94.4, 96.5] | 100.0 | 3.2 |
-| r16_all | 16 / 32 | all linear | 0.0003 | 8,798,208 | 1.78 | 35.24 | 47.28 | 4.59 | 0.0361 | 93.9 [92.8, 95.0] | 100.0 | 6.2 |
-| r8_all | 8 / 16 | all linear | 0.0003 | 4,399,104 | 0.89 | 17.64 | 47.4 | 4.5 | 0.0525 | 92.1 [90.7, 93.3] | 100.0 | 6.6 |
-| r16_lr1e-4 | 16 / 32 | all linear | 0.0001 | 8,798,208 | 1.78 | 35.24 | 81.69 | 4.31 | 0.0734 | 88.0 [86.5, 89.5] | 100.0 | 11.2 |
-| r16_attn | 16 / 32 | attention | 0.0003 | 2,162,688 | 0.44 | 8.68 | 136.99 | 4.11 | 0.0799 | 87.8 [85.9, 89.5] | 99.3 | 9.2 |
+| Config | r / alpha | Targets | LR | Trainable params | % of total | Adapter (MB) | s/step | CPU (precision) | Peak RAM (GB) | Val loss | Val micro-F1 % [95% CI] | JSON valid % | Hallucination % |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| r16_lr6e-4 | 16 / 32 | all linear | 0.0006 | 8,798,208 | 1.78 | 35.24 | 47.8 | Xeon 6975P-C (bf16) | 4.58 | 0.0248 | 96.5 [95.8, 97.3] | 100.0 | 4.1 |
+| r32_all | 32 / 64 | all linear | 0.0003 | 17,596,416 | 3.56 | 70.43 | 50.33 | Xeon 6975P-C (bf16) | 4.94 | 0.024 | 95.5 [94.4, 96.5] | 100.0 | 3.2 |
+| r16_all | 16 / 32 | all linear | 0.0003 | 8,798,208 | 1.78 | 35.24 | 47.28 | Xeon 6975P-C (bf16) | 4.59 | 0.0361 | 93.9 [92.8, 95.0] | 100.0 | 6.2 |
+| r8_all | 8 / 16 | all linear | 0.0003 | 4,399,104 | 0.89 | 17.64 | 47.4 | Xeon 6975P-C (bf16) | 4.5 | 0.0525 | 92.1 [90.7, 93.3] | 100.0 | 6.6 |
+| r16_lr1e-4 | 16 / 32 | all linear | 0.0001 | 8,798,208 | 1.78 | 35.24 | 81.69 | EPYC 9V74 (bf16) | 4.31 | 0.0734 | 88.0 [86.5, 89.5] | 100.0 | 11.2 |
+| r16_attn | 16 / 32 | attention | 0.0003 | 2,162,688 | 0.44 | 8.68 | 136.99 | EPYC 7763 (fp32) | 4.11 | 0.0799 | 87.8 [85.9, 89.5] | 99.3 | 9.2 |
 <!-- RESULTS:END -->
 
 **About the regex baseline.** It is a real CPU run, but read it as a sanity check of the evaluation stack

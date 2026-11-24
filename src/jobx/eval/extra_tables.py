@@ -113,6 +113,13 @@ def quant_md(root: Path) -> list[str]:
     return md
 
 
+def _cpu(name: str) -> str:
+    import re
+
+    m = re.search(r"(Xeon\(R\) [\w-]+|EPYC \w+)", name)
+    return m.group(1).replace("(R)", "") if m else name
+
+
 def lora_md(root: Path) -> list[str]:
     s = _read(root / "results/lora_study/summary.json")
     if not s or not s.get("runs"):
@@ -120,10 +127,11 @@ def lora_md(root: Path) -> list[str]:
     md = [
         "#### LoRA study (reduced budget, validation only)",
         "",
-        f"_{s.get('budget_note', '')} Selected: `{s['best']}` (within its 95% CI: {', '.join(s['within_best_ci']) or 'none'})._",
+        f"_{s.get('budget_note', '')} Selected: `{s['best']}` (within its 95% CI: {', '.join(s['within_best_ci']) or 'none'}). "
+        "Seconds per step depend on the runner's CPU (listed); compare speed only between rows on the same CPU._",
         "",
-        "| Config | r / alpha | Targets | LR | Trainable params | % of total | Adapter (MB) | s/step | Peak RAM (GB) | Val loss | Val micro-F1 % [95% CI] | JSON valid % | Hallucination % |",
-        "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+        "| Config | r / alpha | Targets | LR | Trainable params | % of total | Adapter (MB) | s/step | CPU (precision) | Peak RAM (GB) | Val loss | Val micro-F1 % [95% CI] | JSON valid % | Hallucination % |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for r in s["runs"]:
         c, v = r["config"], r["val"]
@@ -137,7 +145,8 @@ def lora_md(root: Path) -> list[str]:
         ci = v.get("ci95_micro_f1") or [None, None]
         md.append(
             f"| {r['id']} | {c['r']} / {c['alpha']} | {tgt} | {c['learning_rate']} | {r['params_trainable']:,} | "
-            f"{100 * r['trainable_share']:.2f} | {r['adapter_mb']} | {r['seconds_per_step']} | {r['peak_rss_gb']} | "
+            f"{100 * r['trainable_share']:.2f} | {r['adapter_mb']} | {r['seconds_per_step']} | "
+            f"{_cpu(r.get('cpu', '?'))} ({'bf16' if r.get('bf16') else 'fp32'}) | {r['peak_rss_gb']} | "
             f"{r['val_loss']} | {_p(v['micro_f1'])} [{_p(ci[0])}, {_p(ci[1])}] | {_p(v['json_validity'])} | {_p(v['hallucination_rate'])} |"
         )
     md.append("")

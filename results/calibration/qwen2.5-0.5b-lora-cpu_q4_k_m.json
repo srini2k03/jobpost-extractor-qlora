@@ -2,8 +2,8 @@
   "approach": "qwen2.5-0.5b-lora-cpu_q4_k_m",
   "fitted_on": "val",
   "n_fields_val": 3872,
-  "target_selective_accuracy": 0.95,
-  "threshold": 0.002,
+  "target_selective_accuracy": 0.99,
+  "threshold": 0.419,
   "calibrator": {
     "features": [
       "mean_lp",
@@ -230,16 +230,16 @@
           "selective_accuracy": 0.9957
         },
         {
-          "threshold": 0.002,
-          "coverage": 1.0,
-          "selective_accuracy": 0.9814
+          "threshold": 0.419,
+          "coverage": 0.9912,
+          "selective_accuracy": 0.9901
         }
       ],
       "at_threshold": {
-        "coverage": 1.0,
-        "selective_accuracy": 0.9814,
+        "coverage": 0.9912,
+        "selective_accuracy": 0.9901,
         "accuracy_all_fields": 0.9814,
-        "abstained_fields_accuracy": null
+        "abstained_fields_accuracy": 0.0
       },
       "per_field_accuracy": {
         "company": 0.9972,
@@ -449,16 +449,16 @@
           "selective_accuracy": 0.9967
         },
         {
-          "threshold": 0.002,
-          "coverage": 1.0,
-          "selective_accuracy": 0.9851
+          "threshold": 0.419,
+          "coverage": 0.9936,
+          "selective_accuracy": 0.9913
         }
       ],
       "at_threshold": {
-        "coverage": 1.0,
-        "selective_accuracy": 0.9851,
+        "coverage": 0.9936,
+        "selective_accuracy": 0.9913,
         "accuracy_all_fields": 0.9851,
-        "abstained_fields_accuracy": null
+        "abstained_fields_accuracy": 0.0303
       },
       "per_field_accuracy": {
         "company": 0.966,
@@ -668,16 +668,16 @@
           "selective_accuracy": 0.9202
         },
         {
-          "threshold": 0.002,
-          "coverage": 0.9682,
-          "selective_accuracy": 0.7893
+          "threshold": 0.419,
+          "coverage": 0.8788,
+          "selective_accuracy": 0.8595
         }
       ],
       "at_threshold": {
-        "coverage": 0.9682,
-        "selective_accuracy": 0.7893,
+        "coverage": 0.8788,
+        "selective_accuracy": 0.8595,
         "accuracy_all_fields": 0.7642,
-        "abstained_fields_accuracy": 0.0
+        "abstained_fields_accuracy": 0.0732
       },
       "per_field_accuracy": {
         "company": 0.8537,
@@ -887,16 +887,16 @@
           "selective_accuracy": 0.985
         },
         {
-          "threshold": 0.002,
-          "coverage": 0.9995,
-          "selective_accuracy": 0.9762
+          "threshold": 0.419,
+          "coverage": 0.9892,
+          "selective_accuracy": 0.9852
         }
       ],
       "at_threshold": {
-        "coverage": 0.9995,
-        "selective_accuracy": 0.9762,
+        "coverage": 0.9892,
+        "selective_accuracy": 0.9852,
         "accuracy_all_fields": 0.9756,
-        "abstained_fields_accuracy": 0.0
+        "abstained_fields_accuracy": 0.1
       },
       "per_field_accuracy": {
         "company": 1.0,

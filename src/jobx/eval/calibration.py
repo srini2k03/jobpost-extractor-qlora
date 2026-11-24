@@ -1,12 +1,14 @@
 """Calibrate field-level confidence on the validation split; measure it on held-out splits.
 
-    jobx calibrate --approach qwen2.5-0.5b-lora-cpu_q4_k_m [--target 0.95]
+    jobx calibrate --approach qwen2.5-0.5b-lora-cpu_q4_k_m [--target 0.99]
 
 Inputs are prediction files written with ``--logprobs`` (``results/predictions/<approach>__<split>.jsonl``
 rows carry ``field_logprobs``). For every (example, field) the outcome is whether the predicted field
 is correct (exact match after normalisation, annotated alternatives accepted). The calibrator is fitted
 on ``val`` only; the abstention threshold is the smallest one whose *validation* selective accuracy
 reaches ``target``. ``test_synth`` / ``test_real`` / ``robustness`` are only measured, never tuned on.
+The default target (99%) is set just above the fine-tune's validation field accuracy (98.1%): a target the
+whole validation split already meets would pick a threshold of ~0 and never abstain.
 
 Writes ``results/calibration/<approach>.json`` (reliability of raw token probabilities vs calibrated
 confidence, risk-coverage, the chosen threshold) and ``results/calibration/calibrator.json`` (weights
@@ -73,7 +75,7 @@ def _xy(recs: list[dict[str, Any]]) -> tuple[np.ndarray, np.ndarray, list[str], 
 
 
 def calibrate(
-    approach: str, root: str | Path = ".", *, target: float = 0.95, write: bool = True
+    approach: str, root: str | Path = ".", *, target: float = 0.99, write: bool = True
 ) -> dict[str, Any]:
     root = Path(root)
     val = field_records(approach, "val", root)

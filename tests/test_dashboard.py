@@ -106,7 +106,12 @@ def test_extra_tables_render_only_existing_sources(tmp_path):
         json.dumps({"budget_note": "Reduced.", "best": "r16_all", "within_best_ci": [], "runs": [run]})
     )
     out = "\n".join(lora_md(root))
-    assert "| r16_all | 16 / 32 | all linear |" in out and "8,798,208" in out and "95.0 [94.0, 96.0]" in out
+    assert (
+        "| r16_all | 16 / 32 | all linear |" in out
+        and "8,798,208" in out
+        and "95.0 [94.0, 96.0]" in out
+        and "(fp32)" in out
+    )
 
 
 def test_failure_analysis_counts_and_examples():
