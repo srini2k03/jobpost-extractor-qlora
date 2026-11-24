@@ -63,7 +63,7 @@ jobs:
         run: |
           pip install playwright==1.55.0
           python -m playwright install --with-deps chromium
-          python scripts/check_demo.py site --timeout-min 25
+          python scripts/check_demo.py site --timeout-min 25 --out-json site/browser_check.json
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

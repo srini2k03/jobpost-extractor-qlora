@@ -333,6 +333,7 @@ DEMO = """<section id="demo" class="sb-section jx-demo-section" aria-labelledby=
           <p class="jx-hint">Hover a field to see where it came from in the posting.</p>
         </div>
       </div>
+      <p class="jx-ci-note" id="ci-note" hidden></p>
       <div class="jx-fieldcheck" id="field-check-wrap" hidden>
         <div class="jx-fieldcheck__head">
           <span class="sb-label">Field check</span>

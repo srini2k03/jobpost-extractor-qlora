@@ -512,6 +512,16 @@ async function extract() {
   }
 }
 
+// The CI check (scripts/check_demo.py) runs this page with the real model in headless Chromium before every
+// publish and saves what it measured; show it so visitors know what to expect.
+fetch('browser_check.json').then((r) => (r.ok ? r.json() : null)).then((c) => {
+  if (!c || !$('ci-note')) return;
+  const m = c.metrics || {};
+  $('ci-note').textContent = `Last CI run (${c.date}, ${c.browser}): model ready after ${c.load_s} s, extraction ${c.extract_s} s` +
+    `${m.Generation ? `, ${m.Generation}` : ''}${m['Output tokens'] ? ` for ${m['Output tokens']} output tokens` : ''}, ${c.valid ? 'valid JSON' : 'invalid output'}.`;
+  $('ci-note').hidden = false;
+}).catch(() => {});
+
 skeleton(false);
 setTools(false);
 setStep('step-load', 'is-active');

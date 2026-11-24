@@ -393,3 +393,5 @@ tbody tr:nth-child(n+6) .jx-bar__fill { transition-delay: 200ms; }
 .is-bad .jx-cmp__mark { color: var(--danger); }
 .jx-null { color: var(--faint); font-family: var(--font-mono); }
 @media (pointer: coarse) { .jx-toc__a { min-height: 2.5rem; } }
+.jx-ci-note { margin: 0; padding: 0.7rem 1.25rem; border-top: 1px solid var(--border); font: 400 11.5px/1.5 var(--font-mono); color: var(--muted); }
+@media (min-width: 900px) { .jx-ci-note { padding: 0.7rem 1.5rem; } }
