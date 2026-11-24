@@ -55,9 +55,10 @@ def render(stats: dict[str, Any], real: dict[str, Any] | None = None) -> str:
     )
     a("")
     a(
-        "The headline evaluation is **test_real** (real postings, human-verified). `test_synth` uses template "
-        "families and companies never seen in training, so it measures generalisation beyond the templates, "
-        "but it is still synthetic."
+        "`test_real` holds real public postings (labels AI-assisted, not human-verified; see below). `test_synth` "
+        "uses template families and companies never seen in training, so it measures generalisation beyond the "
+        "templates, but it is still synthetic. A generated robustness suite (`data/robustness/`) adds 14 "
+        "adversarial categories, including prompt injection."
     )
     a("")
     a("## Sources")
@@ -78,15 +79,20 @@ def render(stats: dict[str, Any], real: dict[str, Any] | None = None) -> str:
             else "**Pending GPU run**: not yet included."
         )
     )
-    a(
-        "3. **Real postings** from a public Hugging Face dataset for `test_real`, labelled by a strong-model draft "
-        "plus human verification with `jobx verify`. "
-        + (
-            f"{real['n']} examples from `{real.get('dataset')}`."
-            if real
-            else "**Pending**: see `docs/real_dataset.md` (licence check is a TODO)."
+    if real and real.get("sources"):
+        srcs = "; ".join(
+            f"`{k}` ({v['licence']}, revision `{str(v.get('revision'))[:10]}`): {v['n']}"
+            for k, v in real["sources"].items()
         )
-    )
+        ann = real.get("annotation", {})
+        a(
+            f"3. **Real postings** for `test_real`: {real['n']} Indian postings from licence-checked public sources "
+            f"({srcs}). Labels: {ann.get('method', '?')} ({ann.get('human_verified', 0)} human-verified), following "
+            "`docs/annotation.md`; `jobx verify-real` is the human pass. "
+            f"{real.get('rejected', 0)} selected postings were rejected (listing pages, near-duplicates, not India-based)."
+        )
+    else:
+        a("3. **Real postings**: pending; see `docs/annotation.md`.")
     a("")
     a(
         "Company names are fictional (compositional, e.g. stem + sector); any resemblance to a real company is "
@@ -194,8 +200,8 @@ def render(stats: dict[str, Any], real: dict[str, Any] | None = None) -> str:
     a("## Licence")
     a("")
     a(
-        "Synthetic data and generator code: MIT (this repository). Real postings: the licence of the source "
-        "dataset applies; see `docs/real_dataset.md`."
+        "Synthetic data and generator code: MIT (this repository). Real postings keep their sources' licences "
+        "(CC0-1.0, CC-BY-4.0, ODC-By); attribution, revisions and source rows are in `data/real/`."
     )
     a("")
     a("## Reproduce")

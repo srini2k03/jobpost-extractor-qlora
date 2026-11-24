@@ -61,8 +61,9 @@ Metric definitions are in the repository README:
 
 - Structuring job postings for search or analytics, with a human in the loop. It is not for decisions about
   people.
-- It was trained on synthetic postings only. Real postings are longer and messier, and the real-postings test
-  set is still pending human verification.
+- It was trained on synthetic postings only. Real postings are longer and messier. The real-postings test
+  set (130 public Indian postings) has AI-assisted labels that are not human-verified yet; read its scores as an
+  estimate. The README also reports a robustness suite (prompt injection included) and field-confidence calibration.
 - It is a 0.5B model: it is fast and small enough for a browser, but it is less accurate than larger models
   (see the results table in the README).
 - Skills and cities follow fixed canonical vocabularies. Salary is compared as INR per annum.

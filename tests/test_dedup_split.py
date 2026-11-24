@@ -58,4 +58,9 @@ def test_datacard_is_current():
     from jobx.data.datacard import render
 
     stats = json.loads(Path("data/processed/stats.json").read_text())
-    assert Path("DATA_CARD.md").read_text() == render(stats, None), "run `jobx datacard`"
+    real = (
+        json.loads(Path("data/real/real_meta.json").read_text())
+        if Path("data/real/real_meta.json").exists()
+        else None
+    )
+    assert Path("DATA_CARD.md").read_text() == render(stats, real), "run `jobx datacard`"
