@@ -1,24 +1,26 @@
 # jobpost-extractor-qlora
 
 [![CI](https://github.com/srini2k03/jobpost-extractor-qlora/actions/workflows/ci.yml/badge.svg)](https://github.com/srini2k03/jobpost-extractor-qlora/actions/workflows/ci.yml)
+[![Pages](https://github.com/srini2k03/jobpost-extractor-qlora/actions/workflows/pages.yml/badge.svg)](https://github.com/srini2k03/jobpost-extractor-qlora/actions/workflows/pages.yml)
+[![Docker](https://github.com/srini2k03/jobpost-extractor-qlora/actions/workflows/docker.yml/badge.svg)](https://github.com/srini2k03/jobpost-extractor-qlora/actions/workflows/docker.yml)
 
-Messy Indian job postings in, one strict JSON object out.
+Messy Indian job postings in, one strict JSON object out, with the text span that supports every value.
 
-**Headline route:** a LoRA fine-tune of Qwen2.5-0.5B-Instruct, trained on CPU in GitHub Actions.
-- Everything runs on free GitHub-hosted runners: data, baselines, training, quantisation, evaluation,
-  release and demo. It needs no GPU and no accounts beyond GitHub.
-- It is compared with prompting baselines (0.5B and 1.5B, zero/3-shot, free and JSON-grammar decoding), a
-  rule-based baseline and a larger API model, GPT-OSS-120B via Groq.
-- The model files (adapter, merged weights, GGUF) are published by `cpu-eval-release`: as the GitHub Release
-  [`model-v1`](https://github.com/srini2k03/jobpost-extractor-qlora/releases/tag/model-v1) when the workflow
-  token may create releases, otherwise as that run's `model-v1-files` artifact. The Q4_K_M model runs in your browser in the
-  **[live demo](https://srini2k03.github.io/jobpost-extractor-qlora/)**.
+A LoRA fine-tune of **Qwen2.5-0.5B-Instruct**, trained on CPU in GitHub Actions, quantised to GGUF with
+llama.cpp and run **in your browser** (wllama, WebAssembly) in the
+**[live demo](https://srini2k03.github.io/jobpost-extractor-qlora/)**, or behind a FastAPI service.
 
-A QLoRA 1.5B GPU path (Colab or a local GPU) is provided but **not run**; see
-[`docs/gpu_route.md`](docs/gpu_route.md).
-
-> **Status.** Rows marked "pending CPU run" fill in as the workflows below run; nothing in this README is
-> estimated. Model card: [`MODEL_CARD.md`](MODEL_CARD.md).
+- **Two kinds of test data.** A synthetic held-out split (template families and companies never seen in
+  training) and **130 real Indian postings** from four licence-checked public sources (CC0, CC-BY-4.0, ODC-By).
+  The real labels are **AI-assisted annotation, not human-verified**; a verification CLI is included.
+- **Honest comparison** with the base 0.5B model, larger local models (Qwen2.5-1.5B and 3B), rules, and a
+  120B API model, all scored by the same code from committed prediction files.
+- **Evidence and confidence.** Every extracted value is aligned to the input text (unsupported values are
+  flagged). Field confidence comes from token log-probs plus evidence, calibrated on the validation split.
+  Abstention is configurable.
+- **Robustness suite** with 14 categories, including prompt-injection instructions inside the posting.
+- **Measured, not estimated.** Every number below comes from a run whose output is committed, with its date
+  and commit. CI regenerates the tables and fails if they drift.
 
 ```text
 🔥 Hiring!! Sr. Python Developer @ Kaveri Analytics Pvt Ltd
@@ -28,8 +30,6 @@ Must know Django, AWS, PostgreSQL, Docker
 B.Tech/B.E. preferred. Call HR 9876543210. Joining kit worth ₹500!
 ```
 
-Target output (what the model is trained to produce):
-
 ```json
 {"company": "Kaveri Analytics", "role": "Python Developer", "seniority": "senior",
  "skills": ["python", "django", "aws", "postgresql", "docker"],
@@ -38,16 +38,124 @@ Target output (what the model is trained to produce):
  "locations": ["Bengaluru", "Pune"], "work_mode": "hybrid", "employment_type": null, "education": "b.tech"}
 ```
 
-- Fields the posting does not state are `null` (or `[]`), never guessed; here no employment type is stated.
-- The phone number and the ₹500 kit are distractors.
-- Schema: [`src/jobx/schema/models.py`](src/jobx/schema/models.py), exported as
-  [`schema/jobposting.schema.json`](schema/jobposting.schema.json).
+Fields the posting does not state are `null` (or `[]`); nothing is guessed. The phone number and the ₹500 kit
+are distractors. The API also returns, for example, `"locations": "Bengaluru"` supported by the text
+`"Bangalore"` (alias match), and flags any value it cannot find in the posting. The schema is documented in
+[`docs/schema.md`](docs/schema.md).
+
+### Screenshots
+
+The in-browser demo, showing the fine-tune's saved Q4_K_M output for a held-out synthetic posting
+(llama.cpp, GitHub Actions). Every value is highlighted where the text supports it. Timing panels are left
+out because these screenshots were taken with a stand-in runtime; the live page measures them, and its CI
+check runs the real model.
+
+![demo: posting with evidence highlights and the extracted JSON](docs/img/demo-panes.png)
+
+![field check: evidence status of every field](docs/img/demo-field-check.png)
+
+Base model vs fine-tune on the same posting (saved outputs from the committed runs):
+
+![base vs fine-tuned comparison](docs/img/compare.png)
+
+Results dashboard on the Pages site (all numbers from committed files):
+
+![synthetic vs real postings](docs/img/real-vs-synth.png)
+![robustness and prompt injection](docs/img/robustness.png)
+![calibration reliability diagrams](docs/img/calibration.png)
+![quantisation sweep](docs/img/quantisation.png)
+
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph data[Data]
+    G[Synthetic generator<br/>12 template families, noise,<br/>Hinglish, distractors] --> V[Recoverability check]
+    V --> S[Family + company<br/>disjoint split]
+    S --> D[MinHash dedup<br/>+ leakage audit gate]
+    R[Real postings<br/>EMSCAD, employer ATS,<br/>FineWeb job boards] --> A[AI-assisted labels<br/>+ verify CLI]
+    RB[Robustness generator<br/>14 categories] 
+  end
+  subgraph train[Training: GitHub Actions CPU]
+    D --> L[LoRA SFT, TRL<br/>completion-only loss]
+    L --> M[Merge] --> Q[llama.cpp GGUF<br/>F16 / Q8_0 / Q4_K_M ...]
+  end
+  subgraph eval[Evaluation: GitHub Actions CPU]
+    Q --> P[llama-server predictions<br/>+ token log-probs]
+    B[Base 0.5B / 1.5B / 3B,<br/>regex, GPT-OSS-120B] --> P
+    A --> P
+    RB --> P
+    D --> P
+    P --> SC[Scorer: P/R/F1, EM,<br/>hallucination, bootstrap CI]
+    P --> CAL[Calibration on val<br/>reliability, abstention]
+    P --> EV[Evidence spans]
+  end
+  subgraph serve[Serving]
+    Q --> API[FastAPI + llama-cpp-python<br/>evidence, confidence, Docker]
+    Q --> WEB[Browser: wllama WASM<br/>GitHub Pages]
+    SC --> DASH[Results dashboard<br/>Pages + README]
+    CAL --> API
+  end
+```
+
+Everything heavy (model downloads, training, quantisation, inference) runs on free GitHub-hosted runners
+(4 vCPU, no GPU). Results come back as committed files; CI recomputes every metric from the committed
+predictions.
 
 ## Results
 
-All tables are generated by `jobx results-table` from the prediction files in `results/predictions/`; CI
-regenerates them and fails if the committed copy is stale. Percentages, with 95% bootstrap CIs (1,000
-resamples of examples).
+### Key findings
+
+All numbers come from committed prediction files scored by `jobx eval`. The tables below are generated and
+checked by CI.
+
+- **Real postings are much harder than the synthetic test set.** The fine-tune (GGUF F16) scores **99.3%**
+  micro-F1 on held-out synthetic postings but **56.1%** [52.8, 59.2] on 130 real postings. That gap shows how
+  far template-generated training data transfers: partly. The real labels are AI-assisted and not
+  human-verified.
+- **Fine-tuning still pays off on real text.** Against the same base model (Qwen2.5-0.5B zero-shot), micro-F1
+  rises from 32.0% to 56.1% and macro-F1 from 32.4% to 71.7%. Hallucinated fields (filled in although the
+  posting does not state them) drop from **58.4% to 7.9%**.
+- **A 0.5B fine-tune matches a 6x larger model, with a quarter of the hallucinations.** Qwen2.5-3B zero-shot
+  reaches 56.4% micro-F1 and 67.1% macro-F1 with **30.3%** hallucinated fields; Qwen2.5-1.5B reaches
+  50.2% / 58.5% with 35.4%.
+- **Rules are a strong baseline on real text, for a narrow reason.** The regex extractor has the highest
+  micro-F1 (60.4%). Micro-F1 is dominated by skill and location list items, and the rules match those
+  through alias tables. On fields that need reading the posting they fall far behind: role F1 52% vs 82%,
+  company 34% vs 81% for the fine-tune.
+- **Where the fine-tune fails on real postings** ([`results/failures/`](results/failures)):
+  - Skill lists (F1 32–36% for the fine-tune, 43% for Qwen2.5-3B; real postings list many more and vaguer
+    skills than the training data).
+  - Locations: it outputs state and country codes ("IN", "Maharashtra"), company names and head-office
+    cities as locations.
+  - Education. With JSON-grammar decoding, 5 of 130 outputs looped on one list item until the token limit.
+    Capping list lengths in the grammar fixes this (see the grammar row).
+- **Quantisation is nearly free.** On one runner, accuracy on real postings stays between 53.4% and 55.6%
+  from F16 to Q2_K, and on synthetic postings it falls only from 99.6% to 98.3% at Q2_K. Q4_K_M
+  (0.40 GB, the browser model) runs at 40 tok/s on 4 threads with 0.54 GB peak RAM; F16 runs at 29.6 tok/s
+  with 1.07 GB. The rebuilt Q4_K_M is byte-identical to the released file.
+- **Confidence ranks errors well but is over-confident on real text.** It was calibrated on the synthetic
+  validation split (ECE 0.007). On real postings, ECE improves from 0.20 (raw token probabilities) to 0.10,
+  and AUROC is 0.88. At the threshold chosen on validation, the API keeps 87.9% of fields at 86.0% accuracy
+  (76.4% for all fields); the fields it abstains on are only 7.3% correct.
+- **Robustness: two weaknesses.** On the generated suite the fine-tune handles salary, location, work-mode
+  and malformed-text cases (micro-F1 95–100% per category). However:
+  - On text that is not a job posting it returns an all-empty record only 16.7% of the time (Qwen2.5-3B:
+    83.3%).
+  - In 33–42% of prompt-injection cases an injected value reaches the output (Qwen2.5-3B: 41.7%,
+    rules: 16.7%).
+
+  Evidence alignment cannot catch these values, because the injected text is part of the posting.
+- **LoRA study (reduced budget, validation only).** Higher learning rate (6e-4) and higher rank (32) beat
+  the released recipe (r16, 3e-4) at a 40-step budget. Attention-only adapters (0.44% of parameters) score
+  6 points lower on validation. A full-budget re-run of the best setting was not done.
+
+### All results
+
+Generated by `jobx results-table` from `results/metrics`, `results/benchmarks`, `results/robustness`,
+`results/calibration`, `results/quant` and `results/lora_study`; CI fails if this block is stale. Percentages with
+95% bootstrap CIs (1,000 resamples of postings). "incomplete (k/N)" rows are partial runs, shown but not compared.
 
 <!-- RESULTS:START -->
 #### Real postings (`test_real`, headline)
@@ -212,213 +320,198 @@ _Reduced-budget sweep: 640 training examples, 40 steps (effective batch 16) per 
 | r16_attn | 16 / 32 | attention | 0.0003 | 2,162,688 | 0.44 | 8.68 | 136.99 | EPYC 7763 (fp32) | 4.11 | 0.0799 | 87.8 [85.9, 89.5] | 99.3 | 9.2 |
 <!-- RESULTS:END -->
 
-**About the regex baseline.** It is a real CPU run, but read it as a sanity check of the evaluation stack
-rather than a competitor. Its patterns were written with all synthetic templates in view (including the
-held-out families), and it shares alias tables and salary/experience parsers with the generator. So
-`test_synth` flatters it. Company and role, the fields its patterns can't pin down, are where it fails
-(see `notebooks/06_error_analysis.ipynb`). The real-postings split is the honest comparison.
-
-### Charts and training curves
-
-_These images appear after the first CPU-route runs; `jobx charts` draws them from `results/results.json`._
-
-![micro F1 by approach](results/charts/micro_f1_by_approach.png)
-
-![size / speed / accuracy](results/charts/quant_tradeoff.png)
-
-The CPU fine-tune writes its curves (train/validation loss, learning rate, validation JSON micro F1) to
-[`results/training/qwen2.5-0.5b-lora-cpu/`](results/training/qwen2.5-0.5b-lora-cpu/) as PNG and JSON after
-every job. This replaces W&B.
+Training curves (loss, learning rate, validation JSON-F1) of the released CPU run:
+[`results/training/qwen2.5-0.5b-lora-cpu/`](results/training/qwen2.5-0.5b-lora-cpu/).
 
 ![training curves](results/training/curves.png)
 
 ## How it works
 
-**Data** ([`DATA_CARD.md`](DATA_CARD.md), generated from real statistics of the committed set)
-1. *Synthetic, labels by construction.* A structured record is sampled first from Indian job-market
-   vocabularies: 18 role domains, 143 skills with aliases, 35 cities with aliases, salary bands by
-   seniority in LPA or per month, experience ranges and fictional company names. The record is then
-   rendered through alias tables, 12 template families (Naukri-style, LinkedIn prose, WhatsApp forward,
-   consultancy mail, walk-in drive, Telegram channel, Hinglish chat...) and noise operators: typos,
-   abbreviations, emojis, bullets, shuffled sections, HTML remnants, Hinglish fragments and distractors such as
-   phone numbers, "₹500 joining kit", referral bonuses, notice periods, "in business for 15 years" and a
-   "headquartered in <other city>" trap.
-2. *Recoverability checker* (`src/jobx/data/validate.py`): every gold value must be findable in the text
-   with the same parsers the evaluator uses. Paraphrases must also introduce nothing new. An optional NLI
-   hook adds an entailment check per field. On the current set it rejects 0 of 3,000 generated postings,
-   after it caught a real template bug during development.
-3. *LLM paraphrase pass* (7B teacher): part of the optional GPU route, not run. The checker and filter are
-   in place for it.
-4. *MinHash near-duplicate removal* (word 3-gram shingles, 128 permutations, LSH 32×4, exact-Jaccard
-   confirmation). It keeps the test copy when a train item collides with it.
-5. *Leakage-safe split*: template families **and** companies are disjoint across train / val / test_synth.
-   This is verified in the build and in the tests.
-6. *Real postings* (~200, from a permissively licensed HF dataset) with drafted labels checked by a
-   human with `jobx verify`. This **real-only test split is the headline evaluation**. Pending; see
-   [`docs/real_dataset.md`](docs/real_dataset.md).
+### Data ([`DATA_CARD.md`](DATA_CARD.md))
 
-**Baselines** (notebook 02): Qwen2.5-1.5B zero-shot and 3-shot and an optional Llama-3.2-1B. Each runs
-with free decoding and with guided JSON decoding (lm-format-enforcer).
+1. **Synthetic training data, labels by construction.** A structured record is sampled from Indian
+   job-market vocabularies (18 role domains, 143 skills and 35 cities with aliases, salary bands by
+   seniority in LPA or per month). It is then rendered through 12 template families (Naukri-style, LinkedIn
+   prose, WhatsApp forward, consultancy mail, walk-in drive, Telegram channel, Hinglish chat...) and noise
+   operators: typos, abbreviations, emojis, HTML remnants, Hinglish fragments, and distractors such as
+   phone numbers, a "₹500 joining kit", referral bonuses and a "headquartered in <other city>" trap.
+2. **Recoverability check.** Every gold value must be findable in the text with the parsers the evaluator
+   uses ([`validate.py`](src/jobx/data/validate.py)).
+3. **Leakage-safe split.** Template families and companies are disjoint across train / val / test_synth.
+   MinHash dedup at Jaccard 0.8 within the data and 0.5 across splits. An **audit gate**
+   ([`audit.py`](src/jobx/data/audit.py), `jobx audit`) fails the build and CI on any cross-split
+   duplicate, any pair at Jaccard ≥ 0.6, mean 8-gram overlap > 10%, shared labels/families/templates/
+   companies, or a few-shot exemplar outside train. Rebuilding reproduces the committed splits byte for byte.
+4. **Real postings** ([`docs/annotation.md`](docs/annotation.md), [`data/real/`](data/real)). Candidate datasets
+   were probed from Actions, **licence first** ([`real_probe.py`](src/jobx/data/real_probe.py),
+   [`results/real/`](results/real)). The set uses EMSCAD (CC0), employer-direct postings (CC-BY-4.0),
+   company ATS boards (CC-BY-4.0) and 21 Indian job-board pages found by a URL scan of 14.6 M FineWeb documents
+   (ODC-By), with pinned revisions and the source row of every posting. Excluded on purpose:
+   a Naukri scrape whose card says it bypassed anti-bot protection, and a dataset with LLM-rewritten
+   descriptions. India is decided by each source's own country field. Under a US state code, "IN" means
+   Indiana.
+5. **Robustness suite** ([`robustness.py`](src/jobx/robustness.py)). Gold labels by construction; companies
+   come from the held-out bucket.
 
-**Baselines (CPU route)** ([`cpu_baselines.yml`](.github/workflows/cpu_baselines.yml), settings in
-[`configs/cpu/route.yaml`](configs/cpu/route.yaml)):
-- Models: Qwen2.5-0.5B- and 1.5B-Instruct, downloaded from the public Hugging Face Hub with no token,
-  converted to GGUF Q8_0 and served by llama.cpp on the runner's CPU.
-- Settings: zero-shot and 3-shot, with the full instruction prompt. The 0.5B model also runs with
-  **JSON-schema grammar** decoding ("guided"), on the same evenly spaced 200-posting subset the GPU route uses.
-- Each (model, setting) is its own parallel job. llama.cpp's prompt cache reuses the shared system-prompt
-  (and few-shot) prefix.
+### Training (CPU, GitHub Actions)
 
-**Larger API model.** GPT-OSS-120B via Groq's free tier, 3-shot
-([`openai_compat_runner.py`](src/jobx/baselines/openai_compat_runner.py),
-[`api_baseline.yml`](.github/workflows/api_baseline.yml), secret `GROQ_API_KEY`).
-- GPT-OSS-120B is OpenAI's open-weight model, a mixture-of-experts with about 117B parameters. Llama-3.3-70B
-  was not available to the project's Groq key.
-- The JSON Schema is sent as `response_format`, with a fallback to JSON mode and then to prompt-only.
-- Free-tier handling:
-  - client-side rate limiting at 25 requests/min;
-  - 429 waits from `Retry-After` / `x-ratelimit-reset-*`;
-  - a success-only response cache and resumable runs, with a daily schedule;
-  - a model fallback chain;
-  - token counts in the "API usage" table.
-- Partial runs are shown as "incomplete (k/N)", never as results.
+PEFT LoRA r=16/α=32 on all linear projections of Qwen2.5-0.5B-Instruct, TRL `SFTTrainer` with
+**completion-only loss** (the prompt is masked), compact system prompt, max length 512 (p99 is 408 tokens,
+none dropped). Effective batch 16, cosine LR 3e-4, 2 epochs = 273 steps. That took 147 min on one 4-vCPU
+runner in bf16 on an AMX CPU ([`plan.json`](results/training/qwen2.5-0.5b-lora-cpu/plan.json)). A planner
+measures seconds per step first and chains 5-hour jobs if needed. Merged weights are converted to GGUF by
+llama.cpp b6000. Details: [`docs/hyperparameters.md`](docs/hyperparameters.md#cpu-route).
 
-**LoRA fine-tune on CPU** ([`src/jobx/cpu/train.py`](src/jobx/cpu/train.py),
-[`cpu_finetune.yml`](.github/workflows/cpu_finetune.yml)).
-- **Recipe:** PEFT LoRA r=16/α=32 on all linear projections, TRL `SFTTrainer` with completion-only loss,
-  effective batch 16, cosine LR 3e-4. Precision is fp32, or bf16 if the runner's CPU has AVX512-BF16/AMX.
-  Torch uses all cores.
-- **Short prompt:** the fine-tune uses a short system prompt (it learns the conventions from the data). That
-  halves the sequence length:
-  - estimated from character counts at about 330 tokens median and 420 at p99, so `max_length` is 512;
-  - the first CI job measures the real lengths with the tokenizer, and records them in `plan.json`;
-  - over-long examples are dropped, never truncated.
-- **Planning:** the first job measures seconds per optimiser step on the runner. A planner then picks 2
-  epochs, 1 epoch or a stratified subset so training fits ≤ 3 chained 5-hour jobs. The plan and its reason
-  are committed to `results/training/qwen2.5-0.5b-lora-cpu/plan.json`.
-- **Chaining:**
-  - Each job stops at its time limit and checkpoints. It stores the state as an asset of the prerelease
-    `cpu-train-state`, then dispatches the next job (a 6-hourly schedule resumes if a dispatch is lost).
-  - Validation loss and JSON-F1 (greedy decoding on a val subset) are logged four times per run.
-  - When training is done, the job dispatches the release workflow.
-- Details: [`docs/hyperparameters.md`](docs/hyperparameters.md#cpu-route).
+### Structured generation, evidence and confidence
 
-**Merge, quantise, evaluate, publish** ([`cpu_eval_release.yml`](.github/workflows/cpu_eval_release.yml)).
-- The adapter is merged (fp16 safetensors) and converted with llama.cpp to GGUF F16, Q8_0 and Q4_K_M.
-- Each quantisation is evaluated on every test split. A CPU benchmark records tokens/s, peak RAM, size and
-  accuracy (the "size / speed / accuracy" table).
-- Results are committed.
-- The adapter, merged weights and GGUF files are uploaded as the `model-v1-files` artifact of the
-  `cpu-eval-release` run, and also as the GitHub Release `model-v1` (with [`MODEL_CARD.md`](MODEL_CARD.md) as
-  the notes) when the workflow token is allowed to create releases. Chained training jobs hand their state
-  over through the `train-state` and `lora-adapter` artifacts.
+- **Constrained JSON.** llama.cpp's JSON-schema grammar (API, browser) or free decoding plus validation.
+  Invalid or schema-invalid outputs are re-prompted with the validation error (`jobx.serve.extractor`).
+  The evaluator scores partially valid objects field by field, so failures cost points.
+- **Evidence spans** ([`evidence.py`](src/jobx/evidence.py), browser port
+  [`evidence.js`](src/jobx/web/evidence.js)). Every value, and every element of a list, is aligned to the
+  input by one of these matches: exact, alias (Bangalore → Bengaluru), parsed (salary/experience parsers),
+  normalised (case, punctuation, legal suffixes), partial, fuzzy (edit ratio ≥ 0.85) or none. Spans are
+  always slices of the input. Values with no support are flagged `unsupported`, and null fields whose text
+  looks stated are reported as possible omissions.
+- **Confidence and abstention** ([`uncertainty.py`](src/jobx/uncertainty.py),
+  [`calibration.py`](src/jobx/eval/calibration.py)). The token log-probs that spell each JSON value
+  (byte-accurate span alignment) are combined with the evidence status. A logistic calibrator fitted
+  **on the validation split only** turns them into P(field correct). Calibration is measured on the held-out
+  splits (ECE, Brier, AUROC, reliability bins). The API can flag low-confidence fields or replace them with
+  null; withheld values are still returned.
 
-**Live demo** ([`pages.yml`](.github/workflows/pages.yml)).
-- The released Q4_K_M GGUF is split into < 95 MB parts and served from the `gh-pages` branch, because
-  release downloads lack CORS.
-- It runs in the visitor's browser with [wllama](https://github.com/ngxson/wllama) 3.8.1 (llama.cpp → WASM)
-  and the JSON-schema grammar.
-- The page has examples, a box to paste your own posting, the JSON output and field highlighting, next to the
-  results table and charts.
-- A Playwright check loads the model in headless Chromium and extracts valid JSON before every publish.
+### Evaluation ([`src/jobx/eval`](src/jobx/eval))
 
-**Evaluation** ([`src/jobx/eval`](src/jobx/eval), CPU only, runs in CI on saved predictions)
-- JSON validity (a parseable object), schema validity (validates against `JobPosting` exactly).
-- Per-field exact match after normalisation: salary is compared as INR per annum (12 months, 2,080
-  hours, 83 INR/USD) and rounded to ₹1,000, so "1.5L/month" equals "18 LPA". Skills and cities are
-  canonicalised through alias tables. Company names drop legal suffixes, and roles drop seniority words.
-- Precision/recall/F1 for scalar fields (a stated prediction is a TP if correct, else an FP; a stated gold
-  value missed or wrong is an FN). For list fields (skills, locations) they are computed element-wise.
-  Micro F1 pools all fields; macro F1 averages per-field F1.
-- **Hallucination rate**: fields that are null in gold but filled in the prediction, divided by all gold-null
-  fields.
-- Bootstrap 95% CIs, and an automatic error taxonomy (`src/jobx/eval/taxonomy.py`): invalid JSON,
-  truncation, schema-invalid, wrong salary unit, missed/spurious skill, hallucinated field, location
-  confusion, seniority mismatch, experience/role/company errors.
+- JSON validity, schema validity.
+- Per-field exact match after normalisation. Salary is compared as INR per annum; skills and cities are
+  canonicalised; company legal suffixes and role seniority words are ignored.
+- Precision/recall/F1: element-wise for lists, micro and macro.
+- **Hallucination rate:** fields filled in where the gold is null.
+- Record exact match.
+- 95% bootstrap CIs.
+- An automatic error taxonomy.
+- Real-posting rows may list accepted alternatives for ambiguous fields; the scorer keeps the most
+  favourable match. On real data, also read per-field F1: skills and role are inherently ambiguous.
 
-**Serving** without the browser:
-- FastAPI `POST /extract` ([`src/jobx/serve/app.py`](src/jobx/serve/app.py)) uses llama-cpp-python on any of
-  the released GGUF files: `JOBX_GGUF_PATH=jobx-qwen2.5-0.5b-Q4_K_M.gguf uvicorn jobx.serve.app:app`. It
-  validates against the schema and retries on invalid output.
-- There is a Dockerfile in [`docker/`](docker/Dockerfile).
-- Ollama: [`ollama/Modelfile`](ollama/Modelfile).
-- Use the short prompt (`prompts.COMPACT_SYSTEM_PROMPT`) with the CPU fine-tune.
+## Reproduce
 
-## Run it
+Heavy steps run in GitHub Actions (Actions tab → workflow → *Run workflow*). No secrets are needed except
+`GROQ_API_KEY` for the optional API row.
 
-Everything below runs in GitHub Actions (Actions tab → workflow → *Run workflow*). It needs no secrets
-except `GROQ_API_KEY` for the API row. Dispatch in this order:
-
-| # | Workflow | Runs | Produces |
-|---|---|---|---|
-| 1 | `cpu-baselines` | ~1–3 h (parallel jobs) | 0.5B/1.5B baseline predictions + metrics, committed |
-| 2 | `cpu-finetune` | 1–3 chained ~5 h jobs, automatic | plan, checkpoints (prerelease `cpu-train-state`), curves; then dispatches 3 |
-| 3 | `cpu-eval-release` | ~1–2 h, dispatched by 2 | fine-tune rows (F16/Q8_0/Q4_K_M), benchmark, model files (artifact, plus Release `model-v1` when permitted), `MODEL_CARD.md`; then dispatches 4 |
-| 4 | `pages` | ~15–30 min, dispatched by 1 and 3 | the live demo + results site on GitHub Pages (branch `gh-pages`) |
-| - | `api-baseline` | ~20–30 min/day until done | GPT-OSS-120B rows (resumes daily) |
-
-To turn on Pages, go to Settings → Pages → *Deploy from a branch* → `gh-pages` / root (once).
+| Workflow | What it does | Output (committed) |
+|---|---|---|
+| [`cpu_baselines.yml`](.github/workflows/cpu_baselines.yml) | base 0.5B/1.5B prompting baselines on test_synth | `results/predictions/` |
+| [`cpu_finetune.yml`](.github/workflows/cpu_finetune.yml) | planned, resumable CPU LoRA training | `results/training/` |
+| [`cpu_eval_release.yml`](.github/workflows/cpu_eval_release.yml) | merge, GGUF, test_synth eval, Release `model-v1` | predictions, model files |
+| [`real_probe.yml`](.github/workflows/real_probe.yml) | licence-first dataset probe, FineWeb URL scan, real-posting fetch | `results/real/`, `data/real/pool_*` |
+| [`eval_suite.yml`](.github/workflows/eval_suite.yml) | all approaches on test_real + robustness; Q4_K_M with log-probs on val/test; calibration | predictions, `results/robustness/`, `results/calibration/` |
+| [`quant_bench.yml`](.github/workflows/quant_bench.yml) | F16 → Q2_K on one runner: size, latency, tokens/s, RAM, accuracy | `results/quant/` |
+| [`lora_study.yml`](.github/workflows/lora_study.yml) | reduced-budget LoRA sweep, validation-only selection | `results/lora_study/` |
+| [`pages.yml`](.github/workflows/pages.yml) | site + demo; Playwright runs the real model in Chromium first | `gh-pages`, `browser_check.json` |
+| [`docker.yml`](.github/workflows/docker.yml) | builds the API image, smoke-tests it | - |
 
 Locally, on CPU:
 
 ```bash
 pip install -e ".[dev,serve]"
-jobx build-data          # 3,000 synthetic postings -> validate -> split -> dedup -> DATA_CARD.md
-jobx regex-baseline      # predictions for the regex baseline
-jobx eval                # metrics + bootstrap CIs for every predictions file
-jobx results-table       # tables above + results/results.json
-pytest && ruff check . && mypy
+jobx build-data            # 3,000 synthetic postings -> validate -> split -> dedup -> audit gate -> DATA_CARD.md
+jobx audit                 # leakage / memorisation audit of the committed splits
+jobx real-build            # test_real.jsonl from the fetched pools + data/real/annotations.jsonl
+jobx verify-real           # human pass over the AI-assisted real-posting labels
+jobx robustness-build      # the robustness / prompt-injection suite
+jobx regex-baseline        # rule-based predictions for every split
+jobx eval && jobx results-table && jobx robustness-report && jobx calibrate
+pytest && ruff check . && ruff format --check . && mypy
 ```
+
+## API
+
+```bash
+# the released model from the GitHub Release model-v1
+gh release download model-v1 -p 'jobx-qwen2.5-0.5b-Q4_K_M.gguf' -D models
+JOBX_GGUF_PATH=models/jobx-qwen2.5-0.5b-Q4_K_M.gguf uvicorn jobx.serve.app:app --port 8000
+# or with Docker (multi-stage build; the image has no model inside)
+docker build -f docker/Dockerfile -t jobx-api .
+docker run -p 8000:8000 -v "$PWD/models:/models:ro" -e JOBX_GGUF_PATH=/models/jobx-qwen2.5-0.5b-Q4_K_M.gguf jobx-api
+```
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /extract` | `{"text", "guided"?, "retry"?, "evidence"?, "abstain": "off"\|"flag"\|"null", "min_confidence"?}` → `data`, `valid`, `attempts`, `errors`, `evidence[]` (field, value, status, match, spans), `possible_omissions`, `confidence` (calibrated when the backend returns log-probs, else evidence-only), `uncertain_fields`, `withheld`, `latency_ms` |
+| `POST /extract/batch` | up to `JOBX_MAX_BATCH` postings (`{"items": [{"id", "text"}], ...options}`) |
+| `POST /validate` | schema check of a JSON object, per-field errors; with `text`, its evidence |
+| `POST /evidence` | evidence spans of a given record in a given text (no model call) |
+| `GET /model` | backend, prompt, limits, calibration, evaluation summary |
+| `GET /health`, `GET /schema`, `GET /docs` | liveness, JSON Schema, OpenAPI UI |
+
+Settings come from environment variables ([`.env.example`](.env.example)): backend and model path,
+prompt (`compact` for this fine-tune), size limits (8,000 characters per posting by default), a per-client
+rate limit, retries, the calibrator and the abstention threshold. Logs are JSON lines with request ids and
+timings; posting text is never logged. Input is untrusted: it goes to the model inside `<posting>` tags and
+cannot change the task, as the injection category of the robustness suite tests.
+
+## Browser demo
+
+The Q4_K_M GGUF is served from `gh-pages` in byte chunks (release downloads have no CORS) and run by
+[wllama](https://github.com/ngxson/wllama) 3.8.1. The demo has:
+
+- download progress, a device-memory note, live token streaming with cancel, and measured latency and
+  tokens/s;
+- `.txt`/`.md`/`.html` file input, a character count with a context warning, and schema validation;
+- evidence highlighting with a per-field check (found / weak / not found / not stated, plus possible
+  omissions), and copy or download of the JSON;
+- held-out sample postings, and a base-vs-fine-tuned panel with saved outputs from the committed runs.
+
+Nothing leaves the browser. Before each publish, a Playwright check loads the real model in headless
+Chromium, extracts a posting, requires valid JSON with the field check and metrics, and publishes its
+timings on the page.
 
 ## Repository layout
 
 ```text
 src/jobx/
-  schema/        Pydantic schema, JSON Schema export, output parser
-  vocab.py       skills / cities / degrees / enums with aliases, salary bands (shared by generator and evaluator)
-  normalize/     salary -> INR p.a., experience parser, skill/city canonicalisation, field normalisers
-  data/          generate, surface forms, templates, noise, validate, paraphrase, dedup, split, build, datacard, fetch_real
-  cpu/           CPU route: training planner, resumable CPU LoRA training, job matrices, model card
-  baselines/     regex extractor, API runners (Groq/Gemini/Anthropic), HF runner (GPU route)
-  eval/          metrics, bootstrap, taxonomy, results tables, charts, curves, Pages site
-  quantize/      llama.cpp (llama-server) CPU evaluation + benchmark, GPU/AWQ helpers
-  web/           in-browser demo (wllama)
-  serve/         FastAPI app, extractor with retries, LLM backends, highlighting
-  train/         merge.py; sft.py + config loading (GPU route)
-  pipeline.py, local/   GPU route steps (notebooks, local GPU)
-  verify.py      human verification CLI for the real test set
-configs/         cpu/route.yaml (CPU route), data, approaches, hub, real data, training (GPU route), GPU profiles
-requirements/    cpu-train.txt (CPU route), local GPU stacks (GPU route)
-notebooks/       01-06 (GPU route, Colab-ready; 06 runs on CPU)
-scripts/         llama.cpp build / GGUF conversion, rebase-safe result commits, demo check, notebook builder
-space/ docker/ ollama/ model_cards/ docs/ results/ data/ tests/ .github/workflows/
+  schema/        Pydantic schema v1 (+ v2 draft), JSON Schema export, output parser
+  data/          generator, templates, noise, validate, dedup, split, build, audit,
+                 real_probe / real_fetch / real_build (real postings), datacard
+  evidence.py    evidence spans and omission cues
+  uncertainty.py field log-probs, calibrator, reliability, abstention
+  robustness.py  robustness / prompt-injection suite and per-category report
+  eval/          metrics + bootstrap, calibration, taxonomy, results tables, dashboard, Pages site
+  quantize/      llama.cpp runner (predictions, log-probs, timings), quantisation sweep
+  cpu/           CPU training planner, resumable trainer, LoRA study, job matrices
+  serve/         FastAPI app, extractor with retries, LLM backends, settings
+  web/           browser demo (wllama), evidence.js, compare.js, site styles (portfolio design kit)
+  baselines/     regex extractor, OpenAI-compatible / Anthropic API runners, HF runner (GPU route)
+configs/         data, CPU route, eval suite, LoRA study, real-data sources, approaches
+data/            processed synthetic splits, real postings (+ annotations), robustness suite
+results/         predictions, metrics, robustness, calibration, quant, lora_study, real-data probes, audit
+docs/            schema, annotation guidelines, hyperparameters, GPU route
 ```
 
 ## Limitations
 
-- **Synthetic-heavy training data.** Templates and noise cannot cover real-world variety. That is why
-  the headline split is real postings, and why that split is pending until a human has verified it.
-- **Short texts.** Synthetic postings are shorter than many real job descriptions (median ~0.4k characters;
-  see the data card). Long JDs with heavy boilerplate are under-represented.
-- **Closed vocabularies.** Skills and cities are canonicalised through fixed alias tables. A skill outside
-  the table can only match exactly (lower-cased).
-- **Conventions are opinions.** Seniority is labelled only when stated in words. Role excludes seniority
-  words. Skills named in the title count as skills. Salary conversion uses fixed constants. A model that
-  follows different but reasonable conventions is penalised.
-- **The regex baseline is optimistic on synthetic data** (see above).
-- **The API upper bound runs on a free tier.** It uses an evenly spaced subset (up to 200 postings per
-  split; `n` is in the table), so its CIs are wider than those of rows that score the full split. The exact
-  model id and the `response_format` that was accepted are recorded in the meta file. Free-tier models and
-  quotas change, so check the model id when re-running.
-- **Shared runners.** CPU benchmarks run on shared GitHub-hosted runners, so tokens/s varies between runs and
-  CPU models; the CPU model is recorded with each row.
-- **A 0.5B model.** The CPU route trades accuracy for being trainable on CPU and small enough for a browser.
-  The 1.5B/7B GPU route would likely score higher but is not run.
-- **Browser demo speed.** GitHub Pages cannot send the COOP/COEP headers multi-threaded WASM needs, so the
-  demo runs single-threaded.
-- **Licence of real postings** is a TODO until a human confirms the source dataset's terms.
+- **Real-posting labels are AI-assisted and not human-verified.** They follow written guidelines and list
+  alternatives where a posting is ambiguous. Still, read test_real scores as an estimate until someone runs
+  `jobx verify-real`. The set is small (130 postings), and skewed towards IT/software and English-language
+  sources.
+- **Synthetic-heavy training.** The model saw only template-generated postings. The real-vs-synthetic gap in
+  the results is the measure of how far that transfers; synthetic scores are not real-world accuracy.
+- **Closed vocabularies and conventions.** Skills and cities are canonicalised through fixed alias tables,
+  and conventions such as "role without seniority" are opinions. A model that follows different but
+  reasonable conventions is penalised.
+- **The regex baseline** was written with the synthetic templates in view, so it is flattered on test_synth.
+- **Shared runners.** Speed numbers depend on the runner's CPU, which is recorded with every measurement.
+  The quantisation sweep runs all variants on one machine for that reason.
+- **Browser speed.** GitHub Pages cannot send COOP/COEP headers, so the demo runs single-threaded WASM.
+- **Calibration** is fitted on synthetic validation data; it transfers imperfectly to real postings. The
+  calibration table shows how well it transfers on each split.
+- **Schema v2** (required vs preferred skills, deadlines, eligibility...) is designed and validated in code
+  but not trained.
+- A QLoRA 1.5B GPU route (Colab or a local GPU) is provided but **not run**; see
+  [`docs/gpu_route.md`](docs/gpu_route.md).
 
 ## Licence
 
-Code and synthetic data: MIT. Base models keep their own licences (Qwen2.5: Apache-2.0). Real-postings data
-keeps its source dataset's licence.
+Code and synthetic data: MIT. Base models keep their own licences (Qwen2.5-0.5B/1.5B: Apache-2.0;
+Qwen2.5-3B, used for evaluation only: Qwen Research licence). Real postings keep their sources' licences
+(CC0-1.0, CC-BY-4.0, ODC-By; see `data/real/real_meta.json` for attribution and revisions).
