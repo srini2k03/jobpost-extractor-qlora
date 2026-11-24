@@ -63,3 +63,28 @@ def test_india_row_prefers_location_columns():
     assert india_row({"job_location": "Bengaluru, Karnataka", "d": "x"}, "d")
     assert not india_row({"location": "Indiana, US", "d": "salary 12 LPA"}, "d")
     assert india_row({"d": "Hiring in Pune, 12 LPA"}, "d")
+
+
+def test_sample_hits_caps_domains_and_backoff_retries_only_rate_limits(monkeypatch):
+    import time
+
+    import pytest
+
+    from jobx.data.real_probe import sample_hits, with_backoff
+
+    hits = [{"domain": "a.com", "i": i} for i in range(10)] + [{"domain": "b.com", "i": i} for i in range(3)]
+    s = sample_hits(hits, n=8, per_domain=4, seed=1)
+    assert len(s) == 7 and sum(h["domain"] == "a.com" for h in s) == 4
+    assert s == sample_hits(hits, n=8, per_domain=4, seed=1)
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    calls = []
+
+    def flaky():
+        calls.append(1)
+        if len(calls) < 3:
+            raise RuntimeError("429 Client Error: Too Many Requests")
+        return "ok"
+
+    assert with_backoff(flaky) == "ok" and len(calls) == 3
+    with pytest.raises(ValueError):
+        with_backoff(lambda: (_ for _ in ()).throw(ValueError("other")))

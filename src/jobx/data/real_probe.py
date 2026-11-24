@@ -373,8 +373,41 @@ def scan_web_urls(
     return report, hits
 
 
+def with_backoff(fn: Any, *, attempts: int = 6, base_s: float = 60.0) -> Any:
+    """Call ``fn()``; on HTTP 429 / rate-limit errors wait ``base_s * attempt`` seconds and retry."""
+    import time
+
+    for k in range(1, attempts + 1):
+        try:
+            return fn()
+        except Exception as e:  # huggingface_hub wraps requests errors in several types
+            if k == attempts or not re.search(r"429|Too Many Requests|rate limit", str(e), re.I):
+                raise
+            print(f"rate limited ({type(e).__name__}); retry {k}/{attempts - 1} in {base_s * k:.0f}s")
+            time.sleep(base_s * k)
+    raise RuntimeError("unreachable")
+
+
+def sample_hits(
+    hits: Sequence[dict[str, Any]], *, n: int, per_domain: int, seed: int
+) -> list[dict[str, Any]]:
+    """Deterministic sample of URL hits with a per-domain cap (before any text is read)."""
+    rng = random.Random(seed)
+    order = list(hits)
+    rng.shuffle(order)
+    per: Counter[str] = Counter()
+    out = []
+    for h in order:
+        if per[h["domain"]] < per_domain:
+            out.append(h)
+            per[h["domain"]] += 1
+        if len(out) >= n:
+            break
+    return out
+
+
 def read_hit_texts(hits: Sequence[dict[str, Any]], *, text_col: str = "text") -> Iterator[dict[str, Any]]:
-    """Read the text of the given hits, one row group at a time (text column only)."""
+    """Read the text of the given hits, one row group at a time (text column only), with backoff."""
     import pyarrow.parquet as pq
     from huggingface_hub import HfFileSystem
 
@@ -383,17 +416,21 @@ def read_hit_texts(hits: Sequence[dict[str, Any]], *, text_col: str = "text") ->
     for h in hits:
         by_group.setdefault((h["file"], int(h["row_group"])), []).append(h)
     for (path, rg), hs in sorted(by_group.items()):
-        with fs.open(path, "rb", block_size=8 * 1024 * 1024) as fh:
-            pf = pq.ParquetFile(fh)
-            start = sum(pf.metadata.row_group(i).num_rows for i in range(rg))
-            tbl = pf.read_row_group(rg, columns=[text_col, "id", "date", "dump"])
-            texts = tbl.column(text_col).to_pylist()
-            ids = tbl.column("id").to_pylist()
-            dates = tbl.column("date").to_pylist()
-            dumps = tbl.column("dump").to_pylist()
-            for h in hs:
-                j = int(h["row"]) - start
-                yield {**h, "text": texts[j], "doc_id": ids[j], "crawl_date": dates[j], "dump": dumps[j]}
+
+        def _read(path: str = path, rg: int = rg) -> tuple[int, Any]:
+            with fs.open(path, "rb", block_size=8 * 1024 * 1024) as fh:
+                pf = pq.ParquetFile(fh)
+                start = sum(pf.metadata.row_group(i).num_rows for i in range(rg))
+                return start, pf.read_row_group(rg, columns=[text_col, "id", "date", "dump"])
+
+        start, tbl = with_backoff(_read)
+        texts = tbl.column(text_col).to_pylist()
+        ids = tbl.column("id").to_pylist()
+        dates = tbl.column("date").to_pylist()
+        dumps = tbl.column("dump").to_pylist()
+        for h in hs:
+            j = int(h["row"]) - start
+            yield {**h, "text": texts[j], "doc_id": ids[j], "crawl_date": dates[j], "dump": dumps[j]}
 
 
 def is_job_post(text: str) -> bool:
@@ -472,6 +509,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--max-files", type=int, default=None)
     ap.add_argument("--pool-out", default=None, help="web-pool: JSONL of sampled real postings")
+    ap.add_argument(
+        "--hits", default="results/real/web_hits.jsonl", help="URL hits (written by web, reused by web-pool)"
+    )
     a = ap.parse_args(argv)
     cfg = load_real_config(a.config)
     allow = set(cfg["licence_allowlist"])
@@ -495,11 +535,25 @@ def main(argv: list[str] | None = None) -> int:
             json.dumps({"repo": web["repo"], "licence": lic, "skipped": "licence"}, indent=2) + "\n"
         )
         return 0
-    rep, hits = scan_web_urls(web["repo"], web["pattern"], max_files=a.max_files or web["max_files"])
-    rep.update({"licence": lic, "sha": getattr(info, "sha", None), "probed_at": _now()})
+    hits_path = Path(a.hits)
+    if a.command == "web-pool" and hits_path.exists():
+        prev = json.loads(out.read_text()) if out.exists() else {}
+        rep = {k: v for k, v in prev.items() if k != "pool"}
+        hits = [json.loads(x) for x in hits_path.read_text().splitlines() if x.strip()]
+        print(f"reusing {len(hits)} URL hits from {hits_path}")
+    else:
+        rep, hits = scan_web_urls(web["repo"], web["pattern"], max_files=a.max_files or web["max_files"])
+        rep.update({"licence": lic, "sha": getattr(info, "sha", None), "probed_at": _now()})
+        hits_path.parent.mkdir(parents=True, exist_ok=True)
+        hits_path.write_text("".join(json.dumps(h, ensure_ascii=False) + "\n" for h in hits))
+        out.write_text(json.dumps(rep, indent=2, ensure_ascii=False) + "\n")
     if a.command == "web-pool":
+        chosen = sample_hits(
+            hits, n=int(web["n_read"]), per_domain=int(web["max_per_domain"]), seed=int(cfg["seed"])
+        )
+        rep["hits_read"] = len(chosen)
         pool, pstats = build_pool(
-            read_hit_texts(hits),
+            read_hit_texts(chosen),
             n_pool=web["n_pool"],
             seed=cfg["seed"],
             min_chars=web["min_chars"],

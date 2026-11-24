@@ -81,6 +81,7 @@ jobs:
           import json; r = json.load(open("results/real/probe_web.json"))
           print(json.dumps({k: v for k, v in r.items() if k != "files_scanned"}, indent=2))
           PY
-      - name: Commit the report and the pool
+      - name: Commit the report, URL hits and the pool
+        if: always()
         run: |
-          scripts/commit_results.sh "Real-data probe - FineWeb job-board pages (url scan + pool)" results/real/probe_web.json data/real/pool_web.jsonl
+          scripts/commit_results.sh "Real-data probe - FineWeb job-board pages (url scan + pool)" results/real/probe_web.json results/real/web_hits.jsonl data/real/pool_web.jsonl

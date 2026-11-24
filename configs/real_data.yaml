@@ -73,7 +73,8 @@ web_corpus:
   repo: HuggingFaceFW/fineweb
   pattern: sample/10BT/*.parquet
   max_files: 14
-  n_pool: 400            # candidates committed for annotation (non-ads are rejected during annotation)
-  max_per_domain: 120
+  n_read: 450            # URL hits whose text is read (sampled with max_per_domain; keeps Hub requests low)
+  n_pool: 300            # candidates committed for annotation (non-ads are rejected during annotation)
+  max_per_domain: 40
   min_chars: 300
   max_chars: 3500
