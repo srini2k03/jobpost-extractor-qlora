@@ -242,7 +242,14 @@
       {
         "approach": "gpt-oss-120b-groq_few_shot",
         "name": "GPT-OSS-120B via Groq (API, few-shot)",
-        "status": "pending"
+        "status": "incomplete",
+        "completion": {
+          "n_completed": 9,
+          "n_expected": 130,
+          "n_errors": 0,
+          "error_rate": 0.0,
+          "status": "incomplete"
+        }
       },
       {
         "approach": "qwen2.5-1.5b_qlora",

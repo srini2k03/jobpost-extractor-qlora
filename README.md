@@ -68,7 +68,7 @@ _130 real Indian job postings from 4 licence-checked public sources (cc-by-4.0, 
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M + JSON grammar (browser setting) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
 | Qwen2.5-3B-Instruct zero-shot (GGUF Q4_K_M) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
-| GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | pending API run |
+| GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | incomplete (9/130) |
 
 _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus Hugging Face and W&B accounts) were not run; see `docs/gpu_route.md`._
 
@@ -114,10 +114,19 @@ _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo) | 96.6 | 98.1 | 99.4 | 99.4 | 99.8 | 100.0 | 95.8 | 99.4 | 95.5 | 99.8 | 100.0 |
 | GPT-OSS-120B via Groq (API, few-shot) | 99.0 | 97.5 | 90.0 | 88.5 | 100.0 | 100.0 | 98.0 | 98.5 | 99.5 | 100.0 | 95.0 |
 
+#### Incomplete runs (not part of the comparison above)
+
+Partial runs, or runs with more than 5% failed requests, are scored on what completed and shown here only.
+
+| Approach | Split | Status | Error rate % | n scored | Micro F1 % | JSON valid % |
+|---|---|---|---|---|---|---|
+| GPT-OSS-120B via Groq (API, few-shot) | test_real | incomplete (9/130) | 0.0 | 9 | 74.0 | 100.0 |
+
 #### API usage
 
 | Approach | Split | Model | Requests | Input tokens | Output tokens | Cost (USD) |
 |---|---|---|---|---|---|---|
+| GPT-OSS-120B via Groq (API, few-shot) | test_real | `openai/gpt-oss-120b` (9) | 9 | 19112 | 4650 | 0.00 |
 | GPT-OSS-120B via Groq (API, few-shot) | test_synth | `openai/gpt-oss-120b` (200) | 200 | 368572 | 99223 | 0.00 |
 
 #### Size / speed / accuracy trade-off

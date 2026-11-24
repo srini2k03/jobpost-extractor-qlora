@@ -1,0 +1,40 @@
+{
+  "approach": "gpt-oss-120b-groq_few_shot",
+  "model": "openai/gpt-oss-120b",
+  "base_url": "https://api.groq.com/openai/v1",
+  "hardware": "API",
+  "decoding": "greedy (temperature 0), response_format=json_schema",
+  "response_format": "json_schema",
+  "split": "test_real",
+  "n_shots": 3,
+  "shot_ids": [
+    "syn-00007",
+    "syn-00006",
+    "syn-00014"
+  ],
+  "date": "2026-11-24",
+  "n_examples": 130,
+  "n_completed": 9,
+  "complete": false,
+  "usage": {
+    "requests": 9,
+    "prompt_tokens": 19112,
+    "completion_tokens": 4650
+  },
+  "price_per_mtok": {
+    "input": 0.0,
+    "output": 0.0
+  },
+  "cost_usd": 0.0,
+  "format_downgrades": [],
+  "model_chain": [
+    "openai/gpt-oss-120b"
+  ],
+  "models_used": {
+    "openai/gpt-oss-120b": 9
+  },
+  "dropped_models": {},
+  "model_switches": [],
+  "commit": "ea8dbdd",
+  "provider": "groq"
+}
