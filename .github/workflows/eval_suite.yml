@@ -91,7 +91,7 @@ jobs:
 
   collect:
     needs: predict
-    if: always()
+    if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -102,9 +102,15 @@ jobs:
         with:
           pattern: pred-*
           merge-multiple: true
-          path: results/predictions
+          path: incoming
+      # Commit only the files this run produced: copying the whole folder from this (possibly older) checkout
+      # would overwrite predictions committed to main while the run was going.
       - name: Score, robustness report, calibration, tables; commit
         run: |
-          scripts/commit_results.sh "Eval suite - real postings + robustness (llama.cpp, GitHub Actions)" results/predictions
+          mkdir -p results/predictions && cp incoming/* results/predictions/
+          FILES=$(cd incoming && ls | sed 's#^#results/predictions/#' | tr '\n' ' ')
+          echo "new files: $FILES"
+          # shellcheck disable=SC2086
+          scripts/commit_results.sh "Eval suite - real postings + robustness (llama.cpp, GitHub Actions)" $FILES
       - name: Refresh the Pages site
         run: gh workflow run pages.yml --ref "$GITHUB_REF_NAME" || true

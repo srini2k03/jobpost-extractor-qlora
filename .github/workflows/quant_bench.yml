@@ -51,6 +51,6 @@ jobs:
       - name: Sweep
         run: python -m jobx.quantize.sweep --server-bin llama.cpp/build/bin/llama-server --gguf-dir gguf --name "$NAME"
       - name: Commit
-        if: always()
+        if: ${{ always() && !cancelled() }}
         run: |
           scripts/commit_results.sh "Quantisation sweep - one runner, F16 to Q2_K (llama.cpp)" results/quant
