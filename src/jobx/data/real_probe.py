@@ -205,7 +205,9 @@ def india_row(row: dict[str, Any], text_col: str) -> bool:
     ]
     if locs:
         joined = " ".join(locs)
-        return bool(re.search(r"\b(?:[Ii]ndia|INDIA|IN|IND)\b", joined)) or bool(matchers()["locations"].find(joined))
+        return bool(re.search(r"\b(?:[Ii]ndia|INDIA|IN|IND)\b", joined)) or bool(
+            matchers()["locations"].find(joined)
+        )
     return looks_indian(str(row.get(text_col) or ""))
 
 
