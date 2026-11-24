@@ -107,3 +107,14 @@ def test_extra_tables_render_only_existing_sources(tmp_path):
     )
     out = "\n".join(lora_md(root))
     assert "| r16_all | 16 / 32 | all linear |" in out and "8,798,208" in out and "95.0 [94.0, 96.0]" in out
+
+
+def test_failure_analysis_counts_and_examples():
+    from jobx.eval.failures import analyse, render
+
+    rep = analyse("regex_baseline", "test_real", ROOT)
+    assert rep["n"] == len(json.loads(json.dumps(rep["examples"]))) or rep["n"] > 0
+    total = sum(sum(v for k, v in c.items() if not k.startswith("pred ")) for c in rep["kinds"].values())
+    assert total > 0 and all(len(v) <= 3 for v in rep["examples"].values())
+    md = render(rep)
+    assert md.startswith("# Failure analysis") and "| company |" in md

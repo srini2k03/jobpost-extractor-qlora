@@ -245,6 +245,14 @@ def calibrate_cmd(approach: str = "qwen2.5-0.5b-lora-cpu_q4_k_m", target: float 
     typer.echo(json.dumps({k: v["at_threshold"] for k, v in rep["splits"].items()}, indent=2))
 
 
+@app.command("failures")
+def failures_cmd(approach: str = "qwen2.5-0.5b-lora-cpu_q4_k_m", split: str = "test_real") -> None:
+    """Failure analysis (error kinds per field + examples) -> results/failures/<approach>__<split>.md."""
+    from jobx.eval.failures import write
+
+    typer.echo(f"wrote {write(approach, split, Path('.'))}")
+
+
 @app.command("pull")
 def pull(dest: Path = Path(".")) -> None:
     """Download notebook outputs (predictions, metrics, logs) from the HF artifacts dataset repo."""
