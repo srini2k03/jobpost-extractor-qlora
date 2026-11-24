@@ -1,0 +1,5 @@
+# Probing / fetching real postings from the Hugging Face Hub (GitHub Actions only; the Hub is not
+# reachable from the development sandbox). Install: pip install -r requirements/real-data.txt -e .
+datasets==4.1.1
+huggingface_hub==0.35.3
+pyarrow==21.0.0

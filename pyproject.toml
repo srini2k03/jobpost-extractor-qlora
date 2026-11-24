@@ -84,7 +84,7 @@ module = [
   "torch", "torch.*", "transformers", "transformers.*", "trl", "trl.*", "peft", "peft.*",
   "datasets", "datasets.*", "wandb", "wandb.*", "huggingface_hub", "huggingface_hub.*",
   "llama_cpp", "llama_cpp.*", "gradio", "gradio.*", "lmformatenforcer", "lmformatenforcer.*",
-  "awq", "awq.*", "bitsandbytes", "tqdm", "tqdm.*", "matplotlib", "matplotlib.*", "google.colab", "google.colab.*",
+  "awq", "awq.*", "bitsandbytes", "pyarrow", "pyarrow.*", "tqdm", "tqdm.*", "matplotlib", "matplotlib.*", "google.colab", "google.colab.*",
 ]
 ignore_missing_imports = true
 
