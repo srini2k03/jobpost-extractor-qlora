@@ -1,0 +1,31 @@
+# Compute-aware LoRA study (.github/workflows/lora_study.yml): one GitHub-hosted CPU job per configuration.
+# REDUCED BUDGET: every configuration trains on the same 640-example stratified subset for 40 optimiser
+# steps (effective batch 16, one pass), vs 2,177 examples x 2 epochs for the released model. Selection is
+# on validation micro-F1 (150 val postings, llama.cpp Q8_0, greedy); the test splits are never used.
+note: "Reduced-budget sweep: 640 training examples, 40 steps (effective batch 16) per configuration; the released model used 2,177 examples x 2 epochs (273 steps)."
+shared:
+  base_model: Qwen/Qwen2.5-0.5B-Instruct
+  system_prompt: compact
+  n_train: 640
+  max_steps: 40
+  batch_size: 2
+  grad_accum: 8
+  max_length: 512
+  learning_rate: 3.0e-4
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.05
+  weight_decay: 0.0
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+  seed: 42
+  val_loss_n: 64
+  val_eval_n: 150
+configs:
+  - {id: r16_all, note: "the released recipe (reference)"}
+  - {id: r8_all, r: 8, alpha: 16, note: "half the rank"}
+  - {id: r32_all, r: 32, alpha: 64, note: "double the rank"}
+  - {id: r16_attn, target_modules: [q_proj, k_proj, v_proj, o_proj], note: "attention projections only"}
+  - {id: r16_lr1e-4, learning_rate: 1.0e-4, note: "lower learning rate"}
+  - {id: r16_lr6e-4, learning_rate: 6.0e-4, note: "higher learning rate"}
