@@ -1,0 +1,56 @@
+name: quant-bench
+# Quantisation sweep of the released fine-tune on ONE runner (comparable speed numbers): merged weights from
+# the model-v1 release -> GGUF F16 -> Q8_0 / Q6_K / Q5_K_M / Q4_K_M / Q4_0 / Q3_K_M / Q2_K with the pinned
+# llama.cpp; each variant: size, cold start, first/warm latency, tokens/s, peak RAM, accuracy on a fixed
+# test_synth subset and test_real; plus a 1/2/4-thread sweep. Also checks that the rebuilt Q4_K_M is
+# byte-identical to the released one. Results: results/quant/ (committed).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: quant-bench
+  cancel-in-progress: false
+
+env:
+  LLAMA_CPP_REF: b6000
+  NAME: jobx-qwen2.5-0.5b
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  sweep:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - uses: actions/cache@v4
+        with:
+          path: llama.cpp
+          key: llama-cpp-${{ env.LLAMA_CPP_REF }}-avx2-u2404-v1
+      - run: scripts/build_llama_cpp.sh "$LLAMA_CPP_REF" llama.cpp
+      - run: pip install -r requirements/cpu-train.txt -e ".[serve]"
+      - name: Merged weights from the release -> GGUF variants
+        run: |
+          gh release download model-v1 -p "$NAME-merged.tar.gz" -D /tmp
+          mkdir -p outputs && tar xzf "/tmp/$NAME-merged.tar.gz" -C outputs && rm "/tmp/$NAME-merged.tar.gz"
+          scripts/gguf_convert.sh llama.cpp outputs/merged gguf "$NAME" Q8_0 Q6_K Q5_K_M Q4_K_M Q4_0 Q3_K_M Q2_K
+          rm -rf outputs/merged
+      - name: Rebuilt Q4_K_M == released Q4_K_M?
+        run: |
+          gh release download model-v1 -p "$NAME-Q4_K_M.gguf" -D release_check
+          mkdir -p results/quant
+          { sha256sum "gguf/$NAME-Q4_K_M.gguf" | cut -d' ' -f1; sha256sum "release_check/$NAME-Q4_K_M.gguf" | cut -d' ' -f1; } \
+            | paste -sd' ' | awk '{print "{\"rebuilt_q4_k_m_sha256\": \"" $1 "\", \"released_q4_k_m_sha256\": \"" $2 "\", \"identical\": " ($1==$2 ? "true" : "false") "}"}' \
+            > results/quant/release_check.json
+          cat results/quant/release_check.json
+          rm -rf release_check
+      - name: Sweep
+        run: python -m jobx.quantize.sweep --server-bin llama.cpp/build/bin/llama-server --gguf-dir gguf --name "$NAME"
+      - name: Commit
+        if: always()
+        run: |
+          scripts/commit_results.sh "Quantisation sweep - one runner, F16 to Q2_K (llama.cpp)" results/quant
