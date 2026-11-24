@@ -380,6 +380,7 @@ def test_eval_suite_matrix_and_workflow():
     assert q4["logprobs"] and q4["splits"].startswith("val,") and q4["system"] == "compact"
     assert all(e["source"] in ("release", "hf_convert", "hf_gguf") and e["file"].endswith(".gguf") for e in m)
     assert [e["approach"] for e in suite_matrix("qwen2.5-3b-cpu_zero_shot")] == ["qwen2.5-3b-cpu_zero_shot"]
+    assert {e["splits"] for e in suite_matrix("", "test_real")} == {"test_real"}
     wf = yaml.safe_load(Path(".github/workflows/eval_suite.yml").read_text())
     assert wf["jobs"]["predict"]["strategy"]["max-parallel"] <= 6
     assert "--logprobs" in Path(".github/workflows/eval_suite.yml").read_text()

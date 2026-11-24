@@ -54,17 +54,24 @@ def eval_matrix(cfg: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
-def suite_matrix(only: str = "", root: Path = REPO_ROOT) -> list[dict[str, Any]]:
+def suite_matrix(only: str = "", splits: str = "", root: Path = REPO_ROOT) -> list[dict[str, Any]]:
     """configs/eval_suite.yaml as a job matrix: defaults filled, splits comma-joined, only present splits."""
     import yaml
 
     cfg = yaml.safe_load((root / "configs/eval_suite.yaml").read_text())
     want = {x.strip() for x in only.split(",") if x.strip()}
+    want_splits = {x.strip() for x in splits.split(",") if x.strip()}
     out = []
     for e in cfg["entries"]:
         if want and e["approach"] not in want:
             continue
-        splits = [s for s in e["splits"] if (root / SPLIT_FILES[s]).exists()]
+        run = [
+            s
+            for s in e["splits"]
+            if (root / SPLIT_FILES[s]).exists() and (not want_splits or s in want_splits)
+        ]
+        if not run:
+            continue
         if e["source"] == "hf_convert":
             slug = model_slug(e["model"])
             file = f"{slug}-{e['quant']}.gguf"
@@ -84,7 +91,7 @@ def suite_matrix(only: str = "", root: Path = REPO_ROOT) -> list[dict[str, Any]]
                 "shots": int(e.get("shots", 0)),
                 "guided": bool(e.get("guided", False)),
                 "logprobs": bool(e.get("logprobs", False)),
-                "splits": ",".join(splits),
+                "splits": ",".join(run),
                 "label": label,
                 "ctx": int(cfg.get("ctx", 4096)),
             }
@@ -101,7 +108,11 @@ def main(argv: list[str] | None = None) -> int:
     elif what == "eval":
         print(json.dumps({"include": eval_matrix(cfg)}))
     elif what == "suite":
-        print(json.dumps({"include": suite_matrix(argv[1] if len(argv) > 1 else "")}))
+        print(
+            json.dumps(
+                {"include": suite_matrix(argv[1] if len(argv) > 1 else "", argv[2] if len(argv) > 2 else "")}
+            )
+        )
     elif what == "splits":
         print(",".join(available_splits()))
     else:

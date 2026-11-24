@@ -9,6 +9,9 @@ on:
       only:
         description: "comma-separated approach ids from configs/eval_suite.yaml (empty = all)"
         default: ""
+      splits:
+        description: "comma-separated splits to run (intersected with each entry's splits; empty = all)"
+        default: ""
 
 permissions:
   contents: write
@@ -35,7 +38,7 @@ jobs:
         with: {python-version: "3.12", cache: pip}
       - run: pip install -e .
       - id: m
-        run: echo "matrix=$(python -m jobx.cpu.matrix suite '${{ inputs.only }}')" >> "$GITHUB_OUTPUT"
+        run: echo "matrix=$(python -m jobx.cpu.matrix suite '${{ inputs.only }}' '${{ inputs.splits }}')" >> "$GITHUB_OUTPUT"
 
   predict:
     needs: plan
