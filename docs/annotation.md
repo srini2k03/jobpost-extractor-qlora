@@ -62,6 +62,11 @@ of longer postings (`real-joa-*` and `real-ats-*` above 2,400 characters; the em
 truncates descriptions at 3,000 characters). Near-duplicates inside the selection (the same boilerplate
 with a different title) are rejected so that one employer template cannot dominate.
 
+Web pages (`real-web-*`, Indian job boards in the ODC-By FineWeb crawl) are selected when they have at most
+2,400 characters and are not listing pages by a fixed rule (two or more "Key Skills:" blocks, two or more
+"..." truncations, or three or more "apply now"/"view job" links). During annotation, pages that turned out
+to be listings, reviews or jobs outside India are rejected with the reason.
+
 ## Human verification
 
 ```bash

@@ -1,9 +1,10 @@
 {
-  "n": 109,
-  "rejected": 6,
+  "n": 130,
+  "rejected": 14,
   "per_source": {
     "emscad": 55,
     "joa": 35,
+    "web": 21,
     "ats": 19
   },
   "sources": {
@@ -21,17 +22,22 @@
       "licence": "cc-by-4.0",
       "revision": "718f9b65e0d9051b15489b073c85b4f9e4c35685",
       "n": 35
+    },
+    "HuggingFaceFW/fineweb": {
+      "licence": "odc-by",
+      "revision": "9bb295ddab0e05d785b879661af7260fed5140fc",
+      "n": 21
     }
   },
   "annotation": {
     "method": "AI-assisted annotation, not human-verified",
     "human_verified": 0,
-    "with_alternatives": 79,
+    "with_alternatives": 100,
     "guidelines": "docs/annotation.md"
   },
   "chars": {
-    "p5": 480.0,
-    "p50": 1596.0,
-    "p95": 3077.0
+    "p5": 511.0,
+    "p50": 1655.0,
+    "p95": 3070.0
   }
 }

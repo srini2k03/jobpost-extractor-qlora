@@ -254,6 +254,9 @@ FIELD_LEGEND = (
     ("work_mode", "work mode"),
     ("employment_type", "employment type"),
     ("education", "education"),
+    ("salary", "salary"),
+    ("experience", "experience"),
+    ("seniority", "seniority"),
 )
 
 DEMO = """<section id="demo" class="sb-section jx-demo-section" aria-labelledby="demo-title">
@@ -272,6 +275,7 @@ DEMO = """<section id="demo" class="sb-section jx-demo-section" aria-labelledby=
           <div class="jx-step__main">
             <button id="load" class="sb-btn sb-btn--primary" type="button">Load model</button>
             <span class="jx-step__note">~<!--APPROX_MB--> MB, cached after first load</span>
+            <span class="jx-step__note jx-mem" id="mem-note"></span>
           </div>
           <div class="jx-progress" aria-hidden="true">
             <div class="sb-meter"><span id="progress-bar" style="width:0%"></span></div>
@@ -282,6 +286,7 @@ DEMO = """<section id="demo" class="sb-section jx-demo-section" aria-labelledby=
           <span class="jx-step__n" aria-hidden="true">2</span>
           <div class="jx-step__main">
             <button id="extract" class="sb-btn" type="button" disabled>Extract</button>
+            <button id="cancel" class="sb-btn sb-btn--ghost" type="button" hidden>Cancel</button>
             <label class="jx-check"><input type="checkbox" id="guided" checked>
               <span>JSON-schema grammar <span class="sb-faint">(guaranteed valid JSON)</span></span></label>
           </div>
@@ -299,6 +304,11 @@ DEMO = """<section id="demo" class="sb-section jx-demo-section" aria-labelledby=
             </div>
           </div>
           <div id="examples" class="jx-chips" role="group" aria-label="Example postings"></div>
+          <div class="jx-intools">
+            <label class="jx-file jx-tool">Open a file<input type="file" id="file-in" accept=".txt,.md,.markdown,.html,.htm,text/plain,text/markdown,text/html"></label>
+            <span class="jx-count" id="char-count" aria-live="polite">0 chars</span>
+            <span class="jx-filehint sb-faint">.txt, .md or .html, read in your browser</span>
+          </div>
           <div class="jx-pane__body">
             <textarea id="posting" class="sb-textarea jx-text" aria-label="job posting" spellcheck="false"></textarea>
             <div class="jx-marks" id="marks-view" hidden>
@@ -310,11 +320,27 @@ DEMO = """<section id="demo" class="sb-section jx-demo-section" aria-labelledby=
         <div class="jx-pane jx-pane--out">
           <div class="jx-pane__head">
             <span class="sb-label">Extracted JSON</span>
-            <span id="valid-badge" class="sb-pill" hidden></span>
+            <div class="jx-outtools">
+              <span id="valid-badge" class="sb-pill" hidden></span>
+              <button type="button" class="jx-tool" id="copy-json" disabled>Copy JSON</button>
+              <button type="button" class="jx-tool" id="download-json" disabled>Download</button>
+            </div>
           </div>
           <pre id="json-out" class="sb-code jx-json" data-valid="" tabindex="0" aria-label="Extracted JSON">{}</pre>
+          <dl class="jx-metrics" id="run-metrics" hidden></dl>
           <p class="jx-hint">Hover a field to see where it came from in the posting.</p>
         </div>
+      </div>
+      <div class="jx-fieldcheck" id="field-check-wrap" hidden>
+        <div class="jx-fieldcheck__head">
+          <span class="sb-label">Field check</span>
+          <span class="jx-fieldcheck__sum" id="fc-summary"></span>
+        </div>
+        <ul class="jx-fcs" id="field-check" aria-label="Evidence for each field"></ul>
+        <p class="jx-note"><em>Each value is looked up in the posting (exact text, an alias such as Bangalore &rarr; Bengaluru,
+          normalised or fuzzy text, or matching numbers for salary and experience). &ldquo;Not found in text&rdquo; flags a value
+          the model may have invented; &ldquo;possibly stated&rdquo; flags a null field the text may contain. These are checks
+          on the text, not model probabilities.</em></p>
       </div>
     </div>
     <noscript><p class="sb-callout sb-callout--warn">The demo needs JavaScript.</p></noscript>
@@ -601,6 +627,7 @@ def write_demo_assets(
     ddir.mkdir(parents=True, exist_ok=True)
     js = (WEB / "demo.js").read_text()
     (ddir / "demo.js").write_text(js.replace("__WLLAMA_VERSION__", wllama_version))
+    shutil.copy(WEB / "evidence.js", ddir / "evidence.js")
     (ddir / "prompt.json").write_text(
         json.dumps(
             {"system": prompts.COMPACT_SYSTEM_PROMPT, "user_template": prompts.USER_TEMPLATE}, indent=2
@@ -613,6 +640,12 @@ def write_demo_assets(
         "work_mode": vocab.WORK_MODE_ALIASES,
         "employment_type": vocab.EMPLOYMENT_TYPE_ALIASES,
         "education": vocab.EDUCATION_ALIASES,
+        "case_sensitive": {
+            "skills": sorted(vocab.CASE_SENSITIVE_ALIASES),
+            "locations": sorted(vocab.CASE_SENSITIVE_CITY_ALIASES),
+            "work_mode": sorted(vocab.CASE_SENSITIVE_WORK_MODE),
+            "education": sorted(vocab.CASE_SENSITIVE_EDUCATION),
+        },
     }
     (ddir / "aliases.json").write_text(json.dumps(aliases))
     ex_path = root / "space" / "examples.json"

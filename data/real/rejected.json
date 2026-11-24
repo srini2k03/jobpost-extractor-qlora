@@ -22,5 +22,37 @@
   {
     "id": "real-ats-039",
     "reason": "near-duplicate of real-ats-002/008 (Rippling boilerplate)"
+  },
+  {
+    "id": "real-web-0007",
+    "reason": "not a job ad (employer comparison / review page)"
+  },
+  {
+    "id": "real-web-0020",
+    "reason": "listing page: three separate ads on one page"
+  },
+  {
+    "id": "real-web-0026",
+    "reason": "listing page: several unrelated ads from an agency"
+  },
+  {
+    "id": "real-web-0030",
+    "reason": "listing page: search results with fragments of several ads"
+  },
+  {
+    "id": "real-web-0035",
+    "reason": "listing page: several unrelated ads"
+  },
+  {
+    "id": "real-web-0043",
+    "reason": "listing page: one ad followed by fragments of others"
+  },
+  {
+    "id": "real-web-0045",
+    "reason": "not India-based (job location Dubai, UAE)"
+  },
+  {
+    "id": "real-web-0053",
+    "reason": "listing page: fragments of several ads"
   }
 ]
