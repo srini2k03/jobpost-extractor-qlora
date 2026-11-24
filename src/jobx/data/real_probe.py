@@ -193,6 +193,65 @@ def probe_datasets(
     }
 
 
+LOCATION_HINTS = ("location", "city", "country", "region", "place", "state")
+
+
+def india_row(row: dict[str, Any], text_col: str) -> bool:
+    """India by a location-like column when there is one, else by the text heuristic."""
+    from jobx.normalize.text import matchers
+
+    locs = [
+        str(v) for k, v in row.items() if isinstance(v, str) and any(h in k.lower() for h in LOCATION_HINTS)
+    ]
+    if locs:
+        joined = " ".join(locs)
+        return bool(re.search(r"\b(?:[Ii]ndia|INDIA|IN|IND)\b", joined)) or bool(matchers()["locations"].find(joined))
+    return looks_indian(str(row.get(text_col) or ""))
+
+
+def probe_details(ids: Sequence[str], *, max_rows: int = 60000, excerpts: int = 3) -> dict[str, Any]:
+    """Card text (provenance), columns, and India-row counts for a shortlist of allowed datasets."""
+    from huggingface_hub import DatasetCard, HfApi
+
+    api = HfApi()
+    out: list[dict[str, Any]] = []
+    for ds_id in ids:
+        entry: dict[str, Any] = {"id": ds_id}
+        try:
+            info = api.dataset_info(ds_id)
+            entry["licence"] = card_licence(getattr(info, "card_data", None)) or licence_from_tags(
+                getattr(info, "tags", None)
+            )
+            entry["sha"] = getattr(info, "sha", None)
+            entry["gated"] = bool(getattr(info, "gated", False))
+            try:
+                entry["card_excerpt"] = re.sub(r"\s+", " ", DatasetCard.load(ds_id).text)[:2500]
+            except Exception as e:
+                entry["card_excerpt"] = f"card not readable: {type(e).__name__}"
+            rows = _stream_rows(ds_id, max_rows)
+        except Exception as e:
+            entry["error"] = f"{type(e).__name__}: {str(e)[:300]}"
+            out.append(entry)
+            continue
+        col = guess_text_column(rows)
+        entry["columns"] = sorted(rows[0].keys())[:60] if rows else []
+        entry["text_column"] = col
+        entry["rows_read"] = len(rows)
+        if col:
+            ind = [r for r in rows if india_row(r, col)]
+            lens = [len(str(r.get(col) or "")) for r in ind]
+            entry["india_rows"] = len(ind)
+            entry["india_chars"] = _quantiles(lens)
+            entry["india_in_300_3500"] = sum(1 for n in lens if 300 <= n <= 3500)
+            entry["india_excerpts"] = [excerpt(str(r.get(col) or ""), 220) for r in ind[:excerpts]]
+            entry["india_meta_examples"] = [
+                {k: (str(v)[:80] if v is not None else None) for k, v in r.items() if k != col}
+                for r in ind[:2]
+            ]
+        out.append(entry)
+    return {"probed_at": _now(), "datasets": out}
+
+
 def _stream_rows(ds_id: str, n: int) -> list[dict[str, Any]]:
     from datasets import get_dataset_split_names, load_dataset
 
@@ -406,7 +465,7 @@ def main(argv: list[str] | None = None) -> int:
     import argparse
 
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=["datasets", "web", "web-pool"])
+    ap.add_argument("command", choices=["datasets", "details", "web", "web-pool"])
     ap.add_argument("--config", default="configs/real_data.yaml")
     ap.add_argument("--out", required=True)
     ap.add_argument("--max-files", type=int, default=None)
@@ -418,6 +477,10 @@ def main(argv: list[str] | None = None) -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     if a.command == "datasets":
         rep = probe_datasets([c["id"] for c in cfg["candidates"]], allow)
+        out.write_text(json.dumps(rep, indent=2, ensure_ascii=False) + "\n")
+        return 0
+    if a.command == "details":
+        rep = probe_details(cfg["shortlist"])
         out.write_text(json.dumps(rep, indent=2, ensure_ascii=False) + "\n")
         return 0
     web = cfg["web_corpus"]

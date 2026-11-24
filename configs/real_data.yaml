@@ -32,6 +32,19 @@ max_chars: 3000
 max_rows_scanned: 200000
 seed: 11
 
+# Shortlist for `python -m jobx.data.real_probe details` (allowlisted licences in probe_datasets.json):
+# card text (provenance) and India-row counts. The final choice and its reasons go to data/real/real_meta.json.
+shortlist:
+  - logiover/naukri-job-scraper-sample-data
+  - tor24/india-startup-jobs-mini-001
+  - NextGig-Rocks/global-job-postings-multi-ats
+  - JobOpportunitiesAPI/joa-employer-direct-job-postings-2026-10
+  - makenomistakesllc/tech-job-postings-9-ats
+  - MariaScales/ai-job-postings-12-countries
+  - victor/real-or-fake-fake-jobposting-prediction
+  - xanderios/linkedin-job-postings
+  - lang-uk/recruitment-dataset-job-descriptions-english
+
 # Web corpus probe (`python -m jobx.data.real_probe web|web-pool`): pages on Indian job boards in an ODC-By
 # crawl. Only the url column is scanned; the text of matching rows is read for the pool.
 web_corpus:

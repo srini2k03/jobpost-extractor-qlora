@@ -53,3 +53,13 @@ def test_licence_helpers_and_text_column():
     st = row_stats(rows, "description", min_chars=100, max_chars=10_000)
     assert st["rows_read"] == 2 and st["indian_in_length_range"] == 2
     assert excerpt("a  b\n c", 3) == "a b…"
+
+
+def test_india_row_prefers_location_columns():
+    from jobx.data.real_probe import india_row
+
+    assert india_row({"country": "India", "d": "x"}, "d")
+    assert india_row({"location": "IN, MH, Mumbai", "d": "x"}, "d")
+    assert india_row({"job_location": "Bengaluru, Karnataka", "d": "x"}, "d")
+    assert not india_row({"location": "Indiana, US", "d": "salary 12 LPA"}, "d")
+    assert india_row({"d": "Hiring in Pune, 12 LPA"}, "d")
