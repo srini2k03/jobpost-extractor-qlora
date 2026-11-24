@@ -141,7 +141,7 @@
           "decoding": "-",
           "hardware": "CPU",
           "date": "2026-11-24",
-          "commit": "52f5f88"
+          "commit": "dd60848"
         }
       },
       {
@@ -291,7 +291,7 @@
           "shot_ids": [],
           "hardware": "CPU (AMD EPYC 7763 64-Core Processor, 4 threads, GitHub Actions)",
           "date": "2026-11-24",
-          "commit": "c66bc22",
+          "commit": "89c15d3",
           "n_examples": 130
         }
       },
@@ -456,7 +456,7 @@
           ],
           "hardware": "CPU (Intel(R) Xeon(R) 6975P-C, 4 threads, GitHub Actions)",
           "date": "2026-11-24",
-          "commit": "c66bc22",
+          "commit": "89c15d3",
           "n_examples": 130
         }
       },
@@ -607,7 +607,7 @@
           "shot_ids": [],
           "hardware": "CPU (AMD EPYC 7763 64-Core Processor, 4 threads, GitHub Actions)",
           "date": "2026-11-24",
-          "commit": "c66bc22",
+          "commit": "89c15d3",
           "n_examples": 130
         }
       },
@@ -763,7 +763,7 @@
           "shot_ids": [],
           "hardware": "CPU (Intel(R) Xeon(R) 6975P-C, 4 threads, GitHub Actions)",
           "date": "2026-11-24",
-          "commit": "c66bc22",
+          "commit": "89c15d3",
           "n_examples": 130
         }
       },
@@ -919,7 +919,7 @@
           "shot_ids": [],
           "hardware": "CPU (AMD EPYC 7763 64-Core Processor, 4 threads, GitHub Actions)",
           "date": "2026-11-24",
-          "commit": "c66bc22",
+          "commit": "89c15d3",
           "n_examples": 130
         }
       },
@@ -1070,7 +1070,7 @@
           "shot_ids": [],
           "hardware": "CPU (AMD EPYC 7763 64-Core Processor, 4 threads, GitHub Actions)",
           "date": "2026-11-24",
-          "commit": "06897ee",
+          "commit": "caca7de",
           "n_examples": 130
         }
       },
@@ -1221,7 +1221,7 @@
           "shot_ids": [],
           "hardware": "CPU (AMD EPYC 7763 64-Core Processor, 4 threads, GitHub Actions)",
           "date": "2026-11-24",
-          "commit": "c66bc22",
+          "commit": "89c15d3",
           "n_examples": 130
         }
       },
@@ -1454,7 +1454,7 @@
           "decoding": "-",
           "hardware": "CPU",
           "date": "2026-11-03",
-          "commit": "902cc8a"
+          "commit": "64965cc"
         }
       },
       {
@@ -1601,7 +1601,7 @@
           "shot_ids": [],
           "hardware": "CPU (AMD EPYC 7763 64-Core Processor, 4 threads, GitHub Actions)",
           "date": "2026-11-03",
-          "commit": "971e1dc",
+          "commit": "d7d5eb7",
           "n_examples": 471
         }
       },
@@ -1749,7 +1749,7 @@
           "shot_ids": [],
           "hardware": "CPU (AMD EPYC 7763 64-Core Processor, 4 threads, GitHub Actions)",
           "date": "2026-11-03",
-          "commit": "971e1dc",
+          "commit": "d7d5eb7",
           "n_examples": 200
         }
       },
@@ -1901,7 +1901,7 @@
           ],
           "hardware": "CPU (AMD EPYC 7763 64-Core Processor, 4 threads, GitHub Actions)",
           "date": "2026-11-03",
-          "commit": "971e1dc",
+          "commit": "d7d5eb7",
           "n_examples": 471
         }
       },
@@ -2053,7 +2053,7 @@
           ],
           "hardware": "CPU (AMD EPYC 7763 64-Core Processor, 4 threads, GitHub Actions)",
           "date": "2026-11-03",
-          "commit": "971e1dc",
+          "commit": "d7d5eb7",
           "n_examples": 200
         }
       },
@@ -2201,7 +2201,7 @@
           "shot_ids": [],
           "hardware": "CPU (AMD EPYC 9V45 96-Core Processor, 4 threads, GitHub Actions)",
           "date": "2026-11-03",
-          "commit": "971e1dc",
+          "commit": "d7d5eb7",
           "n_examples": 471
         }
       },
@@ -2353,7 +2353,7 @@
           ],
           "hardware": "CPU (AMD EPYC 7763 64-Core Processor, 4 threads, GitHub Actions)",
           "date": "2026-11-03",
-          "commit": "971e1dc",
+          "commit": "d7d5eb7",
           "n_examples": 471
         }
       },
@@ -2501,7 +2501,7 @@
           "shot_ids": [],
           "hardware": "CPU (INTEL(R) XEON(R) PLATINUM 8573C, 4 threads, GitHub Actions)",
           "date": "2026-11-04",
-          "commit": "fcdc48b",
+          "commit": "2321654",
           "n_examples": 471
         }
       },
@@ -2649,7 +2649,7 @@
           "shot_ids": [],
           "hardware": "CPU (AMD EPYC 7763 64-Core Processor, 4 threads, GitHub Actions)",
           "date": "2026-11-04",
-          "commit": "fcdc48b",
+          "commit": "2321654",
           "n_examples": 471
         }
       },
@@ -2800,7 +2800,7 @@
           "shot_ids": [],
           "hardware": "CPU (AMD EPYC 7763 64-Core Processor, 4 threads, GitHub Actions)",
           "date": "2026-11-24",
-          "commit": "c66bc22",
+          "commit": "89c15d3",
           "n_examples": 471
         }
       },
@@ -3026,7 +3026,7 @@
           },
           "dropped_models": {},
           "model_switches": [],
-          "commit": "dd40a42",
+          "commit": "17ae21c",
           "provider": "groq"
         }
       },
@@ -3080,7 +3080,7 @@
       "n_examples": 471,
       "split": "test_synth",
       "date": "2026-11-04",
-      "commit": "fcdc48b"
+      "commit": "2321654"
     },
     {
       "variant": "LoRA 0.5B GGUF Q8_0 (llama.cpp)",
@@ -3094,7 +3094,7 @@
       "n_examples": 471,
       "split": "test_synth",
       "date": "2026-11-04",
-      "commit": "fcdc48b"
+      "commit": "2321654"
     },
     {
       "variant": "LoRA 0.5B GGUF Q4_K_M (llama.cpp)",
@@ -3108,7 +3108,7 @@
       "n_examples": 471,
       "split": "test_synth",
       "date": "2026-11-04",
-      "commit": "fcdc48b"
+      "commit": "2321654"
     }
   ]
 }

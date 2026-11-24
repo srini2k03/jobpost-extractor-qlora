@@ -26,7 +26,7 @@
     "shot_ids": [],
     "hardware": "CPU (AMD EPYC 7763 64-Core Processor, 4 threads, GitHub Actions)",
     "date": "2026-11-24",
-    "commit": "c66bc22",
+    "commit": "89c15d3",
     "n_examples": 352
   },
   "metrics": {

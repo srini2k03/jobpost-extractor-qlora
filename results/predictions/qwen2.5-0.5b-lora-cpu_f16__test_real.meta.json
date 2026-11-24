@@ -11,6 +11,6 @@
   "shot_ids": [],
   "hardware": "CPU (Intel(R) Xeon(R) 6975P-C, 4 threads, GitHub Actions)",
   "date": "2026-11-24",
-  "commit": "c66bc22",
+  "commit": "89c15d3",
   "n_examples": 130
 }

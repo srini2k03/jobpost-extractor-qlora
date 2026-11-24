@@ -4,18 +4,18 @@ _130 real Indian job postings from 4 licence-checked public sources (cc-by-4.0, 
 
 | Approach | Hardware | n | JSON valid % | Schema valid % | Field EM % | Micro F1 % [95% CI] | Macro F1 % | Hallucination % [95% CI] | Status |
 |---|---|---|---|---|---|---|---|---|---|
-| Regex baseline (rules + alias tables) | CPU | 130 | 100.0 | 100.0 | 75.5 | 60.4 [58.0, 63.1] | 74.1 | 5.5 [3.6, 7.7] | measured 2026-11-24 @52f5f88 |
-| Qwen2.5-0.5B-Instruct zero-shot | CPU (GitHub Actions) | 130 | 86.2 | 0.0 | 39.7 | 32.0 [29.3, 34.3] | 32.4 | 58.4 [53.5, 62.6] | measured 2026-11-24 @c66bc22 |
+| Regex baseline (rules + alias tables) | CPU | 130 | 100.0 | 100.0 | 75.5 | 60.4 [58.0, 63.1] | 74.1 | 5.5 [3.6, 7.7] | measured 2026-11-24 @dd60848 |
+| Qwen2.5-0.5B-Instruct zero-shot | CPU (GitHub Actions) | 130 | 86.2 | 0.0 | 39.7 | 32.0 [29.3, 34.3] | 32.4 | 58.4 [53.5, 62.6] | measured 2026-11-24 @89c15d3 |
 | Qwen2.5-0.5B-Instruct zero-shot + guided JSON | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
 | Qwen2.5-0.5B-Instruct 3-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
-| Qwen2.5-0.5B-Instruct 3-shot + guided JSON | CPU (GitHub Actions) | 130 | 70.0 | 67.7 | 53.0 | 35.7 [32.2, 39.4] | 37.3 | 23.9 [20.3, 27.4] | measured 2026-11-24 @c66bc22 |
-| Qwen2.5-1.5B-Instruct zero-shot | CPU (GitHub Actions) | 130 | 93.8 | 13.8 | 62.3 | 50.2 [47.2, 53.2] | 58.5 | 35.4 [31.3, 39.4] | measured 2026-11-24 @c66bc22 |
+| Qwen2.5-0.5B-Instruct 3-shot + guided JSON | CPU (GitHub Actions) | 130 | 70.0 | 67.7 | 53.0 | 35.7 [32.2, 39.4] | 37.3 | 23.9 [20.3, 27.4] | measured 2026-11-24 @89c15d3 |
+| Qwen2.5-1.5B-Instruct zero-shot | CPU (GitHub Actions) | 130 | 93.8 | 13.8 | 62.3 | 50.2 [47.2, 53.2] | 58.5 | 35.4 [31.3, 39.4] | measured 2026-11-24 @89c15d3 |
 | Qwen2.5-1.5B-Instruct 3-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
-| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF F16 | CPU (GitHub Actions) | 130 | 96.9 | 86.2 | 75.2 | 56.1 [52.8, 59.2] | 71.7 | 7.9 [5.6, 10.4] | measured 2026-11-24 @c66bc22 |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF F16 | CPU (GitHub Actions) | 130 | 96.9 | 86.2 | 75.2 | 56.1 [52.8, 59.2] | 71.7 | 7.9 [5.6, 10.4] | measured 2026-11-24 @89c15d3 |
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q8_0 | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
-| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo) | CPU (GitHub Actions) | 130 | 94.6 | 85.4 | 74.7 | 54.4 [51.0, 57.9] | 71.0 | 7.6 [5.5, 9.8] | measured 2026-11-24 @c66bc22 |
-| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M + JSON grammar (browser setting) | CPU (GitHub Actions) | 130 | 100.0 | 96.2 | 76.4 | 56.9 [53.8, 59.8] | 73.4 | 7.9 [5.7, 10.2] | measured 2026-11-24 @06897ee |
-| Qwen2.5-3B-Instruct zero-shot (GGUF Q4_K_M) | CPU (GitHub Actions) | 130 | 98.5 | 59.2 | 70.2 | 56.4 [53.2, 59.3] | 67.1 | 30.3 [26.9, 33.7] | measured 2026-11-24 @c66bc22 |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo) | CPU (GitHub Actions) | 130 | 94.6 | 85.4 | 74.7 | 54.4 [51.0, 57.9] | 71.0 | 7.6 [5.5, 9.8] | measured 2026-11-24 @89c15d3 |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M + JSON grammar (browser setting) | CPU (GitHub Actions) | 130 | 100.0 | 96.2 | 76.4 | 56.9 [53.8, 59.8] | 73.4 | 7.9 [5.7, 10.2] | measured 2026-11-24 @caca7de |
+| Qwen2.5-3B-Instruct zero-shot (GGUF Q4_K_M) | CPU (GitHub Actions) | 130 | 98.5 | 59.2 | 70.2 | 56.4 [53.2, 59.3] | 67.1 | 30.3 [26.9, 33.7] | measured 2026-11-24 @89c15d3 |
 | GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | incomplete (9/130) |
 
 _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus Hugging Face and W&B accounts) were not run; see `docs/gpu_route.md`._
@@ -24,19 +24,19 @@ _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus
 
 | Approach | Hardware | n | JSON valid % | Schema valid % | Field EM % | Micro F1 % [95% CI] | Macro F1 % | Hallucination % [95% CI] | Status |
 |---|---|---|---|---|---|---|---|---|---|
-| Regex baseline (rules + alias tables) | CPU | 471 | 100.0 | 100.0 | 91.1 | 93.1 [92.5, 93.8] | 90.8 | 2.5 [1.7, 3.2] | measured 2026-11-03 @902cc8a |
-| Qwen2.5-0.5B-Instruct zero-shot | CPU (GitHub Actions) | 471 | 96.2 | 0.0 | 54.2 | 71.6 [70.4, 72.7] | 56.2 | 67.1 [64.2, 69.8] | measured 2026-11-03 @971e1dc |
-| Qwen2.5-0.5B-Instruct zero-shot + guided JSON | CPU (GitHub Actions) | 200 | 99.5 | 77.5 | 54.7 | 72.1 [70.6, 73.6] | 54.5 | 73.0 [69.4, 76.6] | measured 2026-11-03 @971e1dc |
-| Qwen2.5-0.5B-Instruct 3-shot | CPU (GitHub Actions) | 471 | 99.4 | 23.6 | 66.0 | 79.1 [78.1, 80.0] | 65.1 | 43.7 [41.4, 46.4] | measured 2026-11-03 @971e1dc |
-| Qwen2.5-0.5B-Instruct 3-shot + guided JSON | CPU (GitHub Actions) | 200 | 99.0 | 99.0 | 66.5 | 80.1 [78.5, 81.4] | 66.2 | 44.2 [40.6, 48.1] | measured 2026-11-03 @971e1dc |
-| Qwen2.5-1.5B-Instruct zero-shot | CPU (GitHub Actions) | 471 | 100.0 | 5.1 | 84.4 | 91.4 [90.8, 92.1] | 86.0 | 35.3 [32.6, 37.6] | measured 2026-11-03 @971e1dc |
-| Qwen2.5-1.5B-Instruct 3-shot | CPU (GitHub Actions) | 471 | 97.5 | 40.3 | 84.0 | 89.8 [88.8, 90.8] | 85.8 | 21.7 [19.8, 23.7] | measured 2026-11-03 @971e1dc |
-| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF F16 | CPU (GitHub Actions) | 471 | 100.0 | 99.6 | 98.8 | 99.3 [99.1, 99.5] | 99.0 | 1.9 [1.2, 2.6] | measured 2026-11-04 @fcdc48b |
-| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q8_0 | CPU (GitHub Actions) | 471 | 100.0 | 99.8 | 98.8 | 99.3 [99.1, 99.5] | 98.9 | 1.7 [1.0, 2.3] | measured 2026-11-04 @fcdc48b |
-| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo) | CPU (GitHub Actions) | 471 | 100.0 | 99.8 | 98.5 | 99.0 [98.8, 99.2] | 98.5 | 2.0 [1.3, 2.7] | measured 2026-11-24 @c66bc22 |
+| Regex baseline (rules + alias tables) | CPU | 471 | 100.0 | 100.0 | 91.1 | 93.1 [92.5, 93.8] | 90.8 | 2.5 [1.7, 3.2] | measured 2026-11-03 @64965cc |
+| Qwen2.5-0.5B-Instruct zero-shot | CPU (GitHub Actions) | 471 | 96.2 | 0.0 | 54.2 | 71.6 [70.4, 72.7] | 56.2 | 67.1 [64.2, 69.8] | measured 2026-11-03 @d7d5eb7 |
+| Qwen2.5-0.5B-Instruct zero-shot + guided JSON | CPU (GitHub Actions) | 200 | 99.5 | 77.5 | 54.7 | 72.1 [70.6, 73.6] | 54.5 | 73.0 [69.4, 76.6] | measured 2026-11-03 @d7d5eb7 |
+| Qwen2.5-0.5B-Instruct 3-shot | CPU (GitHub Actions) | 471 | 99.4 | 23.6 | 66.0 | 79.1 [78.1, 80.0] | 65.1 | 43.7 [41.4, 46.4] | measured 2026-11-03 @d7d5eb7 |
+| Qwen2.5-0.5B-Instruct 3-shot + guided JSON | CPU (GitHub Actions) | 200 | 99.0 | 99.0 | 66.5 | 80.1 [78.5, 81.4] | 66.2 | 44.2 [40.6, 48.1] | measured 2026-11-03 @d7d5eb7 |
+| Qwen2.5-1.5B-Instruct zero-shot | CPU (GitHub Actions) | 471 | 100.0 | 5.1 | 84.4 | 91.4 [90.8, 92.1] | 86.0 | 35.3 [32.6, 37.6] | measured 2026-11-03 @d7d5eb7 |
+| Qwen2.5-1.5B-Instruct 3-shot | CPU (GitHub Actions) | 471 | 97.5 | 40.3 | 84.0 | 89.8 [88.8, 90.8] | 85.8 | 21.7 [19.8, 23.7] | measured 2026-11-03 @d7d5eb7 |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF F16 | CPU (GitHub Actions) | 471 | 100.0 | 99.6 | 98.8 | 99.3 [99.1, 99.5] | 99.0 | 1.9 [1.2, 2.6] | measured 2026-11-04 @2321654 |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q8_0 | CPU (GitHub Actions) | 471 | 100.0 | 99.8 | 98.8 | 99.3 [99.1, 99.5] | 98.9 | 1.7 [1.0, 2.3] | measured 2026-11-04 @2321654 |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo) | CPU (GitHub Actions) | 471 | 100.0 | 99.8 | 98.5 | 99.0 [98.8, 99.2] | 98.5 | 2.0 [1.3, 2.7] | measured 2026-11-24 @89c15d3 |
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M + JSON grammar (browser setting) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
 | Qwen2.5-3B-Instruct zero-shot (GGUF Q4_K_M) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
-| GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | 200 | 100.0 | 100.0 | 96.9 | 97.9 [97.4, 98.4] | 97.7 | 1.0 [0.3, 1.8] | measured 2026-11-06 @dd40a42 |
+| GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | 200 | 100.0 | 100.0 | 96.9 | 97.9 [97.4, 98.4] | 97.7 | 1.0 [0.3, 1.8] | measured 2026-11-06 @17ae21c |
 
 _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus Hugging Face and W&B accounts) were not run; see `docs/gpu_route.md`._
 
@@ -127,7 +127,7 @@ _Fitted on val (3872 fields); abstention threshold 0.42 = smallest with 99% sele
 
 #### Quantisation sweep (one runner, all variants)
 
-_CPU (Intel(R) Xeon(R) 6975P-C, 4 threads, GitHub Actions), llama.cpp b6000, measured 2026-11-24 @2239191; accuracy on 150 evenly spaced test_synth and 109 test_real postings._
+_CPU (Intel(R) Xeon(R) 6975P-C, 4 threads, GitHub Actions), llama.cpp b6000, measured 2026-11-24 @bf39920; accuracy on 150 evenly spaced test_synth and 109 test_real postings._
 
 | GGUF | Size (GB) | Synth micro-F1 % | Real micro-F1 % | JSON valid % (real) | Gen tokens/s | Prompt tokens/s | p50 latency (s) | p95 latency (s) | Cold start (s) | Peak RAM (GB) |
 |---|---|---|---|---|---|---|---|---|---|---|
