@@ -1,0 +1,161 @@
+{
+  "approach": "regex_baseline",
+  "split": "robustness",
+  "n_gold": 168,
+  "n_pred": 168,
+  "unknown_ids": 0,
+  "coverage": 1.0,
+  "mean_latency_s": 0.0098,
+  "completion": {
+    "n_completed": 168,
+    "n_expected": 168,
+    "n_errors": 0,
+    "error_rate": 0.0,
+    "status": "complete"
+  },
+  "meta": {
+    "approach": "regex_baseline",
+    "model": "rules",
+    "decoding": "-",
+    "hardware": "CPU",
+    "date": "2026-11-24",
+    "commit": "bd833d0"
+  },
+  "metrics": {
+    "n": 168,
+    "json_validity": 1.0,
+    "schema_validity": 1.0,
+    "field_em_mean": 0.8793290043290043,
+    "record_exact_match": 0.2261904761904762,
+    "micro_precision": 0.8650937689050212,
+    "micro_recall": 0.9166666666666666,
+    "micro_f1": 0.8901338313103019,
+    "macro_f1": 0.6924467049449069,
+    "hallucination_rate": 0.06025641025641026,
+    "per_field": {
+      "company": {
+        "em": 0.7916666666666666,
+        "precision": 0.9739130434782609,
+        "recall": 0.7777777777777778,
+        "f1": 0.8648648648648649,
+        "hallucination_rate": 0.125,
+        "support_gold_stated": 144
+      },
+      "role": {
+        "em": 0.27380952380952384,
+        "precision": 0.27380952380952384,
+        "recall": 0.3194444444444444,
+        "f1": 0.2948717948717949,
+        "hallucination_rate": 1.0,
+        "support_gold_stated": 144
+      },
+      "seniority": {
+        "em": 1.0,
+        "precision": null,
+        "recall": null,
+        "f1": null,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 0
+      },
+      "skills": {
+        "em": 0.7797619047619048,
+        "precision": 0.9369369369369369,
+        "recall": 1.0,
+        "f1": 0.9674418604651163,
+        "hallucination_rate": 0.25,
+        "support_gold_stated": 624
+      },
+      "min_experience_years": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 156
+      },
+      "max_experience_years": {
+        "em": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 156
+      },
+      "salary": {
+        "em": 0.9821428571428571,
+        "precision": 0.9795918367346939,
+        "recall": 1.0,
+        "f1": 0.9896907216494846,
+        "hallucination_rate": 0.125,
+        "support_gold_stated": 144
+      },
+      "locations": {
+        "em": 0.8809523809523809,
+        "precision": 0.7929515418502202,
+        "recall": 1.0,
+        "f1": 0.8845208845208845,
+        "hallucination_rate": 0.6666666666666666,
+        "support_gold_stated": 180
+      },
+      "work_mode": {
+        "em": 0.9880952380952381,
+        "precision": 0.8571428571428571,
+        "recall": 1.0,
+        "f1": 0.9230769230769231,
+        "hallucination_rate": 0.01282051282051282,
+        "support_gold_stated": 12
+      },
+      "employment_type": {
+        "em": 0.9880952380952381,
+        "precision": 0.0,
+        "recall": null,
+        "f1": 0.0,
+        "hallucination_rate": 0.011904761904761904,
+        "support_gold_stated": 0
+      },
+      "education": {
+        "em": 0.9880952380952381,
+        "precision": 0.0,
+        "recall": null,
+        "f1": 0.0,
+        "hallucination_rate": 0.011904761904761904,
+        "support_gold_stated": 0
+      }
+    },
+    "ci95": {
+      "micro_f1": [
+        0.8762409704266322,
+        0.9021765430506726
+      ],
+      "macro_f1": [
+        0.6762876723909911,
+        0.8788715797788116
+      ],
+      "field_em_mean": [
+        0.8647050865800866,
+        0.8928571428571428
+      ],
+      "json_validity": [
+        1.0,
+        1.0
+      ],
+      "schema_validity": [
+        1.0,
+        1.0
+      ],
+      "hallucination_rate": [
+        0.039931826326820956,
+        0.08312972954137604
+      ],
+      "record_exact_match": [
+        0.16666666666666666,
+        0.2858630952380951
+      ]
+    },
+    "bootstrap": {
+      "n_boot": 1000,
+      "seed": 0,
+      "method": "percentile, resampling examples"
+    }
+  }
+}

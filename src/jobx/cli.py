@@ -220,6 +220,22 @@ def verify_real(verifier: str = "human") -> None:
     typer.echo(json.dumps(build_real("."), indent=2))
 
 
+@app.command("robustness-build")
+def robustness_build() -> None:
+    """Write the robustness / prompt-injection suite to data/robustness/robustness.jsonl."""
+    from jobx.robustness import write_suite
+
+    typer.echo(f"wrote {write_suite('.')}")
+
+
+@app.command("robustness-report")
+def robustness_report() -> None:
+    """Per-category scores of every results/predictions/*__robustness.jsonl -> results/robustness/summary.json."""
+    from jobx.robustness import report_all
+
+    typer.echo(json.dumps(report_all("."), indent=2))
+
+
 @app.command("pull")
 def pull(dest: Path = Path(".")) -> None:
     """Download notebook outputs (predictions, metrics, logs) from the HF artifacts dataset repo."""

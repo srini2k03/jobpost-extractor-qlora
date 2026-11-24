@@ -22,6 +22,7 @@ SPLIT_FILES = {
     "val": "data/processed/val.jsonl",
     "test_synth": "data/processed/test_synth.jsonl",
     "test_real": "data/real/test_real.jsonl",
+    "robustness": "data/robustness/robustness.jsonl",
 }
 
 
