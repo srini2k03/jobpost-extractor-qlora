@@ -50,6 +50,23 @@ class LlamaCppLLM:
         out = self.llm.create_chat_completion(messages=messages, **kwargs)
         return str(out["choices"][0]["message"]["content"] or "")
 
+    def chat_with_logprobs(
+        self, messages: list[dict[str, str]], *, schema: dict[str, Any] | None = None, max_tokens: int = 384
+    ) -> tuple[str, list[dict[str, Any]]]:
+        """Like :meth:`chat`, plus llama.cpp's per-token log-probs (used for field confidence)."""
+        kwargs: dict[str, Any] = {
+            "temperature": 0.0,
+            "max_tokens": max_tokens,
+            "logprobs": True,
+            "top_logprobs": 1,
+        }
+        if schema is not None:
+            kwargs["response_format"] = llama_cpp_response_format(schema)
+        out = self.llm.create_chat_completion(messages=messages, **kwargs)
+        ch = out["choices"][0]
+        toks = list(((ch.get("logprobs") or {}).get("content")) or [])
+        return str(ch["message"]["content"] or ""), toks
+
 
 class RegexLLM:
     """Model-free fallback that answers with the regex baseline (demo / smoke tests)."""
@@ -71,10 +88,16 @@ class MockLLM:
 
     name = "mock"
 
-    def __init__(self, responses: Sequence[str] | Callable[[list[dict[str, str]]], str]) -> None:
+    def __init__(
+        self,
+        responses: Sequence[str] | Callable[[list[dict[str, str]]], str],
+        *,
+        logprob: float | None = None,
+    ) -> None:
         self._fn = responses if callable(responses) else None
         self._queue = list(responses) if not callable(responses) else []
         self.calls: list[list[dict[str, str]]] = []
+        self.logprob = logprob  # when set, chat_with_logprobs returns 4-character tokens with this log-prob
 
     def chat(
         self, messages: list[dict[str, str]], *, schema: dict[str, Any] | None = None, max_tokens: int = 384
@@ -83,6 +106,23 @@ class MockLLM:
         if self._fn is not None:
             return self._fn(messages)
         return self._queue.pop(0) if self._queue else ""
+
+    def chat_with_logprobs(
+        self, messages: list[dict[str, str]], *, schema: dict[str, Any] | None = None, max_tokens: int = 384
+    ) -> tuple[str, list[dict[str, Any]]]:
+        text = self.chat(messages, schema=schema, max_tokens=max_tokens)
+        if self.logprob is None:
+            return text, []
+        toks = [text[i : i + 4] for i in range(0, len(text), 4)]
+        return text, [{"token": t, "bytes": list(t.encode()), "logprob": self.logprob} for t in toks]
+
+
+def prompt_from_env() -> str:
+    """JOBX_PROMPT=compact (default: the CPU fine-tune's training prompt) or full (base models, GPU route)."""
+    name = os.environ.get("JOBX_PROMPT", "compact").lower()
+    if name not in ("compact", "full"):
+        raise ValueError(f"JOBX_PROMPT must be compact or full, got {name!r}")
+    return name
 
 
 def llm_from_env() -> LLM:

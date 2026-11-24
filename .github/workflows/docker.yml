@@ -1,0 +1,30 @@
+name: docker
+# Builds the API image and smoke-tests it with the model-free regex backend (the GGUF backend needs a
+# model file, which is not downloaded here).
+on:
+  push:
+    branches: [main]
+    paths: ["docker/**", "src/jobx/serve/**", "pyproject.toml", ".github/workflows/docker.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f docker/Dockerfile -t jobx-api .
+      - name: Smoke test (regex backend)
+        run: |
+          docker run -d --name api -p 8000:8000 -e JOBX_BACKEND=regex jobx-api
+          for i in $(seq 1 30); do curl -sf localhost:8000/health && break; sleep 2; done
+          curl -sf localhost:8000/model | python3 -m json.tool | head -20
+          curl -sf -X POST localhost:8000/extract -H 'content-type: application/json' \
+            -d '{"text": "Hiring Telecaller\nSalary: 15k-20k/month\nLocation: Chennai", "abstain": "flag"}' | tee out.json
+          python3 -c "import json; b = json.load(open('out.json')); assert b['valid'] and b['data']['locations'] == ['Chennai'] and b['evidence'], b"
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST localhost:8000/extract -H 'content-type: application/json' -d "{\"text\": \"$(python3 -c 'print("x"*9000)')\"}")
+          test "$code" = "413"
+          docker logs api 2>&1 | tail -5

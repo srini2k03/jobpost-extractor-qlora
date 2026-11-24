@@ -77,7 +77,9 @@ def make_predict(extractor: Extractor) -> Any:
 def build_demo(llm: LLM | None = None, banner: str | None = None) -> gr.Blocks:
     if llm is None:
         llm, banner = default_llm()
-    extractor = Extractor(llm, max_retries=1)
+    extractor = Extractor(
+        llm, max_retries=1, system="full"
+    )  # the GPU-route 1.5B QLoRA was trained with the full prompt
     predict = make_predict(extractor)
     with gr.Blocks(title="Job posting to JSON") as demo:
         gr.Markdown(
