@@ -16,7 +16,7 @@ from jobx.cpu.plan import choose_max_length, plan_training, stratified_subset
 from jobx.cpu.train import latest_checkpoint, load_route_config, status
 from jobx.data.build import read_jsonl
 from jobx.eval.results_table import build_tables
-from jobx.eval.site import WLLAMA_VERSION, build_site
+from jobx.eval.site import WLLAMA_VERSION, build_site, headline_stats
 
 WF = Path(".github/workflows")
 
@@ -246,7 +246,11 @@ def test_site_with_demo(tmp_path):
     out = tmp_path / "site"
     build_site(".", out, model_dir=parts)
     html = (out / "index.html").read_text()
-    assert 'src="demo/demo.js"' in html and "Load model" in html and "<h2>Results</h2>" in html
+    assert 'src="demo/demo.js"' in html and "Load model" in html and 'id="results"' in html
+    for asset in ("sb-kit.css", "sb-kit.js", "site.css"):
+        assert (out / asset).exists() and f"{asset}" in html
+    for el in ('id="load"', 'id="extract"', 'id="status"', 'id="posting"', 'id="json-out"', 'id="examples"'):
+        assert el in html, el  # the Playwright check (scripts/check_demo.py) drives these
     man = json.loads((out / "model" / "manifest.json").read_text())
     assert man["parts"] == ["model/jobx-q4km.gguf.part000", "model/jobx-q4km.gguf.part001"]
     assert man["file"] == "jobx-q4km.gguf"
@@ -261,7 +265,11 @@ def test_site_with_demo(tmp_path):
     # no model: "demo pending" note, no demo script
     out2 = tmp_path / "site2"
     build_site(".", out2)
-    assert "demo/demo.js" not in (out2 / "index.html").read_text()
+    html2 = (out2 / "index.html").read_text()
+    assert "demo/demo.js" not in html2 and "Demo pending" in html2 and "<!--" not in html2
+    # hero numbers come from results/results.json, formatted like the results table
+    stats = headline_stats(json.loads(Path("results/results.json").read_text()))
+    assert len(stats) == 4 and all(f">{value}<" in html for value, _, _ in stats)
 
 
 def test_site_rejects_parts_over_95mb(tmp_path):
