@@ -1,0 +1,173 @@
+{
+  "approach": "qwen2.5-0.5b-cpu_few_shot_guided",
+  "split": "test_real",
+  "n_gold": 130,
+  "n_pred": 130,
+  "unknown_ids": 0,
+  "coverage": 1.0,
+  "mean_latency_s": 7.8766,
+  "completion": {
+    "n_completed": 130,
+    "n_expected": 130,
+    "n_errors": 0,
+    "error_rate": 0.0,
+    "status": "complete"
+  },
+  "meta": {
+    "approach": "qwen2.5-0.5b-cpu_few_shot_guided",
+    "model": "Qwen/Qwen2.5-0.5B-Instruct (GGUF Q8_0, llama.cpp)",
+    "gguf": "qwen2.5-0.5b-instruct-Q8_0.gguf",
+    "decoding": "guided (llama.cpp JSON-schema grammar)",
+    "logprobs": false,
+    "ctx": 4096,
+    "threads": 4,
+    "system_prompt": "full",
+    "n_shots": 3,
+    "shot_ids": [
+      "syn-00007",
+      "syn-00006",
+      "syn-00014"
+    ],
+    "hardware": "CPU (Intel(R) Xeon(R) 6975P-C, 4 threads, GitHub Actions)",
+    "date": "2026-11-24",
+    "commit": "c66bc22",
+    "n_examples": 130
+  },
+  "metrics": {
+    "n": 130,
+    "json_validity": 0.7,
+    "schema_validity": 0.676923076923077,
+    "field_em_mean": 0.5300699300699301,
+    "record_exact_match": 0.0,
+    "micro_precision": 0.37609561752988047,
+    "micro_recall": 0.34054834054834054,
+    "micro_f1": 0.35744036349867475,
+    "macro_f1": 0.3726769015563162,
+    "hallucination_rate": 0.23863636363636365,
+    "per_field": {
+      "company": {
+        "em": 0.4230769230769231,
+        "precision": 0.8823529411764706,
+        "recall": 0.17045454545454544,
+        "f1": 0.2857142857142857,
+        "hallucination_rate": 0.047619047619047616,
+        "support_gold_stated": 88
+      },
+      "role": {
+        "em": 0.6307692307692307,
+        "precision": 0.9047619047619048,
+        "recall": 0.6229508196721312,
+        "f1": 0.7378640776699029,
+        "hallucination_rate": 0.25,
+        "support_gold_stated": 122
+      },
+      "seniority": {
+        "em": 0.7307692307692307,
+        "precision": 0.17647058823529413,
+        "recall": 0.10714285714285714,
+        "f1": 0.13333333333333333,
+        "hallucination_rate": 0.09803921568627451,
+        "support_gold_stated": 28
+      },
+      "skills": {
+        "em": 0.023076923076923078,
+        "precision": 0.2746478873239437,
+        "recall": 0.2535760728218466,
+        "f1": 0.26369168356997974,
+        "hallucination_rate": 0.8181818181818182,
+        "support_gold_stated": 769
+      },
+      "min_experience_years": {
+        "em": 0.676923076923077,
+        "precision": 0.8235294117647058,
+        "recall": 0.42424242424242425,
+        "f1": 0.56,
+        "hallucination_rate": 0.0625,
+        "support_gold_stated": 66
+      },
+      "max_experience_years": {
+        "em": 0.8076923076923077,
+        "precision": 0.9375,
+        "recall": 0.38461538461538464,
+        "f1": 0.5454545454545454,
+        "hallucination_rate": 0.01098901098901099,
+        "support_gold_stated": 39
+      },
+      "salary": {
+        "em": 0.8461538461538461,
+        "precision": 0.375,
+        "recall": 0.24,
+        "f1": 0.2926829268292683,
+        "hallucination_rate": 0.009523809523809525,
+        "support_gold_stated": 25
+      },
+      "locations": {
+        "em": 0.27692307692307694,
+        "precision": 0.4692737430167598,
+        "recall": 0.6942148760330579,
+        "f1": 0.56,
+        "hallucination_rate": 0.5789473684210527,
+        "support_gold_stated": 121
+      },
+      "work_mode": {
+        "em": 0.35384615384615387,
+        "precision": 0.12087912087912088,
+        "recall": 0.7333333333333333,
+        "f1": 0.20754716981132076,
+        "hallucination_rate": 0.6956521739130435,
+        "support_gold_stated": 15
+      },
+      "employment_type": {
+        "em": 0.46153846153846156,
+        "precision": 0.42857142857142855,
+        "recall": 0.639344262295082,
+        "f1": 0.5131578947368421,
+        "hallucination_rate": 0.6956521739130435,
+        "support_gold_stated": 61
+      },
+      "education": {
+        "em": 0.6,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0,
+        "hallucination_rate": 0.0,
+        "support_gold_stated": 52
+      }
+    },
+    "ci95": {
+      "micro_f1": [
+        0.321641099986783,
+        0.3935833467475289
+      ],
+      "macro_f1": [
+        0.33143200662490074,
+        0.4139705559215165
+      ],
+      "field_em_mean": [
+        0.509090909090909,
+        0.5538461538461538
+      ],
+      "json_validity": [
+        0.6230769230769231,
+        0.7769230769230769
+      ],
+      "schema_validity": [
+        0.6,
+        0.7538461538461538
+      ],
+      "hallucination_rate": [
+        0.20254060337084587,
+        0.2742173065679205
+      ],
+      "record_exact_match": [
+        0.0,
+        0.0
+      ]
+    },
+    "bootstrap": {
+      "n_boot": 1000,
+      "seed": 0,
+      "method": "percentile, resampling examples"
+    }
+  }
+}

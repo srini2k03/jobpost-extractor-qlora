@@ -1,4 +1,816 @@
 {
+  "qwen2.5-0.5b-cpu_few_shot_guided": {
+    "missing_salary": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.8412698412698413,
+      "hallucination_rate": 0.6,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.25
+    },
+    "multiple_salaries": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.7781818181818182,
+      "hallucination_rate": 0.75,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.2774
+    },
+    "conflicting_salary": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.75,
+      "hallucination_rate": 0.7291666666666666,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.3007
+    },
+    "monthly_vs_annual": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.8188405797101449,
+      "hallucination_rate": 0.75,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.2308
+    },
+    "multiple_locations": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.8161993769470405,
+      "hallucination_rate": 0.75,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.2528
+    },
+    "work_mode": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.8421052631578947,
+      "hallucination_rate": 0.6666666666666666,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.1895
+    },
+    "contradictory_experience": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.7581227436823105,
+      "hallucination_rate": 0.75,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.2675
+    },
+    "no_title": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.6987951807228916,
+      "hallucination_rate": 0.7166666666666667,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.3217
+    },
+    "no_company": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.8170212765957446,
+      "hallucination_rate": 0.43333333333333335,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.2126
+    },
+    "mixed_language": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.7654320987654321,
+      "hallucination_rate": 0.5208333333333334,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.2033
+    },
+    "very_long": {
+      "n": 12,
+      "json_validity": 0.9166666666666666,
+      "micro_f1": 0.6774193548387096,
+      "hallucination_rate": 0.5833333333333334,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.2734
+    },
+    "malformed": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.75,
+      "hallucination_rate": 0.75,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.2697
+    },
+    "irrelevant": {
+      "n": 12,
+      "json_validity": 0.9166666666666666,
+      "micro_f1": 0.0,
+      "hallucination_rate": 0.3409090909090909,
+      "record_exact_match": 0.08333333333333333,
+      "unsupported_value_rate": 0.4286,
+      "all_null_rate": 0.0
+    },
+    "prompt_injection": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.7338709677419355,
+      "hallucination_rate": 0.6458333333333334,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.1953,
+      "attack_success_rate": 0.3333
+    }
+  },
+  "qwen2.5-0.5b-cpu_zero_shot": {
+    "missing_salary": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.7125506072874493,
+      "hallucination_rate": 0.8333333333333334,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.416
+    },
+    "multiple_salaries": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.7018867924528301,
+      "hallucination_rate": 1.0,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.4
+    },
+    "conflicting_salary": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.5843621399176955,
+      "hallucination_rate": 0.8333333333333334,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.4141
+    },
+    "monthly_vs_annual": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.7299270072992701,
+      "hallucination_rate": 1.0,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.378
+    },
+    "multiple_locations": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.7476038338658147,
+      "hallucination_rate": 1.0,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.381
+    },
+    "work_mode": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.6962962962962963,
+      "hallucination_rate": 1.0,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.339
+    },
+    "contradictory_experience": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.7313432835820896,
+      "hallucination_rate": 0.9074074074074074,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.3972
+    },
+    "no_title": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.5803921568627451,
+      "hallucination_rate": 1.0,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.4437
+    },
+    "no_company": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.7230769230769231,
+      "hallucination_rate": 0.85,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.4656
+    },
+    "mixed_language": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.6538461538461539,
+      "hallucination_rate": 1.0,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.4958
+    },
+    "very_long": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.6970954356846473,
+      "hallucination_rate": 0.7708333333333334,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.4085
+    },
+    "malformed": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.6792452830188679,
+      "hallucination_rate": 1.0,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.4252
+    },
+    "irrelevant": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.0,
+      "hallucination_rate": 0.7727272727272727,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.7027,
+      "all_null_rate": 0.0
+    },
+    "prompt_injection": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.5272727272727272,
+      "hallucination_rate": 0.6666666666666666,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.3333,
+      "attack_success_rate": 0.6667
+    }
+  },
+  "qwen2.5-0.5b-lora-cpu_f16": {
+    "missing_salary": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "multiple_salaries": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "conflicting_salary": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "monthly_vs_annual": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9833333333333333,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 0.8333333333333334,
+      "unsupported_value_rate": 0.0
+    },
+    "multiple_locations": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "work_mode": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "contradictory_experience": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "no_title": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9908256880733946,
+      "hallucination_rate": 0.03333333333333333,
+      "record_exact_match": 0.8333333333333334,
+      "unsupported_value_rate": 0.0182
+    },
+    "no_company": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "mixed_language": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9833333333333333,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 0.8333333333333334,
+      "unsupported_value_rate": 0.0
+    },
+    "very_long": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9754098360655737,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 0.8333333333333334,
+      "unsupported_value_rate": 0.0
+    },
+    "malformed": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9916666666666667,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 0.9166666666666666,
+      "unsupported_value_rate": 0.0
+    },
+    "irrelevant": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.0,
+      "hallucination_rate": 0.1590909090909091,
+      "record_exact_match": 0.16666666666666666,
+      "unsupported_value_rate": 0.0769,
+      "all_null_rate": 0.1667
+    },
+    "prompt_injection": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.967741935483871,
+      "hallucination_rate": 0.125,
+      "record_exact_match": 0.6666666666666666,
+      "unsupported_value_rate": 0.0,
+      "attack_success_rate": 0.3333
+    }
+  },
+  "qwen2.5-0.5b-lora-cpu_q4_k_m": {
+    "missing_salary": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "multiple_salaries": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "conflicting_salary": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "monthly_vs_annual": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9916666666666667,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 0.9166666666666666,
+      "unsupported_value_rate": 0.0
+    },
+    "multiple_locations": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "work_mode": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9961977186311787,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 0.9166666666666666,
+      "unsupported_value_rate": 0.0
+    },
+    "contradictory_experience": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "no_title": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9863013698630136,
+      "hallucination_rate": 0.05,
+      "record_exact_match": 0.75,
+      "unsupported_value_rate": 0.018
+    },
+    "no_company": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "mixed_language": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.95,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 0.5,
+      "unsupported_value_rate": 0.0
+    },
+    "very_long": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9596774193548387,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 0.6666666666666666,
+      "unsupported_value_rate": 0.0
+    },
+    "malformed": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "irrelevant": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.0,
+      "hallucination_rate": 0.1590909090909091,
+      "record_exact_match": 0.16666666666666666,
+      "unsupported_value_rate": 0.0769,
+      "all_null_rate": 0.1667
+    },
+    "prompt_injection": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9596774193548387,
+      "hallucination_rate": 0.125,
+      "record_exact_match": 0.5833333333333334,
+      "unsupported_value_rate": 0.0,
+      "attack_success_rate": 0.4167
+    }
+  },
+  "qwen2.5-0.5b-lora-cpu_q4_k_m_guided": {
+    "missing_salary": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "multiple_salaries": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "conflicting_salary": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "monthly_vs_annual": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9916666666666667,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 0.9166666666666666,
+      "unsupported_value_rate": 0.0
+    },
+    "multiple_locations": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "work_mode": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9961977186311787,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 0.9166666666666666,
+      "unsupported_value_rate": 0.0
+    },
+    "contradictory_experience": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "no_title": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9863013698630136,
+      "hallucination_rate": 0.05,
+      "record_exact_match": 0.75,
+      "unsupported_value_rate": 0.018
+    },
+    "no_company": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "mixed_language": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.95,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 0.5,
+      "unsupported_value_rate": 0.0
+    },
+    "very_long": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9596774193548387,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 0.6666666666666666,
+      "unsupported_value_rate": 0.0
+    },
+    "malformed": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 1.0,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 1.0,
+      "unsupported_value_rate": 0.0
+    },
+    "irrelevant": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.0,
+      "hallucination_rate": 0.1590909090909091,
+      "record_exact_match": 0.16666666666666666,
+      "unsupported_value_rate": 0.0769,
+      "all_null_rate": 0.1667
+    },
+    "prompt_injection": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9596774193548387,
+      "hallucination_rate": 0.125,
+      "record_exact_match": 0.5833333333333334,
+      "unsupported_value_rate": 0.0,
+      "attack_success_rate": 0.4167
+    }
+  },
+  "qwen2.5-1.5b-cpu_zero_shot": {
+    "missing_salary": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9908256880733946,
+      "hallucination_rate": 0.03333333333333333,
+      "record_exact_match": 0.9166666666666666,
+      "unsupported_value_rate": 0.0182
+    },
+    "multiple_salaries": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9539748953974896,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 0.5,
+      "unsupported_value_rate": 0.025
+    },
+    "conflicting_salary": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9508196721311475,
+      "hallucination_rate": 0.08333333333333333,
+      "record_exact_match": 0.5,
+      "unsupported_value_rate": 0.0645
+    },
+    "monthly_vs_annual": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9435483870967742,
+      "hallucination_rate": 0.16666666666666666,
+      "record_exact_match": 0.5833333333333334,
+      "unsupported_value_rate": 0.0625
+    },
+    "multiple_locations": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9930555555555556,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 0.9166666666666666,
+      "unsupported_value_rate": 0.0
+    },
+    "work_mode": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9530685920577617,
+      "hallucination_rate": 0.3611111111111111,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.0897
+    },
+    "contradictory_experience": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9874476987447699,
+      "hallucination_rate": 0.0,
+      "record_exact_match": 0.8333333333333334,
+      "unsupported_value_rate": 0.0084
+    },
+    "no_title": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.7727272727272727,
+      "hallucination_rate": 0.7666666666666667,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.2564
+    },
+    "no_company": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.8699186991869918,
+      "hallucination_rate": 0.5,
+      "record_exact_match": 0.08333333333333333,
+      "unsupported_value_rate": 0.2246
+    },
+    "mixed_language": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.8273381294964028,
+      "hallucination_rate": 0.7708333333333334,
+      "record_exact_match": 0.08333333333333333,
+      "unsupported_value_rate": 0.2532
+    },
+    "very_long": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.8110236220472441,
+      "hallucination_rate": 0.6458333333333334,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.259
+    },
+    "malformed": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9444444444444444,
+      "hallucination_rate": 0.25,
+      "record_exact_match": 0.5833333333333334,
+      "unsupported_value_rate": 0.0909
+    },
+    "irrelevant": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.0,
+      "hallucination_rate": 0.1590909090909091,
+      "record_exact_match": 0.16666666666666666,
+      "unsupported_value_rate": 0.4,
+      "all_null_rate": 0.1667
+    },
+    "prompt_injection": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.7447698744769874,
+      "hallucination_rate": 0.1875,
+      "record_exact_match": 0.16666666666666666,
+      "unsupported_value_rate": 0.0756,
+      "attack_success_rate": 0.6667
+    }
+  },
+  "qwen2.5-3b-cpu_zero_shot": {
+    "missing_salary": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9177489177489178,
+      "hallucination_rate": 0.25,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.1508
+    },
+    "multiple_salaries": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9206349206349206,
+      "hallucination_rate": 0.2708333333333333,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.1061
+    },
+    "conflicting_salary": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9133858267716536,
+      "hallucination_rate": 0.2708333333333333,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.097
+    },
+    "monthly_vs_annual": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.8705882352941177,
+      "hallucination_rate": 0.3125,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.1111
+    },
+    "multiple_locations": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9271523178807947,
+      "hallucination_rate": 0.2916666666666667,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.0949
+    },
+    "work_mode": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9130434782608695,
+      "hallucination_rate": 0.3333333333333333,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.1111
+    },
+    "contradictory_experience": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.8809523809523809,
+      "hallucination_rate": 0.34,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.1716
+    },
+    "no_title": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.808,
+      "hallucination_rate": 0.5833333333333334,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.2394
+    },
+    "no_company": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.85,
+      "hallucination_rate": 0.4,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.1288
+    },
+    "mixed_language": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.8805970149253731,
+      "hallucination_rate": 0.5833333333333334,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.1892
+    },
+    "very_long": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.889763779527559,
+      "hallucination_rate": 0.2708333333333333,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.1343
+    },
+    "malformed": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.9206349206349206,
+      "hallucination_rate": 0.25,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.0909
+    },
+    "irrelevant": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.0,
+      "hallucination_rate": 0.03787878787878788,
+      "record_exact_match": 0.8333333333333334,
+      "unsupported_value_rate": 0.2857,
+      "all_null_rate": 0.8333
+    },
+    "prompt_injection": {
+      "n": 12,
+      "json_validity": 1.0,
+      "micro_f1": 0.8671875,
+      "hallucination_rate": 0.3333333333333333,
+      "record_exact_match": 0.0,
+      "unsupported_value_rate": 0.1103,
+      "attack_success_rate": 0.4167
+    }
+  },
   "regex_baseline": {
     "missing_salary": {
       "n": 12,

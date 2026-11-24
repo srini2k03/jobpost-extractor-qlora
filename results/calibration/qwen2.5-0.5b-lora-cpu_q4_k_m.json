@@ -1,0 +1,920 @@
+{
+  "approach": "qwen2.5-0.5b-lora-cpu_q4_k_m",
+  "fitted_on": "val",
+  "n_fields_val": 3872,
+  "target_selective_accuracy": 0.95,
+  "threshold": 0.002,
+  "calibrator": {
+    "features": [
+      "mean_lp",
+      "min_lp",
+      "has_lp",
+      "ev_supported",
+      "ev_weak",
+      "ev_unsupported",
+      "is_null"
+    ],
+    "weights": [
+      2.010258,
+      3.416795,
+      1.15094,
+      4.110458,
+      -2.32112,
+      -2.612164,
+      1.973766
+    ],
+    "field_bias": {
+      "company": 2.598501,
+      "role": -0.446088,
+      "seniority": 1.03094,
+      "skills": -1.686309,
+      "min_experience_years": 1.199613,
+      "max_experience_years": 1.659675,
+      "salary": 0.796859,
+      "locations": 0.440631,
+      "work_mode": 3.249083,
+      "employment_type": 1.910566,
+      "education": 0.755931
+    },
+    "l2": 1.0,
+    "n_train": 3872
+  },
+  "splits": {
+    "val": {
+      "n_fields": 3872,
+      "n_examples": 352,
+      "raw_token_probability": {
+        "n": 3872,
+        "accuracy": 0.9814,
+        "mean_confidence": 0.9953,
+        "ece": 0.0139,
+        "brier": 0.0161,
+        "auroc": 0.9272,
+        "bins": [
+          {
+            "bin": [
+              0.5,
+              0.6
+            ],
+            "n": 6,
+            "conf": 0.5602,
+            "acc": 0.3333
+          },
+          {
+            "bin": [
+              0.6,
+              0.7
+            ],
+            "n": 7,
+            "conf": 0.6369,
+            "acc": 0.5714
+          },
+          {
+            "bin": [
+              0.7,
+              0.8
+            ],
+            "n": 9,
+            "conf": 0.7417,
+            "acc": 0.5556
+          },
+          {
+            "bin": [
+              0.8,
+              0.9
+            ],
+            "n": 20,
+            "conf": 0.8591,
+            "acc": 0.55
+          },
+          {
+            "bin": [
+              0.9,
+              1.0
+            ],
+            "n": 3830,
+            "conf": 0.998,
+            "acc": 0.9864
+          }
+        ]
+      },
+      "calibrated": {
+        "n": 3872,
+        "accuracy": 0.9814,
+        "mean_confidence": 0.9811,
+        "ece": 0.007,
+        "brier": 0.0089,
+        "auroc": 0.956,
+        "bins": [
+          {
+            "bin": [
+              0.0,
+              0.1
+            ],
+            "n": 9,
+            "conf": 0.0393,
+            "acc": 0.0
+          },
+          {
+            "bin": [
+              0.1,
+              0.2
+            ],
+            "n": 7,
+            "conf": 0.146,
+            "acc": 0.0
+          },
+          {
+            "bin": [
+              0.2,
+              0.3
+            ],
+            "n": 6,
+            "conf": 0.2385,
+            "acc": 0.0
+          },
+          {
+            "bin": [
+              0.3,
+              0.4
+            ],
+            "n": 7,
+            "conf": 0.3712,
+            "acc": 0.0
+          },
+          {
+            "bin": [
+              0.4,
+              0.5
+            ],
+            "n": 5,
+            "conf": 0.41,
+            "acc": 0.0
+          },
+          {
+            "bin": [
+              0.5,
+              0.6
+            ],
+            "n": 5,
+            "conf": 0.5584,
+            "acc": 0.4
+          },
+          {
+            "bin": [
+              0.6,
+              0.7
+            ],
+            "n": 7,
+            "conf": 0.6343,
+            "acc": 0.7143
+          },
+          {
+            "bin": [
+              0.7,
+              0.8
+            ],
+            "n": 14,
+            "conf": 0.7614,
+            "acc": 0.4286
+          },
+          {
+            "bin": [
+              0.8,
+              0.9
+            ],
+            "n": 52,
+            "conf": 0.8265,
+            "acc": 0.8654
+          },
+          {
+            "bin": [
+              0.9,
+              1.0
+            ],
+            "n": 3760,
+            "conf": 0.9922,
+            "acc": 0.9952
+          }
+        ]
+      },
+      "risk_coverage": [
+        {
+          "threshold": 0.5,
+          "coverage": 0.9912,
+          "selective_accuracy": 0.9901
+        },
+        {
+          "threshold": 0.6,
+          "coverage": 0.9899,
+          "selective_accuracy": 0.9909
+        },
+        {
+          "threshold": 0.7,
+          "coverage": 0.9881,
+          "selective_accuracy": 0.9914
+        },
+        {
+          "threshold": 0.8,
+          "coverage": 0.9845,
+          "selective_accuracy": 0.9934
+        },
+        {
+          "threshold": 0.9,
+          "coverage": 0.9711,
+          "selective_accuracy": 0.9952
+        },
+        {
+          "threshold": 0.95,
+          "coverage": 0.9638,
+          "selective_accuracy": 0.9957
+        },
+        {
+          "threshold": 0.002,
+          "coverage": 1.0,
+          "selective_accuracy": 0.9814
+        }
+      ],
+      "at_threshold": {
+        "coverage": 1.0,
+        "selective_accuracy": 0.9814,
+        "accuracy_all_fields": 0.9814,
+        "abstained_fields_accuracy": null
+      },
+      "per_field_accuracy": {
+        "company": 0.9972,
+        "role": 0.9915,
+        "seniority": 0.9915,
+        "skills": 0.9119,
+        "min_experience_years": 0.9858,
+        "max_experience_years": 0.9915,
+        "salary": 0.9631,
+        "locations": 0.9858,
+        "work_mode": 1.0,
+        "employment_type": 0.9886,
+        "education": 0.9886
+      },
+      "list_fields": [
+        "skills",
+        "locations"
+      ]
+    },
+    "test_synth": {
+      "n_fields": 5181,
+      "n_examples": 471,
+      "raw_token_probability": {
+        "n": 5181,
+        "accuracy": 0.9851,
+        "mean_confidence": 0.9973,
+        "ece": 0.0122,
+        "brier": 0.0128,
+        "auroc": 0.9373,
+        "bins": [
+          {
+            "bin": [
+              0.5,
+              0.6
+            ],
+            "n": 5,
+            "conf": 0.5556,
+            "acc": 0.4
+          },
+          {
+            "bin": [
+              0.6,
+              0.7
+            ],
+            "n": 7,
+            "conf": 0.6599,
+            "acc": 0.2857
+          },
+          {
+            "bin": [
+              0.7,
+              0.8
+            ],
+            "n": 5,
+            "conf": 0.7631,
+            "acc": 0.2
+          },
+          {
+            "bin": [
+              0.8,
+              0.9
+            ],
+            "n": 16,
+            "conf": 0.8689,
+            "acc": 0.25
+          },
+          {
+            "bin": [
+              0.9,
+              1.0
+            ],
+            "n": 5148,
+            "conf": 0.9988,
+            "acc": 0.9897
+          }
+        ]
+      },
+      "calibrated": {
+        "n": 5181,
+        "accuracy": 0.9851,
+        "mean_confidence": 0.9846,
+        "ece": 0.008,
+        "brier": 0.0068,
+        "auroc": 0.9131,
+        "bins": [
+          {
+            "bin": [
+              0.0,
+              0.1
+            ],
+            "n": 12,
+            "conf": 0.0467,
+            "acc": 0.0
+          },
+          {
+            "bin": [
+              0.1,
+              0.2
+            ],
+            "n": 5,
+            "conf": 0.1425,
+            "acc": 0.0
+          },
+          {
+            "bin": [
+              0.2,
+              0.3
+            ],
+            "n": 5,
+            "conf": 0.247,
+            "acc": 0.0
+          },
+          {
+            "bin": [
+              0.3,
+              0.4
+            ],
+            "n": 10,
+            "conf": 0.3674,
+            "acc": 0.1
+          },
+          {
+            "bin": [
+              0.4,
+              0.5
+            ],
+            "n": 5,
+            "conf": 0.4456,
+            "acc": 0.0
+          },
+          {
+            "bin": [
+              0.5,
+              0.6
+            ],
+            "n": 3,
+            "conf": 0.5493,
+            "acc": 0.0
+          },
+          {
+            "bin": [
+              0.6,
+              0.7
+            ],
+            "n": 3,
+            "conf": 0.6223,
+            "acc": 0.3333
+          },
+          {
+            "bin": [
+              0.7,
+              0.8
+            ],
+            "n": 12,
+            "conf": 0.7617,
+            "acc": 0.1667
+          },
+          {
+            "bin": [
+              0.8,
+              0.9
+            ],
+            "n": 30,
+            "conf": 0.8136,
+            "acc": 0.7333
+          },
+          {
+            "bin": [
+              0.9,
+              1.0
+            ],
+            "n": 5096,
+            "conf": 0.9921,
+            "acc": 0.9965
+          }
+        ]
+      },
+      "risk_coverage": [
+        {
+          "threshold": 0.5,
+          "coverage": 0.9929,
+          "selective_accuracy": 0.992
+        },
+        {
+          "threshold": 0.6,
+          "coverage": 0.9923,
+          "selective_accuracy": 0.9926
+        },
+        {
+          "threshold": 0.7,
+          "coverage": 0.9917,
+          "selective_accuracy": 0.993
+        },
+        {
+          "threshold": 0.8,
+          "coverage": 0.9894,
+          "selective_accuracy": 0.9949
+        },
+        {
+          "threshold": 0.9,
+          "coverage": 0.9836,
+          "selective_accuracy": 0.9965
+        },
+        {
+          "threshold": 0.95,
+          "coverage": 0.9828,
+          "selective_accuracy": 0.9967
+        },
+        {
+          "threshold": 0.002,
+          "coverage": 1.0,
+          "selective_accuracy": 0.9851
+        }
+      ],
+      "at_threshold": {
+        "coverage": 1.0,
+        "selective_accuracy": 0.9851,
+        "accuracy_all_fields": 0.9851,
+        "abstained_fields_accuracy": null
+      },
+      "per_field_accuracy": {
+        "company": 0.966,
+        "role": 0.9809,
+        "seniority": 0.9936,
+        "skills": 0.9936,
+        "min_experience_years": 0.9979,
+        "max_experience_years": 1.0,
+        "salary": 0.9575,
+        "locations": 0.9936,
+        "work_mode": 0.9554,
+        "employment_type": 0.9979,
+        "education": 1.0
+      },
+      "list_fields": [
+        "skills",
+        "locations"
+      ]
+    },
+    "test_real": {
+      "n_fields": 1353,
+      "n_examples": 123,
+      "raw_token_probability": {
+        "n": 1353,
+        "accuracy": 0.7642,
+        "mean_confidence": 0.9636,
+        "ece": 0.1994,
+        "brier": 0.1914,
+        "auroc": 0.8874,
+        "bins": [
+          {
+            "bin": [
+              0.5,
+              0.6
+            ],
+            "n": 7,
+            "conf": 0.5533,
+            "acc": 0.1429
+          },
+          {
+            "bin": [
+              0.6,
+              0.7
+            ],
+            "n": 23,
+            "conf": 0.6519,
+            "acc": 0.3043
+          },
+          {
+            "bin": [
+              0.7,
+              0.8
+            ],
+            "n": 35,
+            "conf": 0.7526,
+            "acc": 0.2286
+          },
+          {
+            "bin": [
+              0.8,
+              0.9
+            ],
+            "n": 126,
+            "conf": 0.8635,
+            "acc": 0.1984
+          },
+          {
+            "bin": [
+              0.9,
+              1.0
+            ],
+            "n": 1162,
+            "conf": 0.9895,
+            "acc": 0.8546
+          }
+        ]
+      },
+      "calibrated": {
+        "n": 1353,
+        "accuracy": 0.7642,
+        "mean_confidence": 0.8564,
+        "ece": 0.1005,
+        "brier": 0.1124,
+        "auroc": 0.8797,
+        "bins": [
+          {
+            "bin": [
+              0.0,
+              0.1
+            ],
+            "n": 112,
+            "conf": 0.0169,
+            "acc": 0.0268
+          },
+          {
+            "bin": [
+              0.1,
+              0.2
+            ],
+            "n": 20,
+            "conf": 0.1471,
+            "acc": 0.15
+          },
+          {
+            "bin": [
+              0.2,
+              0.3
+            ],
+            "n": 14,
+            "conf": 0.2598,
+            "acc": 0.0714
+          },
+          {
+            "bin": [
+              0.3,
+              0.4
+            ],
+            "n": 13,
+            "conf": 0.3391,
+            "acc": 0.3077
+          },
+          {
+            "bin": [
+              0.4,
+              0.5
+            ],
+            "n": 15,
+            "conf": 0.4414,
+            "acc": 0.5333
+          },
+          {
+            "bin": [
+              0.5,
+              0.6
+            ],
+            "n": 17,
+            "conf": 0.5219,
+            "acc": 0.7059
+          },
+          {
+            "bin": [
+              0.6,
+              0.7
+            ],
+            "n": 23,
+            "conf": 0.6382,
+            "acc": 0.6087
+          },
+          {
+            "bin": [
+              0.7,
+              0.8
+            ],
+            "n": 21,
+            "conf": 0.7571,
+            "acc": 0.1429
+          },
+          {
+            "bin": [
+              0.8,
+              0.9
+            ],
+            "n": 39,
+            "conf": 0.8326,
+            "acc": 0.2051
+          },
+          {
+            "bin": [
+              0.9,
+              1.0
+            ],
+            "n": 1079,
+            "conf": 0.9891,
+            "acc": 0.9064
+          }
+        ]
+      },
+      "risk_coverage": [
+        {
+          "threshold": 0.5,
+          "coverage": 0.8714,
+          "selective_accuracy": 0.8609
+        },
+        {
+          "threshold": 0.6,
+          "coverage": 0.8588,
+          "selective_accuracy": 0.8632
+        },
+        {
+          "threshold": 0.7,
+          "coverage": 0.8418,
+          "selective_accuracy": 0.8683
+        },
+        {
+          "threshold": 0.8,
+          "coverage": 0.8263,
+          "selective_accuracy": 0.8819
+        },
+        {
+          "threshold": 0.9,
+          "coverage": 0.7975,
+          "selective_accuracy": 0.9064
+        },
+        {
+          "threshold": 0.95,
+          "coverage": 0.7775,
+          "selective_accuracy": 0.9202
+        },
+        {
+          "threshold": 0.002,
+          "coverage": 0.9682,
+          "selective_accuracy": 0.7893
+        }
+      ],
+      "at_threshold": {
+        "coverage": 0.9682,
+        "selective_accuracy": 0.7893,
+        "accuracy_all_fields": 0.7642,
+        "abstained_fields_accuracy": 0.0
+      },
+      "per_field_accuracy": {
+        "company": 0.8537,
+        "role": 0.8455,
+        "seniority": 0.8618,
+        "skills": 0.0732,
+        "min_experience_years": 0.9268,
+        "max_experience_years": 0.9187,
+        "salary": 0.8862,
+        "locations": 0.3089,
+        "work_mode": 0.9756,
+        "employment_type": 0.9593,
+        "education": 0.7967
+      },
+      "list_fields": [
+        "skills",
+        "locations"
+      ]
+    },
+    "robustness": {
+      "n_fields": 1848,
+      "n_examples": 168,
+      "raw_token_probability": {
+        "n": 1848,
+        "accuracy": 0.9756,
+        "mean_confidence": 0.9937,
+        "ece": 0.0207,
+        "brier": 0.0232,
+        "auroc": 0.8125,
+        "bins": [
+          {
+            "bin": [
+              0.5,
+              0.6
+            ],
+            "n": 4,
+            "conf": 0.5711,
+            "acc": 0.75
+          },
+          {
+            "bin": [
+              0.6,
+              0.7
+            ],
+            "n": 8,
+            "conf": 0.6655,
+            "acc": 0.75
+          },
+          {
+            "bin": [
+              0.7,
+              0.8
+            ],
+            "n": 10,
+            "conf": 0.7465,
+            "acc": 0.8
+          },
+          {
+            "bin": [
+              0.8,
+              0.9
+            ],
+            "n": 12,
+            "conf": 0.8673,
+            "acc": 0.9167
+          },
+          {
+            "bin": [
+              0.9,
+              1.0
+            ],
+            "n": 1814,
+            "conf": 0.9982,
+            "acc": 0.9785
+          }
+        ]
+      },
+      "calibrated": {
+        "n": 1848,
+        "accuracy": 0.9756,
+        "mean_confidence": 0.9791,
+        "ece": 0.0112,
+        "brier": 0.0166,
+        "auroc": 0.7186,
+        "bins": [
+          {
+            "bin": [
+              0.0,
+              0.1
+            ],
+            "n": 7,
+            "conf": 0.0212,
+            "acc": 0.0
+          },
+          {
+            "bin": [
+              0.1,
+              0.2
+            ],
+            "n": 6,
+            "conf": 0.1389,
+            "acc": 0.0
+          },
+          {
+            "bin": [
+              0.2,
+              0.3
+            ],
+            "n": 2,
+            "conf": 0.2364,
+            "acc": 1.0
+          },
+          {
+            "bin": [
+              0.3,
+              0.4
+            ],
+            "n": 3,
+            "conf": 0.3948,
+            "acc": 0.0
+          },
+          {
+            "bin": [
+              0.4,
+              0.5
+            ],
+            "n": 3,
+            "conf": 0.4281,
+            "acc": 0.3333
+          },
+          {
+            "bin": [
+              0.5,
+              0.6
+            ],
+            "n": 3,
+            "conf": 0.5353,
+            "acc": 1.0
+          },
+          {
+            "bin": [
+              0.6,
+              0.7
+            ],
+            "n": 2,
+            "conf": 0.6733,
+            "acc": 1.0
+          },
+          {
+            "bin": [
+              0.7,
+              0.8
+            ],
+            "n": 7,
+            "conf": 0.7775,
+            "acc": 1.0
+          },
+          {
+            "bin": [
+              0.8,
+              0.9
+            ],
+            "n": 12,
+            "conf": 0.8316,
+            "acc": 1.0
+          },
+          {
+            "bin": [
+              0.9,
+              1.0
+            ],
+            "n": 1803,
+            "conf": 0.9912,
+            "acc": 0.985
+          }
+        ]
+      },
+      "risk_coverage": [
+        {
+          "threshold": 0.5,
+          "coverage": 0.9886,
+          "selective_accuracy": 0.9852
+        },
+        {
+          "threshold": 0.6,
+          "coverage": 0.987,
+          "selective_accuracy": 0.9852
+        },
+        {
+          "threshold": 0.7,
+          "coverage": 0.9859,
+          "selective_accuracy": 0.9852
+        },
+        {
+          "threshold": 0.8,
+          "coverage": 0.9821,
+          "selective_accuracy": 0.9851
+        },
+        {
+          "threshold": 0.9,
+          "coverage": 0.9756,
+          "selective_accuracy": 0.985
+        },
+        {
+          "threshold": 0.95,
+          "coverage": 0.9724,
+          "selective_accuracy": 0.985
+        },
+        {
+          "threshold": 0.002,
+          "coverage": 0.9995,
+          "selective_accuracy": 0.9762
+        }
+      ],
+      "at_threshold": {
+        "coverage": 0.9995,
+        "selective_accuracy": 0.9762,
+        "accuracy_all_fields": 0.9756,
+        "abstained_fields_accuracy": 0.0
+      },
+      "per_field_accuracy": {
+        "company": 1.0,
+        "role": 0.9405,
+        "seniority": 1.0,
+        "skills": 0.994,
+        "min_experience_years": 1.0,
+        "max_experience_years": 1.0,
+        "salary": 0.9226,
+        "locations": 0.9167,
+        "work_mode": 0.9821,
+        "employment_type": 0.9881,
+        "education": 0.9881
+      },
+      "list_fields": [
+        "skills",
+        "locations"
+      ]
+    }
+  }
+}

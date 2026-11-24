@@ -5,7 +5,7 @@
   "n_pred": 471,
   "unknown_ids": 0,
   "coverage": 1.0,
-  "mean_latency_s": 2.7582,
+  "mean_latency_s": 4.3492,
   "completion": {
     "n_completed": 471,
     "n_expected": 471,
@@ -18,12 +18,15 @@
     "model": "jobx-qwen2.5-0.5b-lora (GGUF Q4_K_M, llama.cpp)",
     "gguf": "jobx-qwen2.5-0.5b-Q4_K_M.gguf",
     "decoding": "free",
+    "logprobs": true,
+    "ctx": 4096,
+    "threads": 4,
     "system_prompt": "compact",
     "n_shots": 0,
     "shot_ids": [],
     "hardware": "CPU (AMD EPYC 7763 64-Core Processor, 4 threads, GitHub Actions)",
-    "date": "2026-11-04",
-    "commit": "fcdc48b",
+    "date": "2026-11-24",
+    "commit": "c66bc22",
     "n_examples": 471
   },
   "metrics": {

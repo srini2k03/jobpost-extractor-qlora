@@ -1,0 +1,37 @@
+{
+  "approach": "qwen2.5-0.5b-lora-cpu_q4_k_m",
+  "threshold": 0.002,
+  "features": [
+    "mean_lp",
+    "min_lp",
+    "has_lp",
+    "ev_supported",
+    "ev_weak",
+    "ev_unsupported",
+    "is_null"
+  ],
+  "weights": [
+    2.010258,
+    3.416795,
+    1.15094,
+    4.110458,
+    -2.32112,
+    -2.612164,
+    1.973766
+  ],
+  "field_bias": {
+    "company": 2.598501,
+    "role": -0.446088,
+    "seniority": 1.03094,
+    "skills": -1.686309,
+    "min_experience_years": 1.199613,
+    "max_experience_years": 1.659675,
+    "salary": 0.796859,
+    "locations": 0.440631,
+    "work_mode": 3.249083,
+    "employment_type": 1.910566,
+    "education": 0.755931
+  },
+  "l2": 1.0,
+  "n_train": 3872
+}

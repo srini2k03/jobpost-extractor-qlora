@@ -47,6 +47,8 @@ decoding (temperature 0). To guarantee valid output, add the JSON-schema grammar
 
 | approach | split | n | micro F1 % [95% CI] | JSON valid % | hallucination % |
 |---|---|---|---|---|---|
+| qwen2.5-0.5b-lora-cpu_f16 | test_real | 130 | 56.1 [52.8, 59.2] | 96.9 | 7.9 |
+| qwen2.5-0.5b-lora-cpu_q4_k_m | test_real | 130 | 54.4 [51.0, 57.9] | 94.6 | 7.6 |
 | qwen2.5-0.5b-lora-cpu_f16 | test_synth | 471 | 99.3 [99.1, 99.5] | 100.0 | 1.9 |
 | qwen2.5-0.5b-lora-cpu_q8_0 | test_synth | 471 | 99.3 [99.1, 99.5] | 100.0 | 1.7 |
 | qwen2.5-0.5b-lora-cpu_q4_k_m | test_synth | 471 | 99.0 [98.8, 99.2] | 100.0 | 2.0 |
