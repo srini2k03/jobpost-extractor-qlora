@@ -329,7 +329,7 @@ def test_workflows_static():
     assert job["timeout-minutes"] <= 360 and ft["permissions"]["actions"] == "write"
     text = (WF / "cpu_finetune.yml").read_text()
     assert "gh workflow run cpu_finetune.yml" in text and "gh workflow run cpu_eval_release.yml" in text
-    assert "gh release upload" in text and "--clobber" in text and "cron:" in text
+    assert "gh release upload" in text and "--clobber" in text  # resume schedule removed after training
     ev = (WF / "cpu_eval_release.yml").read_text()
     assert "gh release create model-v1" in ev and "--notes-file MODEL_CARD.md" in ev and "2000000000" in ev
     pages = (WF / "pages.yml").read_text()

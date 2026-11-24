@@ -1,0 +1,140 @@
+{
+  "n": {
+    "train": 2177,
+    "val": 352,
+    "test_synth": 471
+  },
+  "exact_duplicates": {
+    "raw": {
+      "within_split": {
+        "train": 0,
+        "val": 0,
+        "test_synth": 0
+      },
+      "cross_split": 0
+    },
+    "normalised": {
+      "within_split": {
+        "train": 0,
+        "val": 0,
+        "test_synth": 0
+      },
+      "cross_split": 0
+    }
+  },
+  "near_duplicates": {
+    "method": "MinHash(128) screen, exact word-3-gram Jaccard confirmation; pairs >= 0.4 listed",
+    "cross_split_pairs_at": {
+      "0.4": 0,
+      "0.5": 0,
+      "0.6": 0,
+      "0.7": 0,
+      "0.8": 0
+    },
+    "examples": [],
+    "nearest_train_jaccard": {
+      "val": {
+        "p50": 0.0647,
+        "p90": 0.1186,
+        "p95": 0.1395,
+        "p99": 0.1623,
+        "max": 0.2143,
+        "mean": 0.0699
+      },
+      "test_synth": {
+        "p50": 0.063,
+        "p90": 0.1075,
+        "p95": 0.1196,
+        "p99": 0.1585,
+        "max": 0.1829,
+        "mean": 0.0667
+      }
+    }
+  },
+  "ngram_overlap_with_train": {
+    "n": 8,
+    "val": {
+      "p50": 0.0,
+      "p90": 0.0868,
+      "p95": 0.1183,
+      "p99": 0.2052,
+      "max": 0.3056,
+      "mean": 0.024,
+      "share_over_0.5": 0.0
+    },
+    "test_synth": {
+      "p50": 0.0,
+      "p90": 0.0566,
+      "p95": 0.0888,
+      "p99": 0.1383,
+      "max": 0.26,
+      "mean": 0.0188,
+      "share_over_0.5": 0.0
+    }
+  },
+  "label_overlap": {
+    "train~val": {
+      "identical_records": 0,
+      "identical_role_and_skills": 59
+    },
+    "train~test_synth": {
+      "identical_records": 0,
+      "identical_role_and_skills": 48
+    },
+    "val~test_synth": {
+      "identical_records": 0,
+      "identical_role_and_skills": 26
+    }
+  },
+  "metadata_overlap": {
+    "train~val": {
+      "families": [],
+      "templates": [],
+      "companies": [],
+      "n_companies": 0
+    },
+    "train~test_synth": {
+      "families": [],
+      "templates": [],
+      "companies": [],
+      "n_companies": 0
+    },
+    "val~test_synth": {
+      "families": [],
+      "templates": [],
+      "companies": [],
+      "n_companies": 0
+    }
+  },
+  "few_shot_exemplars": {
+    "syn-00007": "train",
+    "syn-00006": "train",
+    "syn-00014": "train"
+  },
+  "gates": {
+    "max_cross_split_exact_duplicates": {
+      "limit": 0,
+      "observed": 0,
+      "ok": true
+    },
+    "max_cross_split_pairs_jaccard_ge_0.6": {
+      "limit": 0,
+      "observed": 0,
+      "ok": true
+    },
+    "max_eval_mean_8gram_overlap_with_train": {
+      "limit": 0.1,
+      "observed": 0.024,
+      "ok": true
+    },
+    "max_cross_split_identical_records": {
+      "limit": 0,
+      "observed": 0,
+      "ok": true
+    }
+  },
+  "gates_ok": true,
+  "metadata_ok": true,
+  "few_shot_ok": true,
+  "ok": true
+}

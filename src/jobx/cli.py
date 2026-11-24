@@ -39,6 +39,17 @@ def build_data(
     typer.echo(json.dumps(stats["pipeline"], indent=2))
 
 
+@app.command("audit")
+def audit_cmd(out: Path = Path("results/audit/leakage.json")) -> None:
+    """Leakage / memorisation audit of the committed splits (exits 1 if a gate fails)."""
+    from jobx.data.audit import run_audit
+
+    rep = run_audit(".", out)
+    typer.echo(json.dumps({k: rep[k] for k in ("n", "gates", "metadata_ok", "few_shot_ok", "ok")}, indent=2))
+    if not rep["ok"]:
+        raise typer.Exit(1)
+
+
 @app.command("datacard")
 def datacard(stats: Path = Path("data/processed/stats.json"), out: Path = Path("DATA_CARD.md")) -> None:
     """Re-render DATA_CARD.md from stats.json."""

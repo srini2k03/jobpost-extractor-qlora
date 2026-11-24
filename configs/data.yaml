@@ -33,5 +33,6 @@ dedup:
   bands: 32                 # 32 bands x 4 rows
   shingle_words: 3
   threshold: 0.8            # Jaccard on word 3-gram shingles; candidates verified exactly
+  cross_split_threshold: 0.5  # stricter across splits: a train/val item this close to an eval item is dropped
 
 few_shot_k: 3               # few-shot exemplars for baselines (taken from train)

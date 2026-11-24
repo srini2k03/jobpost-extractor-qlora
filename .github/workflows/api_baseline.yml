@@ -10,8 +10,7 @@ name: api-baseline
 # between runs with actions/cache) and resumable runs. When the daily quota runs out, progress is committed;
 # the daily schedule resumes it and stops (without committing) once every planned prediction exists.
 on:
-  schedule:
-    - cron: "11 * * * *"  # hourly: resumes until done; exits early when complete or quota is spent
+  # The hourly resume schedule was removed once the run completed (200/200, 2026-11-06); dispatch to resume.
   workflow_dispatch:
     inputs:
       provider:

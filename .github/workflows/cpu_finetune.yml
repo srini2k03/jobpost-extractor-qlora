@@ -3,7 +3,8 @@ name: cpu-finetune
 # The first job benchmarks seconds/step and plans the run (epochs or a stratified subset) to fit
 # configs/cpu/route.yaml's budget. Each job trains for up to ~5 h, checkpoints, and stores the state as an
 # asset of the prerelease `cpu-train-state`; it then dispatches the next job, until training is done, and
-# finally dispatches cpu_eval_release.yml. A 6-hourly schedule resumes the chain if a dispatch was lost.
+# finally dispatches cpu_eval_release.yml. (The 6-hourly resume schedule was removed after training finished;
+# re-dispatch to resume a chain whose dispatch was lost.)
 on:
   workflow_dispatch:
     inputs:
@@ -19,8 +20,6 @@ on:
         description: "training minutes in this job"
         required: false
         default: "300"
-  schedule:
-    - cron: "17 */6 * * *"
 
 permissions:
   contents: write
@@ -130,5 +129,5 @@ jobs:
             echo "not done yet: dispatching job $((DEPTH + 1))"
             gh workflow run cpu_finetune.yml --ref "$GITHUB_REF_NAME" -f chain="$((DEPTH + 1))"
           else
-            echo "::warning::chain depth $DEPTH reached; the 6-hourly schedule will continue"
+            echo "::warning::chain depth $DEPTH reached; re-dispatch cpu-finetune to continue"
           fi

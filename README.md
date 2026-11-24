@@ -125,12 +125,6 @@ held-out families), and it shares alias tables and salary/experience parsers wit
 `test_synth` flatters it. Company and role, the fields its patterns can't pin down, are where it fails
 (see `notebooks/06_error_analysis.ipynb`). The real-postings split is the honest comparison.
 
-**About the regex baseline.** It is a real CPU run, but read it as a sanity check of the evaluation stack
-rather than a competitor. Its patterns were written with all synthetic templates in view (including the
-held-out families), and it shares alias tables and salary/experience parsers with the generator. So
-`test_synth` flatters it. Company and role, the fields its patterns can't pin down, are where it fails
-(see `notebooks/06_error_analysis.ipynb`). The real-postings split is the honest comparison.
-
 ### Charts and training curves
 
 _These images appear after the first CPU-route runs; `jobx charts` draws them from `results/results.json`._

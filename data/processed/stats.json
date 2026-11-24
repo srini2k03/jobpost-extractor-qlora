@@ -48,7 +48,8 @@
       "num_perm": 128,
       "bands": 32,
       "shingle_words": 3,
-      "threshold": 0.8
+      "threshold": 0.8,
+      "cross_split_threshold": 0.5
     },
     "few_shot_k": 3
   },
@@ -72,6 +73,8 @@
     "exact_duplicates_removed": 0,
     "near_duplicates_removed": 0,
     "duplicates_removed_across_splits": 0,
+    "cross_split_threshold": 0.5,
+    "cross_split_near_duplicates_removed": 0,
     "near_duplicate_examples": [],
     "final": {
       "train": 2177,

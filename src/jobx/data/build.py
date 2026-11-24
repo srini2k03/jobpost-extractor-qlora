@@ -11,6 +11,7 @@ from typing import Any
 import numpy as np
 import yaml
 
+from jobx.data.audit import audit, cross_split_near_duplicates
 from jobx.data.dedup import dedup
 from jobx.data.generate import GenConfig, generate
 from jobx.data.split import SPLITS, SplitSpec, leakage_report, split_examples
@@ -146,9 +147,25 @@ def build(
     for s in SPLITS:
         final[s].sort(key=lambda e: e["id"])
 
+    # Stricter pass across splits: drop the lower-priority copy (train before val before test) of any
+    # cross-split pair at or above cross_split_threshold.
+    xs_thr = float(dd_cfg.get("cross_split_threshold", 0.5))
+    xs_pairs, _ = cross_split_near_duplicates(
+        {s: [e["text"] for e in final[s]] for s in SPLITS}, screen=xs_thr
+    )
+    drop: dict[str, set[int]] = {s: set() for s in SPLITS}
+    for pr in xs_pairs:
+        loser, idx = (pr["a"], pr["i"]) if prio_of[pr["a"]] > prio_of[pr["b"]] else (pr["b"], pr["j"])
+        drop[loser].add(idx)
+    for s in SPLITS:
+        final[s] = [e for k, e in enumerate(final[s]) if k not in drop[s]]
+
     leak = leakage_report(final)
     if not leak["ok"]:
         raise RuntimeError(f"leakage detected: {leak}")
+    gate = audit(final)
+    if not gate["ok"]:
+        raise RuntimeError(f"leakage audit failed: {gate['gates']}")
 
     out = Path(out_dir)
     for s in SPLITS:
@@ -170,6 +187,8 @@ def build(
             "exact_duplicates_removed": len(dres.exact_dups),
             "near_duplicates_removed": len(dres.near_dups),
             "duplicates_removed_across_splits": cross_split,
+            "cross_split_threshold": xs_thr,
+            "cross_split_near_duplicates_removed": sum(len(v) for v in drop.values()),
             "near_duplicate_examples": examples_near,
             "final": {s: len(final[s]) for s in SPLITS},
             "final_total": sum(len(final[s]) for s in SPLITS),
