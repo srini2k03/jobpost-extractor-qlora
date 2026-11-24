@@ -102,3 +102,25 @@ def test_verify_cli_flow(tmp_path):
     # resume: nothing left to do
     meta2 = verify(drafts, out, input_fn=lambda _: "q", console=Console(quiet=True))
     assert meta2["n"] == 2
+
+
+def test_guided_schema_caps_list_lengths_above_any_gold_list():
+    import json as _json
+    from pathlib import Path as _P
+
+    from jobx.baselines.guided import LIST_CAPS, guided_schema, llama_cpp_response_format
+    from jobx.schema import json_schema
+
+    g = guided_schema()
+    assert g["properties"]["skills"]["maxItems"] == LIST_CAPS["skills"]
+    assert (
+        llama_cpp_response_format(json_schema())["schema"]["properties"]["locations"]["maxItems"]
+        == LIST_CAPS["locations"]
+    )
+    rows = [
+        _json.loads(x)
+        for f in ("data/processed/train.jsonl", "data/real/test_real.jsonl")
+        for x in _P(f).read_text().splitlines()
+    ]
+    assert max(len(r["label"]["skills"]) for r in rows) < LIST_CAPS["skills"]
+    assert max(len(r["label"]["locations"]) for r in rows) < LIST_CAPS["locations"]

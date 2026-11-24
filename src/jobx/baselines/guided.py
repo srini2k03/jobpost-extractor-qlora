@@ -55,11 +55,26 @@ def require_all(schema: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+# Decoding-only caps on list lengths. Without them a greedy 0.5B model can loop on one list item ("sap fico",
+# "sap fico", ...) until the token limit and the JSON is never closed (5 of 130 real postings in the first
+# test_real run). The largest gold lists are 19 skills and 5 locations, so the caps never cut a correct answer.
+LIST_CAPS: dict[str, int] = {"skills": 30, "locations": 10}
+
+
+def cap_lists(schema: dict[str, Any], caps: dict[str, int] | None = None) -> dict[str, Any]:
+    out = copy.deepcopy(schema)
+    for name, n in (caps or LIST_CAPS).items():
+        prop = out.get("properties", {}).get(name)
+        if isinstance(prop, dict) and prop.get("type") == "array":
+            prop["maxItems"] = n
+    return out
+
+
 def guided_schema() -> dict[str, Any]:
-    """The schema every constrained decoder uses: JobPosting, refs inlined, all keys required."""
+    """The schema every constrained decoder uses: JobPosting, refs inlined, all keys required, list caps."""
     from jobx.schema import json_schema
 
-    return require_all(inline_refs(json_schema()))
+    return cap_lists(require_all(inline_refs(json_schema())))
 
 
 def build_transformers_prefix_fn(tokenizer: Any, schema: dict[str, Any]) -> Callable[..., Any]:
@@ -71,4 +86,4 @@ def build_transformers_prefix_fn(tokenizer: Any, schema: dict[str, Any]) -> Call
 
 
 def llama_cpp_response_format(schema: dict[str, Any]) -> dict[str, Any]:
-    return {"type": "json_object", "schema": require_all(inline_refs(schema))}
+    return {"type": "json_object", "schema": cap_lists(require_all(inline_refs(schema)))}
