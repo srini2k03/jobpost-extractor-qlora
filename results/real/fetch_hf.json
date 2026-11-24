@@ -1,0 +1,32 @@
+{
+  "sources": {
+    "victor/real-or-fake-fake-jobposting-prediction": {
+      "licence": "cc0-1.0",
+      "revision": "a751f55136a26da3c36e26aa207a9e187ca24b45",
+      "rows": 17880,
+      "india": 270,
+      "length": 31,
+      "duplicate": 3,
+      "eligible": 236,
+      "picked": 90
+    },
+    "JobOpportunitiesAPI/joa-employer-direct-job-postings-2026-10": {
+      "licence": "cc-by-4.0",
+      "revision": "718f9b65e0d9051b15489b073c85b4f9e4c35685",
+      "rows": 25000,
+      "india": 454,
+      "eligible": 454,
+      "picked": 90
+    },
+    "makenomistakesllc/tech-job-postings-9-ats": {
+      "licence": "cc-by-4.0",
+      "revision": "87e46fca3d36cc00481f39be18327522733c9d3b",
+      "rows": 7516,
+      "india": 241,
+      "length": 201,
+      "eligible": 40,
+      "picked": 40
+    }
+  },
+  "n": 220
+}
