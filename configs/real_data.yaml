@@ -27,8 +27,8 @@ candidates:
   - id: TechWolf/Synthetic-ESCO-skill-sentences
 licence_allowlist: [mit, apache-2.0, cc0-1.0, cc-by-4.0, cc-by-sa-4.0, odc-by, pddl, cdla-permissive-2.0, odbl]
 n_target: 200
-min_chars: 200
-max_chars: 3000
+min_chars: 300
+max_chars: 3500
 max_rows_scanned: 200000
 seed: 11
 
@@ -44,6 +44,28 @@ shortlist:
   - victor/real-or-fake-fake-jobposting-prediction
   - xanderios/linkedin-job-postings
   - lang-uk/recruitment-dataset-job-descriptions-english
+
+# Sources fetched by `python -m jobx.data.real_fetch` (chosen from probe_details.json; reasons in
+# docs/real_dataset.md). Pinned revisions; licence re-checked at fetch time; India by the source's own
+# country/location field. Excluded on purpose: logiover/naukri-job-scraper-sample-data (its card says it
+# was scraped through residential proxies to bypass anti-bot protection) and NextGig-Rocks/* (descriptions
+# were rewritten by an LLM, so they are not raw postings).
+sources:
+  - id: victor/real-or-fake-fake-jobposting-prediction   # EMSCAD (Univ. of the Aegean), CC0 on the Hub
+    revision: a751f55136a26da3c36e26aa207a9e187ca24b45
+    kind: emscad          # title + location/employment type/salary lines + description, requirements, benefits
+    prefix: emscad
+    n: 90
+  - id: JobOpportunitiesAPI/joa-employer-direct-job-postings-2026-10   # employer career pages, CC-BY-4.0
+    revision: 718f9b65e0d9051b15489b073c85b4f9e4c35685
+    kind: joa             # title + employer/location line + description (the source truncates at 3,000 chars)
+    prefix: joa
+    n: 90
+  - id: makenomistakesllc/tech-job-postings-9-ats   # company ATS boards, CC-BY-4.0
+    revision: 87e46fca3d36cc00481f39be18327522733c9d3b
+    kind: ats             # title + company/location line + description text
+    prefix: ats
+    n: 40
 
 # Web corpus probe (`python -m jobx.data.real_probe web|web-pool`): pages on Indian job boards in an ODC-By
 # crawl. Only the url column is scanned; the text of matching rows is read for the pool.
