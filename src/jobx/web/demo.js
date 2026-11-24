@@ -99,7 +99,7 @@ function setPosting(text) {
 examples.forEach((ex, i) => {
   const b = document.createElement('button');
   b.type = 'button';
-  b.textContent = `Example ${i + 1}`;
+  b.textContent = ex.label || `Example ${i + 1}`;
   b.className = 'jx-chip';
   b.title = ex.text.split('\n')[0];
   b.dataset.example = String(i);

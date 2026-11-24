@@ -628,6 +628,43 @@ def caveats(data: dict[str, Any]) -> list[str]:
     return notes
 
 
+def demo_examples(root: Path) -> list[dict[str, Any]]:
+    """Held-out sample postings for the demo (never training data), chosen by a fixed rule: two real postings
+    from different sources and two synthetic test posts from different families (shortest-first in SHA-1(id)
+    order), plus the handwritten README example."""
+    import hashlib
+
+    from jobx.data.build import read_jsonl
+
+    def pick(path: Path, key: str, max_chars: int, n: int, label: str) -> list[dict[str, Any]]:
+        if not path.exists():
+            return []
+        rows = sorted(read_jsonl(path), key=lambda r: hashlib.sha1(r["id"].encode()).hexdigest())
+        out: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for r in rows:
+            group = str(r.get("source", {}).get("composition") or r.get("meta", {}).get(key) or "")
+            if len(r["text"]) <= max_chars and group not in seen:
+                seen.add(group)
+                out.append(
+                    {"id": r["id"], "text": r["text"], "label": f"{label} {len(out) + 1}", "split": path.stem}
+                )
+            if len(out) == n:
+                break
+        return out
+
+    ex = pick(root / "data/real/test_real.jsonl", "family", 900, 2, "Real posting")
+    ex += pick(root / "data/processed/test_synth.jsonl", "family", 600, 2, "Synthetic test")
+    space = root / "space" / "examples.json"
+    if space.exists():
+        ex += [
+            {"id": e["id"], "text": e["text"], "label": "Handwritten", "split": "handwritten"}
+            for e in json.loads(space.read_text())
+            if e["id"].startswith("handwritten")
+        ]
+    return ex
+
+
 def write_demo_assets(
     root: Path, out: Path, model_dir: Path, wllama_version: str = WLLAMA_VERSION
 ) -> dict[str, object]:
@@ -681,9 +718,7 @@ def write_demo_assets(
         },
     }
     (ddir / "aliases.json").write_text(json.dumps(aliases))
-    ex_path = root / "space" / "examples.json"
-    examples = json.loads(ex_path.read_text()) if ex_path.exists() else []
-    (ddir / "examples.json").write_text(json.dumps(examples, indent=2, ensure_ascii=False))
+    (ddir / "examples.json").write_text(json.dumps(demo_examples(root), indent=2, ensure_ascii=False))
     return manifest
 
 
