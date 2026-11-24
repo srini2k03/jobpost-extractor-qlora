@@ -282,7 +282,9 @@ def very_long(r: Rec, rng: random.Random, i: int) -> Case:
 def malformed(r: Rec, rng: random.Random, i: int) -> Case:
     kind = ("no_punctuation", "html", "all_caps")[i % 3]
     if kind == "all_caps":  # case-sensitive aliases ("Hyd", "Go") would change meaning in capitals
-        r.city_text = next(a for a in vocab.CITY_ALIASES[r.city] if a not in vocab.CASE_SENSITIVE_CITY_ALIASES)
+        r.city_text = next(
+            a for a in vocab.CITY_ALIASES[r.city] if a not in vocab.CASE_SENSITIVE_CITY_ALIASES
+        )
         r.skill_text = [
             next((a for a in vocab.SKILL_ALIASES.get(sk, []) if a not in vocab.CASE_SENSITIVE_ALIASES), t)
             for sk, t in zip(r.skills, r.skill_text, strict=True)
