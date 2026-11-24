@@ -77,3 +77,33 @@ def test_calibration_and_quant_cards_use_the_numbers_in_the_files(tmp_path):
     (root / "results/quant/sweep.json").write_text(json.dumps(sweep))
     q = dash.quant_card(root)
     assert "70.0" in q and "99.0" in q and "1 thread: 15.0 tok/s" in q and "browser" in q
+
+
+def test_extra_tables_render_only_existing_sources(tmp_path):
+    from jobx.eval.extra_tables import extra_md, lora_md
+
+    root = _root(tmp_path)
+    md = "\n".join(extra_md(root))
+    assert "Robustness suite" in md and "Quantisation sweep" not in md and "LoRA study" not in md
+    (root / "results/lora_study").mkdir(parents=True)
+    run = {
+        "id": "r16_all",
+        "config": {"r": 16, "alpha": 32, "target_modules": ["q"] * 7, "learning_rate": 3e-4},
+        "params_trainable": 8798208,
+        "trainable_share": 0.0175,
+        "adapter_mb": 35.2,
+        "seconds_per_step": 33.0,
+        "peak_rss_gb": 9.8,
+        "val_loss": 0.21,
+        "val": {
+            "micro_f1": 0.95,
+            "json_validity": 1.0,
+            "hallucination_rate": 0.02,
+            "ci95_micro_f1": [0.94, 0.96],
+        },
+    }
+    (root / "results/lora_study/summary.json").write_text(
+        json.dumps({"budget_note": "Reduced.", "best": "r16_all", "within_best_ci": [], "runs": [run]})
+    )
+    out = "\n".join(lora_md(root))
+    assert "| r16_all | 16 / 32 | all linear |" in out and "8,798,208" in out and "95.0 [94.0, 96.0]" in out

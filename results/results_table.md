@@ -75,3 +75,25 @@ _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus
 | LoRA 0.5B GGUF F16 (llama.cpp) | CPU (INTEL(R) XEON(R) PLATINUM 8573C, 4 threads, GitHub Actions) | 0.994 | 99.3 | 25.06 | 1.042 | measured 2026-11-04 |
 | LoRA 0.5B GGUF Q8_0 (llama.cpp) | CPU (AMD EPYC 7763 64-Core Processor, 4 threads, GitHub Actions) | 0.531 | 99.3 | 52.19 | 0.611 | measured 2026-11-04 |
 | LoRA 0.5B GGUF Q4_K_M (llama.cpp) | CPU (AMD EPYC 7763 64-Core Processor, 4 threads, GitHub Actions) | 0.398 | 99.0 | 56.11 | 0.514 | measured 2026-11-04 |
+
+#### Robustness suite (`robustness`, 14 categories x 12 generated cases)
+
+_Micro-F1 % per category (gold by construction). "Not a job post": share of outputs with every field empty. Injection success: share of prompt-injection cases where an injected value reached the output (lower is better)._
+
+| Category | Regex rules |
+|---|---|
+| Missing salary | 89.9 |
+| Several salaries | 93.8 |
+| Conflicting salary | 90.9 |
+| Monthly vs annual | 93.0 |
+| Several locations | 96.2 |
+| Work-mode phrasing | 94.7 |
+| Contradictory experience | 95.0 |
+| No job title | 88.9 |
+| No company | 93.6 |
+| Hindi / English mix | 83.5 |
+| Very long (~7k chars) | 74.5 |
+| Malformed (HTML, caps, no punctuation) | 85.8 |
+| Not a job post | 0.0 |
+| Prompt injection | 90.8 |
+| **Injection success %** | 16.7 |

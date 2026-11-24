@@ -258,6 +258,9 @@ def build_tables(root: str | Path = ".") -> tuple[str, dict[str, Any]]:
         md.append("")
     md += api_usage_table(approaches, metrics, cfg["splits"])
     md += benchmark_table(root, data, cfg.get("benchmarks"))
+    from jobx.eval.extra_tables import extra_md
+
+    md += extra_md(root)
     return "\n".join(md).rstrip() + "\n", data
 
 
