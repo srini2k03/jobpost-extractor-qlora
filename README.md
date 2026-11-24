@@ -130,7 +130,8 @@ checked by CI.
   - Locations: it outputs state and country codes ("IN", "Maharashtra"), company names and head-office
     cities as locations.
   - Education. With JSON-grammar decoding, 5 of 130 outputs looped on one list item until the token limit.
-    Capping list lengths in the grammar fixes this (see the grammar row).
+    Capping list lengths in the grammar (`maxItems`) fixed it: valid JSON 96.2% → 100%, schema-valid
+    92.3% → 96.2%, micro-F1 56.0% → **56.9%** [53.8, 59.8] for the browser setting (Q4_K_M + grammar).
 - **Quantisation is nearly free.** On one runner, accuracy on real postings stays between 53.4% and 55.6%
   from F16 to Q2_K, and on synthetic postings it falls only from 99.6% to 98.3% at Q2_K. Q4_K_M
   (0.40 GB, the browser model) runs at 40 tok/s on 4 threads with 0.54 GB peak RAM; F16 runs at 29.6 tok/s
