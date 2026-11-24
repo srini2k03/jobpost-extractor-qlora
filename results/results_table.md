@@ -125,6 +125,27 @@ _Fitted on val (3872 fields); abstention threshold 0.00 = smallest with 95% sele
 | test_real | 1353 | 0.199 | 0.101 | 0.112 | 0.8797 | 96.8 | 78.9 | 76.4 |
 | robustness | 1848 | 0.021 | 0.011 | 0.017 | 0.7186 | 100.0 | 97.6 | 97.6 |
 
+#### Quantisation sweep (one runner, all variants)
+
+_CPU (Intel(R) Xeon(R) 6975P-C, 4 threads, GitHub Actions), llama.cpp b6000, measured 2026-11-24 @2239191; accuracy on 150 evenly spaced test_synth and 109 test_real postings._
+
+| GGUF | Size (GB) | Synth micro-F1 % | Real micro-F1 % | JSON valid % (real) | Gen tokens/s | Prompt tokens/s | p50 latency (s) | p95 latency (s) | Cold start (s) | Peak RAM (GB) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| F16 | 0.994 | 99.6 | 54.9 | 96.3 | 29.56 | 173.5 | 4.818 | 6.895 | 2.065 | 1.069 |
+| Q8_0 | 0.531 | 99.6 | 54.9 | 97.2 | 42.3 | 198.0 | 3.513 | 5.434 | 2.031 | 0.637 |
+| Q6_K | 0.506 | 99.5 | 55.6 | 97.2 | 42.84 | 165.8 | 3.592 | 5.887 | 2.031 | 0.614 |
+| Q5_K_M | 0.42 | 99.5 | 54.9 | 96.3 | 40.65 | 105.6 | 4.141 | 8.124 | 2.033 | 0.534 |
+| Q4_K_M | 0.398 | 99.4 | 53.4 | 94.5 | 40.16 | 152.5 | 3.873 | 6.431 | 2.031 | 0.541 |
+| Q4_0 | 0.352 | 99.3 | 53.9 | 96.3 | 57.35 | 235.5 | 2.636 | 4.422 | 2.031 | 0.656 |
+| Q3_K_M | 0.355 | 99.0 | 54.3 | 95.4 | 43.83 | 183.1 | 3.45 | 5.501 | 2.032 | 0.526 |
+| Q2_K | 0.339 | 98.3 | 54.1 | 95.4 | 42.91 | 153.6 | 3.66 | 6.205 | 2.031 | 0.458 |
+
+| Threads (Q4_K_M) | Gen tokens/s | Prompt tokens/s | p50 latency (s) |
+|---|---|---|---|
+| 1 | 14.92 | 77.9 | 8.79 |
+| 2 | 27.68 | 152.8 | 4.652 |
+| 4 | 40.03 | 154.9 | 3.477 |
+
 #### LoRA study (reduced budget, validation only)
 
 _Reduced-budget sweep: 640 training examples, 40 steps (effective batch 16) per configuration; the released model used 2,177 examples x 2 epochs (273 steps). Selected: `r16_lr6e-4` (within its 95% CI: none)._

@@ -1,0 +1,326 @@
+{
+  "hardware": "CPU (Intel(R) Xeon(R) 6975P-C, 4 threads, GitHub Actions)",
+  "llama_cpp": "b6000",
+  "ctx": 4096,
+  "prompt": "compact",
+  "decoding": "greedy, free (no grammar)",
+  "subsets": {
+    "test_synth": 150,
+    "test_real": 109
+  },
+  "date": "2026-11-24",
+  "commit": "2239191",
+  "variants": [
+    {
+      "quant": "F16",
+      "size_gb": 0.994,
+      "startup_s": 2.065,
+      "page_cache_dropped": true,
+      "first_request_latency_s": 6.314,
+      "warm_latency_s": {
+        "mean": 4.961,
+        "p50": 4.818,
+        "p95": 6.895
+      },
+      "gen_tokens_per_s": 29.56,
+      "prompt_tokens_per_s": 173.5,
+      "peak_ram_gb": 1.069,
+      "accuracy": {
+        "test_synth": {
+          "n": 150,
+          "json_validity": 1.0,
+          "schema_validity": 1.0,
+          "micro_f1": 0.9963,
+          "field_em_mean": 0.9933,
+          "hallucination_rate": 0.009
+        },
+        "test_real": {
+          "n": 109,
+          "json_validity": 0.9633,
+          "schema_validity": 0.8716,
+          "micro_f1": 0.5486,
+          "field_em_mean": 0.7548,
+          "hallucination_rate": 0.0637
+        }
+      }
+    },
+    {
+      "quant": "Q8_0",
+      "size_gb": 0.531,
+      "startup_s": 2.031,
+      "page_cache_dropped": true,
+      "first_request_latency_s": 4.252,
+      "warm_latency_s": {
+        "mean": 3.67,
+        "p50": 3.513,
+        "p95": 5.434
+      },
+      "gen_tokens_per_s": 42.3,
+      "prompt_tokens_per_s": 198.0,
+      "peak_ram_gb": 0.637,
+      "accuracy": {
+        "test_synth": {
+          "n": 150,
+          "json_validity": 1.0,
+          "schema_validity": 1.0,
+          "micro_f1": 0.9957,
+          "field_em_mean": 0.9927,
+          "hallucination_rate": 0.009
+        },
+        "test_real": {
+          "n": 109,
+          "json_validity": 0.9725,
+          "schema_validity": 0.8899,
+          "micro_f1": 0.5486,
+          "field_em_mean": 0.7581,
+          "hallucination_rate": 0.0653
+        }
+      }
+    },
+    {
+      "quant": "Q6_K",
+      "size_gb": 0.506,
+      "startup_s": 2.031,
+      "page_cache_dropped": true,
+      "first_request_latency_s": 4.507,
+      "warm_latency_s": {
+        "mean": 3.839,
+        "p50": 3.592,
+        "p95": 5.887
+      },
+      "gen_tokens_per_s": 42.84,
+      "prompt_tokens_per_s": 165.8,
+      "peak_ram_gb": 0.614,
+      "accuracy": {
+        "test_synth": {
+          "n": 150,
+          "json_validity": 1.0,
+          "schema_validity": 1.0,
+          "micro_f1": 0.9954,
+          "field_em_mean": 0.9921,
+          "hallucination_rate": 0.009
+        },
+        "test_real": {
+          "n": 109,
+          "json_validity": 0.9725,
+          "schema_validity": 0.8899,
+          "micro_f1": 0.5559,
+          "field_em_mean": 0.7573,
+          "hallucination_rate": 0.0671
+        }
+      }
+    },
+    {
+      "quant": "Q5_K_M",
+      "size_gb": 0.42,
+      "startup_s": 2.033,
+      "page_cache_dropped": true,
+      "first_request_latency_s": 5.305,
+      "warm_latency_s": {
+        "mean": 4.701,
+        "p50": 4.141,
+        "p95": 8.124
+      },
+      "gen_tokens_per_s": 40.65,
+      "prompt_tokens_per_s": 105.6,
+      "peak_ram_gb": 0.534,
+      "accuracy": {
+        "test_synth": {
+          "n": 150,
+          "json_validity": 1.0,
+          "schema_validity": 0.9933,
+          "micro_f1": 0.9954,
+          "field_em_mean": 0.9921,
+          "hallucination_rate": 0.0136
+        },
+        "test_real": {
+          "n": 109,
+          "json_validity": 0.9633,
+          "schema_validity": 0.8807,
+          "micro_f1": 0.5492,
+          "field_em_mean": 0.7581,
+          "hallucination_rate": 0.0638
+        }
+      }
+    },
+    {
+      "quant": "Q4_K_M",
+      "size_gb": 0.398,
+      "startup_s": 2.031,
+      "page_cache_dropped": true,
+      "first_request_latency_s": 4.933,
+      "warm_latency_s": {
+        "mean": 4.164,
+        "p50": 3.873,
+        "p95": 6.431
+      },
+      "gen_tokens_per_s": 40.16,
+      "prompt_tokens_per_s": 152.5,
+      "peak_ram_gb": 0.541,
+      "accuracy": {
+        "test_synth": {
+          "n": 150,
+          "json_validity": 1.0,
+          "schema_validity": 1.0,
+          "micro_f1": 0.994,
+          "field_em_mean": 0.9909,
+          "hallucination_rate": 0.009
+        },
+        "test_real": {
+          "n": 109,
+          "json_validity": 0.945,
+          "schema_validity": 0.8624,
+          "micro_f1": 0.5341,
+          "field_em_mean": 0.7481,
+          "hallucination_rate": 0.0671
+        }
+      }
+    },
+    {
+      "quant": "Q4_0",
+      "size_gb": 0.352,
+      "startup_s": 2.031,
+      "page_cache_dropped": true,
+      "first_request_latency_s": 3.322,
+      "warm_latency_s": {
+        "mean": 2.826,
+        "p50": 2.636,
+        "p95": 4.422
+      },
+      "gen_tokens_per_s": 57.35,
+      "prompt_tokens_per_s": 235.5,
+      "peak_ram_gb": 0.656,
+      "accuracy": {
+        "test_synth": {
+          "n": 150,
+          "json_validity": 1.0,
+          "schema_validity": 1.0,
+          "micro_f1": 0.9926,
+          "field_em_mean": 0.9903,
+          "hallucination_rate": 0.0023
+        },
+        "test_real": {
+          "n": 109,
+          "json_validity": 0.9633,
+          "schema_validity": 0.8716,
+          "micro_f1": 0.5386,
+          "field_em_mean": 0.7465,
+          "hallucination_rate": 0.072
+        }
+      }
+    },
+    {
+      "quant": "Q3_K_M",
+      "size_gb": 0.355,
+      "startup_s": 2.032,
+      "page_cache_dropped": true,
+      "first_request_latency_s": 4.314,
+      "warm_latency_s": {
+        "mean": 3.661,
+        "p50": 3.45,
+        "p95": 5.501
+      },
+      "gen_tokens_per_s": 43.83,
+      "prompt_tokens_per_s": 183.1,
+      "peak_ram_gb": 0.526,
+      "accuracy": {
+        "test_synth": {
+          "n": 150,
+          "json_validity": 1.0,
+          "schema_validity": 0.9933,
+          "micro_f1": 0.9897,
+          "field_em_mean": 0.9861,
+          "hallucination_rate": 0.0045
+        },
+        "test_real": {
+          "n": 109,
+          "json_validity": 0.9541,
+          "schema_validity": 0.8807,
+          "micro_f1": 0.5434,
+          "field_em_mean": 0.7498,
+          "hallucination_rate": 0.0619
+        }
+      }
+    },
+    {
+      "quant": "Q2_K",
+      "size_gb": 0.339,
+      "startup_s": 2.031,
+      "page_cache_dropped": true,
+      "first_request_latency_s": 4.578,
+      "warm_latency_s": {
+        "mean": 3.982,
+        "p50": 3.66,
+        "p95": 6.205
+      },
+      "gen_tokens_per_s": 42.91,
+      "prompt_tokens_per_s": 153.6,
+      "peak_ram_gb": 0.458,
+      "accuracy": {
+        "test_synth": {
+          "n": 150,
+          "json_validity": 1.0,
+          "schema_validity": 0.9867,
+          "micro_f1": 0.9831,
+          "field_em_mean": 0.9776,
+          "hallucination_rate": 0.0068
+        },
+        "test_real": {
+          "n": 109,
+          "json_validity": 0.9541,
+          "schema_validity": 0.8716,
+          "micro_f1": 0.5406,
+          "field_em_mean": 0.7356,
+          "hallucination_rate": 0.08
+        }
+      }
+    }
+  ],
+  "thread_sweep": [
+    {
+      "quant": "Q4_K_M",
+      "threads": 1,
+      "startup_s": 2.031,
+      "page_cache_dropped": true,
+      "first_request_latency_s": 12.08,
+      "warm_latency_s": {
+        "mean": 8.672,
+        "p50": 8.79,
+        "p95": 10.44
+      },
+      "gen_tokens_per_s": 14.92,
+      "prompt_tokens_per_s": 77.9,
+      "peak_ram_gb": 0.513
+    },
+    {
+      "quant": "Q4_K_M",
+      "threads": 2,
+      "startup_s": 2.032,
+      "page_cache_dropped": true,
+      "first_request_latency_s": 6.586,
+      "warm_latency_s": {
+        "mean": 4.631,
+        "p50": 4.652,
+        "p95": 5.531
+      },
+      "gen_tokens_per_s": 27.68,
+      "prompt_tokens_per_s": 152.8,
+      "peak_ram_gb": 0.513
+    },
+    {
+      "quant": "Q4_K_M",
+      "threads": 4,
+      "startup_s": 2.032,
+      "page_cache_dropped": true,
+      "first_request_latency_s": 4.816,
+      "warm_latency_s": {
+        "mean": 3.42,
+        "p50": 3.477,
+        "p95": 4.068
+      },
+      "gen_tokens_per_s": 40.03,
+      "prompt_tokens_per_s": 154.9,
+      "peak_ram_gb": 0.513
+    }
+  ]
+}
