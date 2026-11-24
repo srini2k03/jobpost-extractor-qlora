@@ -66,6 +66,8 @@ _109 real Indian job postings from 3 licence-checked public sources (cc-by-4.0, 
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF F16 | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q8_0 | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M + JSON grammar (browser setting) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-3B-Instruct zero-shot (GGUF Q4_K_M) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
 | GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | pending API run |
 
 _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus Hugging Face and W&B accounts) were not run; see `docs/gpu_route.md`._
@@ -84,6 +86,8 @@ _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF F16 | CPU (GitHub Actions) | 471 | 100.0 | 99.6 | 98.8 | 99.3 [99.1, 99.5] | 99.0 | 1.9 [1.2, 2.6] | measured 2026-11-04 @fcdc48b |
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q8_0 | CPU (GitHub Actions) | 471 | 100.0 | 99.8 | 98.8 | 99.3 [99.1, 99.5] | 98.9 | 1.7 [1.0, 2.3] | measured 2026-11-04 @fcdc48b |
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo) | CPU (GitHub Actions) | 471 | 100.0 | 99.8 | 98.5 | 99.0 [98.8, 99.2] | 98.5 | 2.0 [1.3, 2.7] | measured 2026-11-04 @fcdc48b |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M + JSON grammar (browser setting) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
+| Qwen2.5-3B-Instruct zero-shot (GGUF Q4_K_M) | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
 | GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | 200 | 100.0 | 100.0 | 96.9 | 97.9 [97.4, 98.4] | 97.7 | 1.0 [0.3, 1.8] | measured 2026-11-06 @dd40a42 |
 
 _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus Hugging Face and W&B accounts) were not run; see `docs/gpu_route.md`._

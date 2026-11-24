@@ -3,6 +3,7 @@
 python -m jobx.cpu.matrix baselines   # one entry per (model, setting)
 python -m jobx.cpu.matrix eval        # one entry per fine-tune quantisation
 python -m jobx.cpu.matrix splits      # test splits present in the repo, comma-separated
+python -m jobx.cpu.matrix suite [ids] # configs/eval_suite.yaml entries (optionally only the given approach ids)
 """
 
 from __future__ import annotations
@@ -53,6 +54,44 @@ def eval_matrix(cfg: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
+def suite_matrix(only: str = "", root: Path = REPO_ROOT) -> list[dict[str, Any]]:
+    """configs/eval_suite.yaml as a job matrix: defaults filled, splits comma-joined, only present splits."""
+    import yaml
+
+    cfg = yaml.safe_load((root / "configs/eval_suite.yaml").read_text())
+    want = {x.strip() for x in only.split(",") if x.strip()}
+    out = []
+    for e in cfg["entries"]:
+        if want and e["approach"] not in want:
+            continue
+        splits = [s for s in e["splits"] if (root / SPLIT_FILES[s]).exists()]
+        if e["source"] == "hf_convert":
+            slug = model_slug(e["model"])
+            file = f"{slug}-{e['quant']}.gguf"
+            label = e.get("label") or f"{e['model']} (GGUF {e['quant']}, llama.cpp)"
+        else:
+            slug, file, label = "", e["file"], e.get("label") or e["file"]
+        out.append(
+            {
+                "approach": e["approach"],
+                "source": e["source"],
+                "model": e.get("model", ""),
+                "repo": e.get("repo", ""),
+                "slug": slug,
+                "quant": e.get("quant", ""),
+                "file": file,
+                "system": e.get("system", "full"),
+                "shots": int(e.get("shots", 0)),
+                "guided": bool(e.get("guided", False)),
+                "logprobs": bool(e.get("logprobs", False)),
+                "splits": ",".join(splits),
+                "label": label,
+                "ctx": int(cfg.get("ctx", 4096)),
+            }
+        )
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     cfg = load_route_config()
@@ -61,6 +100,8 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"include": baselines_matrix(cfg)}))
     elif what == "eval":
         print(json.dumps({"include": eval_matrix(cfg)}))
+    elif what == "suite":
+        print(json.dumps({"include": suite_matrix(argv[1] if len(argv) > 1 else "")}))
     elif what == "splits":
         print(",".join(available_splits()))
     else:

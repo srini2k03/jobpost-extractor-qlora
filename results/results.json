@@ -190,6 +190,16 @@
         "status": "pending"
       },
       {
+        "approach": "qwen2.5-0.5b-lora-cpu_q4_k_m_guided",
+        "name": "Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M + JSON grammar (browser setting)",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-3b-cpu_zero_shot",
+        "name": "Qwen2.5-3B-Instruct zero-shot (GGUF Q4_K_M)",
+        "status": "pending"
+      },
+      {
         "approach": "qwen2.5-1.5b_zero_shot",
         "name": "Qwen2.5-1.5B-Instruct zero-shot",
         "status": "pending"
@@ -1757,6 +1767,16 @@
           "commit": "fcdc48b",
           "n_examples": 471
         }
+      },
+      {
+        "approach": "qwen2.5-0.5b-lora-cpu_q4_k_m_guided",
+        "name": "Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M + JSON grammar (browser setting)",
+        "status": "pending"
+      },
+      {
+        "approach": "qwen2.5-3b-cpu_zero_shot",
+        "name": "Qwen2.5-3B-Instruct zero-shot (GGUF Q4_K_M)",
+        "status": "pending"
       },
       {
         "approach": "qwen2.5-1.5b_zero_shot",

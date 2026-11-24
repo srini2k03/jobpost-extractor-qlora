@@ -26,6 +26,7 @@ from jobx import prompts
 from jobx.data.build import read_jsonl
 from jobx.eval.metrics import aggregate
 from jobx.eval.run import SPLIT_FILES, eval_subset, git_commit, score_file
+from jobx.uncertainty import field_logprobs
 
 
 def peak_rss_gb(pid: int) -> float | None:
@@ -113,6 +114,9 @@ def run(a: argparse.Namespace) -> dict[str, Any]:
                 }
                 if response_format is not None:
                     body["response_format"] = response_format
+                if a.logprobs:
+                    body["logprobs"] = True
+                    body["top_logprobs"] = 1
                 t0 = time.perf_counter()
                 r = client.post(f"{url}/v1/chat/completions", json=body)
                 r.raise_for_status()
@@ -125,13 +129,20 @@ def run(a: argparse.Namespace) -> dict[str, Any]:
                 if speed:
                     tps.append(float(speed))
                 lat.append(dt)
-                f.write(
-                    json.dumps(
-                        {"id": e["id"], "output": text, "latency_s": round(dt, 4), "new_tokens": n_tok},
-                        ensure_ascii=False,
-                    )
-                    + "\n"
-                )
+                row: dict[str, Any] = {
+                    "id": e["id"],
+                    "output": text,
+                    "latency_s": round(dt, 4),
+                    "new_tokens": n_tok,
+                }
+                row["prompt_tokens"] = (d.get("usage") or {}).get("prompt_tokens") or timings.get("prompt_n")
+                if timings:
+                    row["prompt_ms"] = round(float(timings.get("prompt_ms") or 0), 1)
+                    row["predicted_ms"] = round(float(timings.get("predicted_ms") or 0), 1)
+                if a.logprobs:
+                    toks = ((d["choices"][0].get("logprobs") or {}).get("content")) or []
+                    row["field_logprobs"] = field_logprobs(toks, text) if toks else {}
+                f.write(json.dumps(row, ensure_ascii=False) + "\n")
         peak = peak_rss_gb(proc.pid)
     finally:
         proc.terminate()
@@ -145,6 +156,9 @@ def run(a: argparse.Namespace) -> dict[str, Any]:
         "model": a.model_label or os.path.basename(a.model),
         "gguf": os.path.basename(a.model),
         "decoding": "guided (llama.cpp JSON-schema grammar)" if a.guided else "free",
+        "logprobs": bool(a.logprobs),
+        "ctx": a.ctx,
+        "threads": a.threads,
         "system_prompt": a.system,
         "n_shots": len(shots),
         "shot_ids": [s["id"] for s in shots],
@@ -191,6 +205,7 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument(
         "--guided", action="store_true", help="JSON-schema constrained decoding (llama.cpp grammar)"
     )
+    ap.add_argument("--logprobs", action="store_true", help="store per-field token log-probs in each row")
     ap.add_argument("--approach", required=True)
     ap.add_argument("--split", default="test_synth")
     ap.add_argument("--max-examples", type=int, default=150, help="0 = the whole split")

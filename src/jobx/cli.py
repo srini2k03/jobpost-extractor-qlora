@@ -236,6 +236,15 @@ def robustness_report() -> None:
     typer.echo(json.dumps(report_all("."), indent=2))
 
 
+@app.command("calibrate")
+def calibrate_cmd(approach: str = "qwen2.5-0.5b-lora-cpu_q4_k_m", target: float = 0.95) -> None:
+    """Fit field-confidence calibration on val (needs --logprobs predictions); report held-out reliability."""
+    from jobx.eval.calibration import calibrate
+
+    rep = calibrate(approach, ".", target=target)
+    typer.echo(json.dumps({k: v["at_threshold"] for k, v in rep["splits"].items()}, indent=2))
+
+
 @app.command("pull")
 def pull(dest: Path = Path(".")) -> None:
     """Download notebook outputs (predictions, metrics, logs) from the HF artifacts dataset repo."""

@@ -1,0 +1,107 @@
+name: eval-suite
+# Real-world + robustness evaluation: every entry of configs/eval_suite.yaml runs as its own job (fine-tune GGUFs
+# from the model-v1 release, base models converted from the Hub, a larger official GGUF) on test_real and the
+# robustness suite; the fine-tune's Q4_K_M also runs val/test_synth with token log-probs for calibration.
+# The collect job scores everything, writes the robustness report and the calibration, and commits.
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "comma-separated approach ids from configs/eval_suite.yaml (empty = all)"
+        default: ""
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: eval-suite
+  cancel-in-progress: false
+
+env:
+  LLAMA_CPP_REF: b6000
+  HF_HUB_DISABLE_TELEMETRY: "1"
+  HF_HUB_DISABLE_PROGRESS_BARS: "1"
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -e .
+      - id: m
+        run: echo "matrix=$(python -m jobx.cpu.matrix suite '${{ inputs.only }}')" >> "$GITHUB_OUTPUT"
+
+  predict:
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - uses: actions/cache@v4
+        with:
+          path: llama.cpp
+          key: llama-cpp-${{ env.LLAMA_CPP_REF }}-avx2-u2404-v1
+      - name: Build llama.cpp (portable AVX2)
+        run: scripts/build_llama_cpp.sh "$LLAMA_CPP_REF" llama.cpp
+      - name: Install
+        run: |
+          if [ "${{ matrix.source }}" = "hf_convert" ]; then pip install -r requirements/cpu-train.txt -e ".[serve]";
+          else pip install -e ".[serve]" huggingface_hub==0.35.3; fi
+      - name: Get the model (${{ matrix.source }})
+        run: |
+          mkdir -p gguf
+          case "${{ matrix.source }}" in
+            release) gh release download model-v1 -p "${{ matrix.file }}" -D gguf ;;
+            hf_gguf) python -c "from huggingface_hub import hf_hub_download as d; d('${{ matrix.repo }}', '${{ matrix.file }}', local_dir='gguf')" ;;
+            hf_convert)
+              python -c "from huggingface_hub import snapshot_download as s; s('${{ matrix.model }}', local_dir='hf/${{ matrix.slug }}')"
+              scripts/gguf_convert.sh llama.cpp "hf/${{ matrix.slug }}" gguf "${{ matrix.slug }}" "${{ matrix.quant }}" ;;
+          esac
+          ls -lh gguf
+      - name: Predict (${{ matrix.approach }} on ${{ matrix.splits }})
+        run: |
+          for SPLIT in $(echo "${{ matrix.splits }}" | tr ',' ' '); do
+            ARGS=(--server-bin llama.cpp/build/bin/llama-server --model "gguf/${{ matrix.file }}"
+                  --approach "${{ matrix.approach }}" --split "$SPLIT" --max-examples 0 --system "${{ matrix.system }}"
+                  --shots "${{ matrix.shots }}" --threads "$(nproc)" --ctx "${{ matrix.ctx }}"
+                  --model-label "${{ matrix.label }}")
+            if [ "${{ matrix.guided }}" = "true" ]; then ARGS+=(--guided); fi
+            if [ "${{ matrix.logprobs }}" = "true" ]; then ARGS+=(--logprobs); fi
+            python -m jobx.quantize.benchmark "${ARGS[@]}"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pred-${{ matrix.approach }}
+          path: results/predictions/${{ matrix.approach }}__*
+
+  collect:
+    needs: predict
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: pip install -e . matplotlib
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: pred-*
+          merge-multiple: true
+          path: results/predictions
+      - name: Score, robustness report, calibration, tables; commit
+        run: |
+          scripts/commit_results.sh "Eval suite - real postings + robustness (llama.cpp, GitHub Actions)" results/predictions
+      - name: Refresh the Pages site
+        run: gh workflow run pages.yml --ref "$GITHUB_REF_NAME" || true

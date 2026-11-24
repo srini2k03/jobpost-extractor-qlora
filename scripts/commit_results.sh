@@ -16,6 +16,8 @@ for i in 1 2 3 4 5; do
   git fetch -q origin "$BRANCH" && git reset -q --hard "origin/$BRANCH"
   cp -r "$STASH"/. . 2>/dev/null || true
   jobx eval > /dev/null && jobx results-table > /dev/null && jobx charts > /dev/null || true
+  jobx robustness-report > /dev/null || true
+  if ls results/predictions/*__val.jsonl > /dev/null 2>&1; then jobx calibrate > /dev/null || true; fi
   if [ -f results/training/qwen2.5-0.5b-lora-cpu/status.json ]; then jobx model-card > /dev/null || true; fi
   git add -A results README.md MODEL_CARD.md 2>/dev/null; git add -A "$@" 2>/dev/null
   if git diff --cached --quiet; then echo "nothing to commit"; exit 0; fi

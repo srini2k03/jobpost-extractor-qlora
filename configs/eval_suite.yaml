@@ -1,0 +1,25 @@
+# Real-world + robustness evaluation (.github/workflows/eval_suite.yml). One parallel job per entry; every job
+# builds the same llama.cpp ref and runs on a GitHub-hosted ubuntu-24.04 runner (4 vCPU).
+#   source: release    -> GGUF asset of the model-v1 release (the fine-tune that was evaluated on test_synth)
+#           hf_convert -> HF safetensors converted to GGUF with the pinned llama.cpp (same as cpu_baselines.yml)
+#           hf_gguf    -> an official GGUF file from the HF Hub
+# Prompts: compact = the fine-tune's short prompt; full = the long rule prompt the baselines always use.
+llama_cpp_ref: b6000
+ctx: 4096
+entries:
+  - {approach: qwen2.5-0.5b-lora-cpu_q4_k_m, source: release, file: jobx-qwen2.5-0.5b-Q4_K_M.gguf, system: compact, logprobs: true,
+     splits: [val, test_synth, test_real, robustness], label: "jobx-qwen2.5-0.5b-lora (GGUF Q4_K_M, llama.cpp)"}
+  - {approach: qwen2.5-0.5b-lora-cpu_q4_k_m_guided, source: release, file: jobx-qwen2.5-0.5b-Q4_K_M.gguf, system: compact, guided: true,
+     splits: [test_real, robustness], label: "jobx-qwen2.5-0.5b-lora (GGUF Q4_K_M, llama.cpp, JSON grammar)"}
+  - {approach: qwen2.5-0.5b-lora-cpu_f16, source: release, file: jobx-qwen2.5-0.5b-F16.gguf, system: compact,
+     splits: [test_real, robustness], label: "jobx-qwen2.5-0.5b-lora (GGUF F16, llama.cpp)"}
+  - {approach: qwen2.5-0.5b-cpu_zero_shot, source: hf_convert, model: Qwen/Qwen2.5-0.5B-Instruct, quant: Q8_0, system: full,
+     splits: [test_real, robustness]}
+  - {approach: qwen2.5-0.5b-cpu_few_shot_guided, source: hf_convert, model: Qwen/Qwen2.5-0.5B-Instruct, quant: Q8_0, system: full,
+     shots: 3, guided: true, splits: [test_real, robustness]}
+  - {approach: qwen2.5-1.5b-cpu_zero_shot, source: hf_convert, model: Qwen/Qwen2.5-1.5B-Instruct, quant: Q8_0, system: full,
+     splits: [test_real, robustness]}
+  # Larger local instruct model. Qwen2.5-3B-Instruct is under the Qwen Research licence (evaluation only here,
+  # the weights are not redistributed); official GGUF Q4_K_M.
+  - {approach: qwen2.5-3b-cpu_zero_shot, source: hf_gguf, repo: Qwen/Qwen2.5-3B-Instruct-GGUF, file: qwen2.5-3b-instruct-q4_k_m.gguf,
+     system: full, splits: [test_real, robustness], label: "Qwen/Qwen2.5-3B-Instruct (official GGUF Q4_K_M, llama.cpp)"}

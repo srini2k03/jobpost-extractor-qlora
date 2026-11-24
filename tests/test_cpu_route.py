@@ -144,11 +144,17 @@ def test_llama_server_client_request_shapes(monkeypatch, tmp_path):
                 for e in gold.values()
                 if f"<posting>\n{e['text'].strip()}\n</posting>" == text.split("\n\n", 1)[1]
             )
+            out = prompts.target_json(ex["label"])
             body = {
-                "choices": [{"message": {"content": prompts.target_json(ex["label"])}}],
+                "choices": [{"message": {"content": out}}],
                 "usage": {"completion_tokens": 120},
                 "timings": {"predicted_per_second": 33.0},
             }
+            if json.get("logprobs"):
+                toks = [out[i : i + 4] for i in range(0, len(out), 4)]
+                body["choices"][0]["logprobs"] = {
+                    "content": [{"token": t, "bytes": list(t.encode()), "logprob": -0.25} for t in toks]
+                }
             return SimpleNamespace(raise_for_status=lambda: None, json=lambda: body)
 
     monkeypatch.setattr(httpx, "Client", FakeClient)
@@ -192,6 +198,12 @@ def test_llama_server_client_request_shapes(monkeypatch, tmp_path):
     )
     assert sent[0]["response_format"]["type"] == "json_schema" and sent[0]["cache_prompt"] is True
     assert row["micro_f1"] == pytest.approx(1.0) and row["tokens_per_s"] == 33.0
+    # --logprobs stores per-field log-prob summaries, not the token stream
+    ns = _parse(bm, [*args[:-3], "--guided", "--logprobs", "--max-examples", "2"])
+    bm.run(ns)
+    rows = read_jsonl(tmp_path / "pred" / "qwen2.5-0.5b-lora-cpu_q4_k_m__test_synth.jsonl")
+    assert "logprobs" in sent[-1] and rows[0]["field_logprobs"]["role"]["mean"] == -0.25
+    assert {"company", "skills", "salary"} <= set(rows[0]["field_logprobs"])
     meta = json.loads((tmp_path / "pred" / "qwen2.5-0.5b-lora-cpu_q4_k_m__test_synth.meta.json").read_text())
     assert meta["system_prompt"] == "compact" and meta["decoding"].startswith("guided")
     # few-shot, predictions only (no --variant -> no benchmark row)
@@ -355,3 +367,19 @@ def test_guided_schema_requires_every_key():
     sal = next(x for x in s["properties"]["salary"]["anyOf"] if x.get("type") == "object")
     assert set(sal["required"]) == {"min", "max", "currency", "period"}
     assert require_all({"type": "string"}) == {"type": "string"}
+
+
+def test_eval_suite_matrix_and_workflow():
+    from jobx.cpu.matrix import suite_matrix
+
+    m = suite_matrix()
+    ids = {e["approach"] for e in m}
+    approaches = {a["id"] for a in yaml.safe_load(Path("configs/approaches.yaml").read_text())["approaches"]}
+    assert ids <= approaches, "every eval-suite row must be in approaches.yaml"
+    q4 = next(e for e in m if e["approach"] == "qwen2.5-0.5b-lora-cpu_q4_k_m")
+    assert q4["logprobs"] and q4["splits"].startswith("val,") and q4["system"] == "compact"
+    assert all(e["source"] in ("release", "hf_convert", "hf_gguf") and e["file"].endswith(".gguf") for e in m)
+    assert [e["approach"] for e in suite_matrix("qwen2.5-3b-cpu_zero_shot")] == ["qwen2.5-3b-cpu_zero_shot"]
+    wf = yaml.safe_load(Path(".github/workflows/eval_suite.yml").read_text())
+    assert wf["jobs"]["predict"]["strategy"]["max-parallel"] <= 6
+    assert "--logprobs" in Path(".github/workflows/eval_suite.yml").read_text()
