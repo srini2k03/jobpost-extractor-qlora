@@ -56,7 +56,7 @@ _130 real Indian job postings from 4 licence-checked public sources (cc-by-4.0, 
 
 | Approach | Hardware | n | JSON valid % | Schema valid % | Field EM % | Micro F1 % [95% CI] | Macro F1 % | Hallucination % [95% CI] | Status |
 |---|---|---|---|---|---|---|---|---|---|
-| Regex baseline (rules + alias tables) | CPU | 130 | 100.0 | 100.0 | 75.5 | 60.4 [58.0, 63.1] | 74.1 | 5.5 [3.6, 7.7] | measured 2026-11-24 @b24b6ca |
+| Regex baseline (rules + alias tables) | CPU | 109 | 100.0 | 100.0 | 76.8 | 60.5 [57.3, 63.3] | 74.9 | 3.0 [1.6, 4.6] | measured 2026-11-24 @5095739 |
 | Qwen2.5-0.5B-Instruct zero-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
 | Qwen2.5-0.5B-Instruct zero-shot + guided JSON | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
 | Qwen2.5-0.5B-Instruct 3-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
@@ -96,7 +96,7 @@ _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus
 
 | Approach | company | role | seniority | skills | min_experience_years | max_experience_years | salary | locations | work_mode | employment_type | education |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| Regex baseline (rules + alias tables) | 45.4 | 50.0 | 95.4 | 5.4 | 86.2 | 88.5 | 96.9 | 92.3 | 97.7 | 93.8 | 79.2 |
+| Regex baseline (rules + alias tables) | 41.3 | 56.9 | 95.4 | 5.5 | 87.2 | 93.6 | 99.1 | 95.4 | 98.2 | 94.5 | 78.0 |
 
 #### Per-field exact match % (`test_synth`)
 
