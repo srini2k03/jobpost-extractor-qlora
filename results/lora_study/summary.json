@@ -1,0 +1,281 @@
+{
+  "budget_note": "Reduced-budget sweep: 640 training examples, 40 steps (effective batch 16) per configuration; the released model used 2,177 examples x 2 epochs (273 steps).",
+  "selection": "highest validation micro-F1 (fewer trainable parameters breaks ties); test splits unused",
+  "best": "r16_lr6e-4",
+  "within_best_ci": [],
+  "runs": [
+    {
+      "id": "r16_lr6e-4",
+      "config": {
+        "r": 16,
+        "alpha": 32,
+        "dropout": 0.05,
+        "learning_rate": 0.0006,
+        "target_modules": [
+          "q_proj",
+          "k_proj",
+          "v_proj",
+          "o_proj",
+          "gate_proj",
+          "up_proj",
+          "down_proj"
+        ],
+        "max_length": 512,
+        "warmup_ratio": 0.05,
+        "weight_decay": 0.0,
+        "batch_size": 2,
+        "grad_accum": 8
+      },
+      "params_trainable": 8798208,
+      "trainable_share": 0.017809,
+      "adapter_mb": 35.24,
+      "train_seconds": 1912.1,
+      "seconds_per_step": 47.8,
+      "peak_rss_gb": 4.58,
+      "final_train_loss": 0.0145,
+      "val_loss": 0.0248,
+      "val": {
+        "n": 150,
+        "micro_f1": 0.9651,
+        "macro_f1": 0.9573,
+        "json_validity": 1.0,
+        "schema_validity": 0.9533,
+        "hallucination_rate": 0.0412,
+        "field_em_mean": 0.9503,
+        "ci95_micro_f1": [
+          0.9575,
+          0.9729
+        ]
+      },
+      "cpu": "Intel(R) Xeon(R) 6975P-C",
+      "bf16": true
+    },
+    {
+      "id": "r32_all",
+      "config": {
+        "r": 32,
+        "alpha": 64,
+        "dropout": 0.05,
+        "learning_rate": 0.0003,
+        "target_modules": [
+          "q_proj",
+          "k_proj",
+          "v_proj",
+          "o_proj",
+          "gate_proj",
+          "up_proj",
+          "down_proj"
+        ],
+        "max_length": 512,
+        "warmup_ratio": 0.05,
+        "weight_decay": 0.0,
+        "batch_size": 2,
+        "grad_accum": 8
+      },
+      "params_trainable": 17596416,
+      "trainable_share": 0.035618,
+      "adapter_mb": 70.43,
+      "train_seconds": 2013.1,
+      "seconds_per_step": 50.33,
+      "peak_rss_gb": 4.94,
+      "final_train_loss": 0.0146,
+      "val_loss": 0.024,
+      "val": {
+        "n": 150,
+        "micro_f1": 0.9551,
+        "macro_f1": 0.9476,
+        "json_validity": 1.0,
+        "schema_validity": 0.9667,
+        "hallucination_rate": 0.032,
+        "field_em_mean": 0.9388,
+        "ci95_micro_f1": [
+          0.9444,
+          0.9654
+        ]
+      },
+      "cpu": "Intel(R) Xeon(R) 6975P-C",
+      "bf16": true
+    },
+    {
+      "id": "r16_all",
+      "config": {
+        "r": 16,
+        "alpha": 32,
+        "dropout": 0.05,
+        "learning_rate": 0.0003,
+        "target_modules": [
+          "q_proj",
+          "k_proj",
+          "v_proj",
+          "o_proj",
+          "gate_proj",
+          "up_proj",
+          "down_proj"
+        ],
+        "max_length": 512,
+        "warmup_ratio": 0.05,
+        "weight_decay": 0.0,
+        "batch_size": 2,
+        "grad_accum": 8
+      },
+      "params_trainable": 8798208,
+      "trainable_share": 0.017809,
+      "adapter_mb": 35.24,
+      "train_seconds": 1891.4,
+      "seconds_per_step": 47.28,
+      "peak_rss_gb": 4.59,
+      "final_train_loss": 0.0289,
+      "val_loss": 0.0361,
+      "val": {
+        "n": 150,
+        "micro_f1": 0.9389,
+        "macro_f1": 0.9311,
+        "json_validity": 1.0,
+        "schema_validity": 0.9267,
+        "hallucination_rate": 0.0618,
+        "field_em_mean": 0.9145,
+        "ci95_micro_f1": [
+          0.9285,
+          0.9499
+        ]
+      },
+      "cpu": "Intel(R) Xeon(R) 6975P-C",
+      "bf16": true
+    },
+    {
+      "id": "r8_all",
+      "config": {
+        "r": 8,
+        "alpha": 16,
+        "dropout": 0.05,
+        "learning_rate": 0.0003,
+        "target_modules": [
+          "q_proj",
+          "k_proj",
+          "v_proj",
+          "o_proj",
+          "gate_proj",
+          "up_proj",
+          "down_proj"
+        ],
+        "max_length": 512,
+        "warmup_ratio": 0.05,
+        "weight_decay": 0.0,
+        "batch_size": 2,
+        "grad_accum": 8
+      },
+      "params_trainable": 4399104,
+      "trainable_share": 0.008904,
+      "adapter_mb": 17.64,
+      "train_seconds": 1896.1,
+      "seconds_per_step": 47.4,
+      "peak_rss_gb": 4.5,
+      "final_train_loss": 0.0504,
+      "val_loss": 0.0525,
+      "val": {
+        "n": 150,
+        "micro_f1": 0.9206,
+        "macro_f1": 0.9202,
+        "json_validity": 1.0,
+        "schema_validity": 0.9533,
+        "hallucination_rate": 0.0664,
+        "field_em_mean": 0.8958,
+        "ci95_micro_f1": [
+          0.9073,
+          0.9328
+        ]
+      },
+      "cpu": "Intel(R) Xeon(R) 6975P-C",
+      "bf16": true
+    },
+    {
+      "id": "r16_lr1e-4",
+      "config": {
+        "r": 16,
+        "alpha": 32,
+        "dropout": 0.05,
+        "learning_rate": 0.0001,
+        "target_modules": [
+          "q_proj",
+          "k_proj",
+          "v_proj",
+          "o_proj",
+          "gate_proj",
+          "up_proj",
+          "down_proj"
+        ],
+        "max_length": 512,
+        "warmup_ratio": 0.05,
+        "weight_decay": 0.0,
+        "batch_size": 2,
+        "grad_accum": 8
+      },
+      "params_trainable": 8798208,
+      "trainable_share": 0.017809,
+      "adapter_mb": 35.24,
+      "train_seconds": 3267.7,
+      "seconds_per_step": 81.69,
+      "peak_rss_gb": 4.31,
+      "final_train_loss": 0.071,
+      "val_loss": 0.0734,
+      "val": {
+        "n": 150,
+        "micro_f1": 0.8801,
+        "macro_f1": 0.8652,
+        "json_validity": 1.0,
+        "schema_validity": 0.8933,
+        "hallucination_rate": 0.1121,
+        "field_em_mean": 0.8424,
+        "ci95_micro_f1": [
+          0.8653,
+          0.8953
+        ]
+      },
+      "cpu": "AMD EPYC 9V74 80-Core Processor",
+      "bf16": true
+    },
+    {
+      "id": "r16_attn",
+      "config": {
+        "r": 16,
+        "alpha": 32,
+        "dropout": 0.05,
+        "learning_rate": 0.0003,
+        "target_modules": [
+          "q_proj",
+          "k_proj",
+          "v_proj",
+          "o_proj"
+        ],
+        "max_length": 512,
+        "warmup_ratio": 0.05,
+        "weight_decay": 0.0,
+        "batch_size": 2,
+        "grad_accum": 8
+      },
+      "params_trainable": 2162688,
+      "trainable_share": 0.004378,
+      "adapter_mb": 8.68,
+      "train_seconds": 5479.4,
+      "seconds_per_step": 136.99,
+      "peak_rss_gb": 4.11,
+      "final_train_loss": 0.0777,
+      "val_loss": 0.0799,
+      "val": {
+        "n": 150,
+        "micro_f1": 0.8775,
+        "macro_f1": 0.8682,
+        "json_validity": 0.9933,
+        "schema_validity": 0.78,
+        "hallucination_rate": 0.0915,
+        "field_em_mean": 0.8461,
+        "ci95_micro_f1": [
+          0.8593,
+          0.8953
+        ]
+      },
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "bf16": false
+    }
+  ]
+}

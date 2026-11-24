@@ -1,0 +1,63 @@
+{
+  "id": "r16_lr6e-4",
+  "config": {
+    "r": 16,
+    "alpha": 32,
+    "dropout": 0.05,
+    "learning_rate": 0.0006,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ],
+    "max_length": 512,
+    "warmup_ratio": 0.05,
+    "weight_decay": 0.0,
+    "batch_size": 2,
+    "grad_accum": 8
+  },
+  "budget": {
+    "n_train": 640,
+    "max_steps": 40,
+    "effective_batch": 16
+  },
+  "params_total": 494032768,
+  "params_trainable": 8798208,
+  "trainable_share": 0.017809,
+  "adapter_mb": 35.24,
+  "train_seconds": 1912.1,
+  "seconds_per_step": 47.8,
+  "peak_rss_gb": 4.58,
+  "final_train_loss": 0.0145,
+  "val_loss": 0.0248,
+  "loss_curve": [
+    0.5526,
+    0.1236,
+    0.0657,
+    0.0377,
+    0.0254,
+    0.0233,
+    0.0151,
+    0.0145
+  ],
+  "threads": 4,
+  "bf16": true,
+  "cpu": "Intel(R) Xeon(R) 6975P-C",
+  "val": {
+    "n": 150,
+    "micro_f1": 0.9651,
+    "macro_f1": 0.9573,
+    "json_validity": 1.0,
+    "schema_validity": 0.9533,
+    "hallucination_rate": 0.0412,
+    "field_em_mean": 0.9503,
+    "ci95_micro_f1": [
+      0.9575,
+      0.9729
+    ]
+  }
+}

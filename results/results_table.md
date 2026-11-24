@@ -96,20 +96,44 @@ Partial runs, or runs with more than 5% failed requests, are scored on what comp
 
 _Micro-F1 % per category (gold by construction). "Not a job post": share of outputs with every field empty. Injection success: share of prompt-injection cases where an injected value reached the output (lower is better)._
 
-| Category | Regex rules |
-|---|---|
-| Missing salary | 89.9 |
-| Several salaries | 93.8 |
-| Conflicting salary | 90.9 |
-| Monthly vs annual | 93.0 |
-| Several locations | 96.2 |
-| Work-mode phrasing | 94.7 |
-| Contradictory experience | 95.0 |
-| No job title | 88.9 |
-| No company | 93.6 |
-| Hindi / English mix | 83.5 |
-| Very long (~7k chars) | 74.5 |
-| Malformed (HTML, caps, no punctuation) | 85.8 |
-| Not a job post | 0.0 |
-| Prompt injection | 90.8 |
-| **Injection success %** | 16.7 |
+| Category | Regex rules | 0.5B zero-shot | 0.5B 3-shot + grammar | 1.5B zero-shot | 3B zero-shot | LoRA 0.5B F16 | LoRA 0.5B Q4_K_M | LoRA Q4_K_M + grammar |
+|---|---|---|---|---|---|---|---|---|
+| Missing salary | 89.9 | 71.3 | 84.1 | 99.1 | 91.8 | 100.0 | 100.0 | 100.0 |
+| Several salaries | 93.8 | 70.2 | 77.8 | 95.4 | 92.1 | 100.0 | 100.0 | 100.0 |
+| Conflicting salary | 90.9 | 58.4 | 75.0 | 95.1 | 91.3 | 100.0 | 100.0 | 100.0 |
+| Monthly vs annual | 93.0 | 73.0 | 81.9 | 94.4 | 87.1 | 98.3 | 99.2 | 99.2 |
+| Several locations | 96.2 | 74.8 | 81.6 | 99.3 | 92.7 | 100.0 | 100.0 | 100.0 |
+| Work-mode phrasing | 94.7 | 69.6 | 84.2 | 95.3 | 91.3 | 100.0 | 99.6 | 99.6 |
+| Contradictory experience | 95.0 | 73.1 | 75.8 | 98.7 | 88.1 | 100.0 | 100.0 | 100.0 |
+| No job title | 88.9 | 58.0 | 69.9 | 77.3 | 80.8 | 99.1 | 98.6 | 98.6 |
+| No company | 93.6 | 72.3 | 81.7 | 87.0 | 85.0 | 100.0 | 100.0 | 100.0 |
+| Hindi / English mix | 83.5 | 65.4 | 76.5 | 82.7 | 88.1 | 98.3 | 95.0 | 95.0 |
+| Very long (~7k chars) | 74.5 | 69.7 | 67.7 | 81.1 | 89.0 | 97.5 | 96.0 | 96.0 |
+| Malformed (HTML, caps, no punctuation) | 85.8 | 67.9 | 75.0 | 94.4 | 92.1 | 99.2 | 100.0 | 100.0 |
+| Not a job post | 0.0 | 0.0 | 0.0 | 16.7 | 83.3 | 16.7 | 16.7 | 16.7 |
+| Prompt injection | 90.8 | 52.7 | 73.4 | 74.5 | 86.7 | 96.8 | 96.0 | 96.0 |
+| **Injection success %** | 16.7 | 66.7 | 33.3 | 66.7 | 41.7 | 33.3 | 41.7 | 41.7 |
+
+#### Field-confidence calibration (`qwen2.5-0.5b-lora-cpu_q4_k_m`)
+
+_Fitted on val (3872 fields); abstention threshold 0.00 = smallest with 95% selective accuracy on val. Held-out splits not used for fitting._
+
+| Split | Fields | ECE raw | ECE calibrated | Brier calibrated | AUROC | Kept at threshold % | Accuracy kept % | Accuracy all % |
+|---|---|---|---|---|---|---|---|---|
+| val | 3872 | 0.014 | 0.007 | 0.009 | 0.956 | 100.0 | 98.1 | 98.1 |
+| test_synth | 5181 | 0.012 | 0.008 | 0.007 | 0.9131 | 100.0 | 98.5 | 98.5 |
+| test_real | 1353 | 0.199 | 0.101 | 0.112 | 0.8797 | 96.8 | 78.9 | 76.4 |
+| robustness | 1848 | 0.021 | 0.011 | 0.017 | 0.7186 | 100.0 | 97.6 | 97.6 |
+
+#### LoRA study (reduced budget, validation only)
+
+_Reduced-budget sweep: 640 training examples, 40 steps (effective batch 16) per configuration; the released model used 2,177 examples x 2 epochs (273 steps). Selected: `r16_lr6e-4` (within its 95% CI: none)._
+
+| Config | r / alpha | Targets | LR | Trainable params | % of total | Adapter (MB) | s/step | Peak RAM (GB) | Val loss | Val micro-F1 % [95% CI] | JSON valid % | Hallucination % |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| r16_lr6e-4 | 16 / 32 | all linear | 0.0006 | 8,798,208 | 1.78 | 35.24 | 47.8 | 4.58 | 0.0248 | 96.5 [95.8, 97.3] | 100.0 | 4.1 |
+| r32_all | 32 / 64 | all linear | 0.0003 | 17,596,416 | 3.56 | 70.43 | 50.33 | 4.94 | 0.024 | 95.5 [94.4, 96.5] | 100.0 | 3.2 |
+| r16_all | 16 / 32 | all linear | 0.0003 | 8,798,208 | 1.78 | 35.24 | 47.28 | 4.59 | 0.0361 | 93.9 [92.8, 95.0] | 100.0 | 6.2 |
+| r8_all | 8 / 16 | all linear | 0.0003 | 4,399,104 | 0.89 | 17.64 | 47.4 | 4.5 | 0.0525 | 92.1 [90.7, 93.3] | 100.0 | 6.6 |
+| r16_lr1e-4 | 16 / 32 | all linear | 0.0001 | 8,798,208 | 1.78 | 35.24 | 81.69 | 4.31 | 0.0734 | 88.0 [86.5, 89.5] | 100.0 | 11.2 |
+| r16_attn | 16 / 32 | attention | 0.0003 | 2,162,688 | 0.44 | 8.68 | 136.99 | 4.11 | 0.0799 | 87.8 [85.9, 89.5] | 99.3 | 9.2 |

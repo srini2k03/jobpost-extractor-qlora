@@ -1,0 +1,63 @@
+{
+  "id": "r16_lr1e-4",
+  "config": {
+    "r": 16,
+    "alpha": 32,
+    "dropout": 0.05,
+    "learning_rate": 0.0001,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ],
+    "max_length": 512,
+    "warmup_ratio": 0.05,
+    "weight_decay": 0.0,
+    "batch_size": 2,
+    "grad_accum": 8
+  },
+  "budget": {
+    "n_train": 640,
+    "max_steps": 40,
+    "effective_batch": 16
+  },
+  "params_total": 494032768,
+  "params_trainable": 8798208,
+  "trainable_share": 0.017809,
+  "adapter_mb": 35.24,
+  "train_seconds": 3267.7,
+  "seconds_per_step": 81.69,
+  "peak_rss_gb": 4.31,
+  "final_train_loss": 0.071,
+  "val_loss": 0.0734,
+  "loss_curve": [
+    0.7051,
+    0.2761,
+    0.1659,
+    0.1046,
+    0.0855,
+    0.0717,
+    0.0705,
+    0.071
+  ],
+  "threads": 4,
+  "bf16": true,
+  "cpu": "AMD EPYC 9V74 80-Core Processor",
+  "val": {
+    "n": 150,
+    "micro_f1": 0.8801,
+    "macro_f1": 0.8652,
+    "json_validity": 1.0,
+    "schema_validity": 0.8933,
+    "hallucination_rate": 0.1121,
+    "field_em_mean": 0.8424,
+    "ci95_micro_f1": [
+      0.8653,
+      0.8953
+    ]
+  }
+}
