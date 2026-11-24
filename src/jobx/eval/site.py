@@ -458,16 +458,32 @@ def headline_stats(data: dict[str, Any]) -> list[tuple[str, str, str]]:
     else:
         out.append(("pending", "Micro-F1 after fine-tuning", "fine-tune not evaluated yet"))
         out.append(("pending", "Hallucinated fields", "fine-tune not evaluated yet"))
-    if api:
-        out.append(
-            (
-                f"{_p(api['metrics']['micro_f1'])}%",
-                "GPT-OSS-120B few-shot",
-                f"API model on an evenly spaced subset, n = {api['n']}",
-            )
-        )
+    big = [
+        (api, "GPT-OSS-120B few-shot", "API model on an evenly spaced subset"),
+        (
+            _row(rows, "qwen2.5-3b-cpu_zero_shot"),
+            "Qwen2.5-3B zero-shot",
+            "6x larger local model, same prompt",
+        ),
+        (
+            _row(rows, "qwen2.5-1.5b-cpu_zero_shot"),
+            "Qwen2.5-1.5B zero-shot",
+            "3x larger local model, same prompt",
+        ),
+    ]
+    ref = next(
+        (
+            (r, lbl, c)
+            for r, lbl, c in big
+            if r and (r.get("completion") or {}).get("status", "complete") == "complete"
+        ),
+        None,
+    )
+    if ref:
+        r, lbl, c = ref
+        out.append((f"{_p(r['metrics']['micro_f1'])}%", lbl, f"{c}, n = {r['n']}"))
     else:
-        out.append(("pending", "GPT-OSS-120B few-shot", "API run pending"))
+        out.append(("pending", "Larger-model reference", "not measured on this split yet"))
     if q4:
         out.append(
             (
@@ -603,8 +619,10 @@ def caveats(data: dict[str, Any]) -> list[str]:
         )
     else:
         notes.append(
-            "<strong>Real postings.</strong> The headline split is <code>test_real</code>; the synthetic split is in the "
-            "tables below."
+            "<strong>Real postings, AI-assisted labels.</strong> The headline split is <code>test_real</code>: real Indian "
+            "postings from public sources whose labels were written with AI assistance and are <em>not human-verified</em> "
+            "(annotated ambiguities are accepted as alternatives). Read these scores as an estimate; the synthetic split "
+            "is in the tables below."
         )
     notes.append(
         "<strong>The regex baseline is flattered by the synthetic data.</strong> Its patterns were written with every "
@@ -801,7 +819,10 @@ def build_site(
             "template families and companies held out of training. The real-postings split is pending."
         )
     else:
-        split_note = "Scores below are on <code>test_real</code>, real postings with human-verified labels."
+        split_note = (
+            "Scores below are on <code>test_real</code>: real postings from public sources, labels AI-assisted and not "
+            "human-verified."
+        )
     pills = (
         '<span class="sb-pill sb-pill--live">In-browser model live</span>'
         if has_demo
