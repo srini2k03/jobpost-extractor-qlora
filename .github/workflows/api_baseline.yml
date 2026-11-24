@@ -169,20 +169,14 @@ jobs:
             results/metrics/*.json
       - name: Commit results
         if: steps.run.outputs.succeeded == 'true'
+        # Only the prediction files this run wrote: derived files are regenerated on top of the current main
+        # by commit_results.sh, so results committed by other workflows meanwhile are never overwritten.
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add results README.md
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m "API baseline: $PROVIDER $MODEL (shots $SHOTS, ${{ github.event_name }})"
-          # The run can take hours; rebase onto anything pushed meanwhile instead of failing the push.
-          for i in 1 2 3; do
-            if git pull --rebase origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME"; then exit 0; fi
-            git rebase --abort 2>/dev/null || true
-            sleep $((i * 15))
-          done
-          echo "::error::could not push the results after 3 attempts (see the rebase output above)"
-          exit 1
+          FILES=$( { git status --porcelain --untracked-files=all -- results/predictions | awk '{print $2}'; } | tr '\n' ' ')
+          echo "new or changed: $FILES"
+          if [ -z "$FILES" ]; then exit 0; fi
+          # shellcheck disable=SC2086
+          scripts/commit_results.sh "API baseline: $PROVIDER $MODEL (shots $SHOTS, ${{ github.event_name }})" $FILES
       # Saved even when a later step fails, so completed (free-tier quota) responses are never lost.
       - name: Save API response cache
         if: always() && steps.done.outputs.complete != 'true'
