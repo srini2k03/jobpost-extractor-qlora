@@ -174,7 +174,7 @@ _130 real Indian job postings from 4 licence-checked public sources (cc-by-4.0, 
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF F16 | CPU (GitHub Actions) | 130 | 96.9 | 86.2 | 75.2 | 56.1 [52.8, 59.2] | 71.7 | 7.9 [5.6, 10.4] | measured 2026-11-24 @c66bc22 |
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q8_0 | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo) | CPU (GitHub Actions) | 130 | 94.6 | 85.4 | 74.7 | 54.4 [51.0, 57.9] | 71.0 | 7.6 [5.5, 9.8] | measured 2026-11-24 @c66bc22 |
-| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M + JSON grammar (browser setting) | CPU (GitHub Actions) | 130 | 96.2 | 92.3 | 75.3 | 56.0 [52.8, 59.1] | 72.0 | 7.6 [5.5, 9.8] | measured 2026-11-24 @c66bc22 |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M + JSON grammar (browser setting) | CPU (GitHub Actions) | 130 | 100.0 | 96.2 | 76.4 | 56.9 [53.8, 59.8] | 73.4 | 7.9 [5.7, 10.2] | measured 2026-11-24 @06897ee |
 | Qwen2.5-3B-Instruct zero-shot (GGUF Q4_K_M) | CPU (GitHub Actions) | 130 | 98.5 | 59.2 | 70.2 | 56.4 [53.2, 59.3] | 67.1 | 30.3 [26.9, 33.7] | measured 2026-11-24 @c66bc22 |
 | GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | - | - | - | - | - | - | - | incomplete (9/130) |
 
@@ -210,7 +210,7 @@ _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus
 | Qwen2.5-1.5B-Instruct zero-shot | 70.0 | 82.3 | 80.0 | 6.2 | 76.2 | 95.4 | 92.3 | 50.0 | 26.9 | 53.8 | 52.3 |
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF F16 | 80.8 | 79.2 | 85.4 | 6.9 | 93.1 | 92.3 | 90.0 | 30.8 | 96.9 | 95.4 | 76.9 |
 | Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M (browser demo) | 82.3 | 80.0 | 85.4 | 6.9 | 88.5 | 90.0 | 89.2 | 30.0 | 97.7 | 93.8 | 77.7 |
-| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M + JSON grammar (browser setting) | 83.8 | 81.5 | 85.4 | 6.9 | 90.8 | 90.0 | 89.2 | 30.0 | 97.7 | 94.6 | 78.5 |
+| Qwen2.5-0.5B LoRA fine-tune (ours), GGUF Q4_K_M + JSON grammar (browser setting) | 83.8 | 83.1 | 86.2 | 6.9 | 93.8 | 92.3 | 89.2 | 30.8 | 97.7 | 96.9 | 79.2 |
 | Qwen2.5-3B-Instruct zero-shot (GGUF Q4_K_M) | 80.0 | 86.2 | 83.8 | 6.2 | 95.4 | 85.4 | 90.8 | 76.9 | 51.5 | 43.8 | 72.3 |
 
 #### Per-field exact match % (`test_synth`)
