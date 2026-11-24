@@ -349,8 +349,10 @@ def _measured(data: dict[str, Any], split: str) -> list[dict[str, Any]]:
 
 
 def headline_split(data: dict[str, Any]) -> str:
-    """The split the page headlines: the real postings once measured, else the synthetic held-out split."""
-    return "test_real" if _measured(data, "test_real") else "test_synth"
+    """The split the page headlines: the real postings once the fine-tune is measured on them, else the
+    synthetic held-out split."""
+    real = _measured(data, "test_real")
+    return "test_real" if _row(real, "qwen2.5-0.5b-lora-cpu_f16") else "test_synth"
 
 
 def _row(rows: list[dict[str, Any]], approach: str) -> dict[str, Any] | None:

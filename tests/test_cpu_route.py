@@ -105,7 +105,7 @@ def test_matrices():
     assert ev[2]["approach"] == "qwen2.5-0.5b-lora-cpu_q4_k_m"
     approaches = {a["id"] for a in yaml.safe_load(Path("configs/approaches.yaml").read_text())["approaches"]}
     assert ids | {e["approach"] for e in ev} <= approaches, "every CPU-route row must be in approaches.yaml"
-    assert matrix.available_splits() == ["test_synth"]
+    assert matrix.available_splits() == ["test_synth", "test_real"]
 
 
 def test_train_state_helpers(tmp_path):

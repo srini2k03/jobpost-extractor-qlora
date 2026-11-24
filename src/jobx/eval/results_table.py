@@ -130,10 +130,23 @@ def build_tables(root: str | Path = ".") -> tuple[str, dict[str, Any]]:
         md.append(f"#### {split_titles.get(split, split)}")
         md.append("")
         has_any = any(k[1] == split for k in metrics)
-        if split == "test_real" and not has_any:
+        real_meta = root / "data/real/real_meta.json"
+        if split == "test_real" and real_meta.exists():
+            rm = json.loads(real_meta.read_text())
+            ann = rm.get("annotation", {})
+            lics = ", ".join(sorted({str(v["licence"]) for v in rm.get("sources", {}).values()}))
             md.append(
-                "_The real test set is pending: it needs real postings fetched, draft labels and a human "
-                "pass with `jobx verify` (see `docs/real_dataset.md`)._"
+                f"_{rm['n']} real Indian job postings from {len(rm.get('sources', {}))} licence-checked public "
+                f"sources ({lics}); see "
+                f"`data/real/real_meta.json`. Labels: {ann.get('method', '?')} "
+                f"({ann.get('human_verified', 0)} of {rm['n']} human-verified); {ann.get('with_alternatives', 0)} "
+                "rows list acceptable alternatives for ambiguous fields (`docs/annotation.md`)._"
+            )
+            md.append("")
+        elif split == "test_real" and not has_any:
+            md.append(
+                "_The real test set is pending: it needs real postings fetched, labels and a human "
+                "pass with `jobx verify-real` (see `docs/annotation.md`)._"
             )
             md.append("")
         md.append(

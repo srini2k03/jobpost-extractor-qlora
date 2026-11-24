@@ -2,14 +2,16 @@
   "n": {
     "train": 2177,
     "val": 352,
-    "test_synth": 471
+    "test_synth": 471,
+    "test_real": 109
   },
   "exact_duplicates": {
     "raw": {
       "within_split": {
         "train": 0,
         "val": 0,
-        "test_synth": 0
+        "test_synth": 0,
+        "test_real": 0
       },
       "cross_split": 0
     },
@@ -17,7 +19,8 @@
       "within_split": {
         "train": 0,
         "val": 0,
-        "test_synth": 0
+        "test_synth": 0,
+        "test_real": 0
       },
       "cross_split": 0
     }
@@ -48,6 +51,14 @@
         "p99": 0.1585,
         "max": 0.1829,
         "mean": 0.0667
+      },
+      "test_real": {
+        "p50": 0.0051,
+        "p90": 0.016,
+        "p95": 0.0183,
+        "p99": 0.0227,
+        "max": 0.0252,
+        "mean": 0.007
       }
     }
   },
@@ -70,6 +81,15 @@
       "max": 0.26,
       "mean": 0.0188,
       "share_over_0.5": 0.0
+    },
+    "test_real": {
+      "p50": 0.0,
+      "p90": 0.0,
+      "p95": 0.0,
+      "p99": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "share_over_0.5": 0.0
     }
   },
   "label_overlap": {
@@ -81,9 +101,21 @@
       "identical_records": 0,
       "identical_role_and_skills": 48
     },
+    "train~test_real": {
+      "identical_records": 0,
+      "identical_role_and_skills": 0
+    },
     "val~test_synth": {
       "identical_records": 0,
       "identical_role_and_skills": 26
+    },
+    "val~test_real": {
+      "identical_records": 0,
+      "identical_role_and_skills": 0
+    },
+    "test_synth~test_real": {
+      "identical_records": 0,
+      "identical_role_and_skills": 0
     }
   },
   "metadata_overlap": {

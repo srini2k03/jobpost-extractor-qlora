@@ -1,0 +1,37 @@
+{
+  "n": 109,
+  "rejected": 6,
+  "per_source": {
+    "emscad": 55,
+    "joa": 35,
+    "ats": 19
+  },
+  "sources": {
+    "makenomistakesllc/tech-job-postings-9-ats": {
+      "licence": "cc-by-4.0",
+      "revision": "87e46fca3d36cc00481f39be18327522733c9d3b",
+      "n": 19
+    },
+    "victor/real-or-fake-fake-jobposting-prediction": {
+      "licence": "cc0-1.0",
+      "revision": "a751f55136a26da3c36e26aa207a9e187ca24b45",
+      "n": 55
+    },
+    "JobOpportunitiesAPI/joa-employer-direct-job-postings-2026-10": {
+      "licence": "cc-by-4.0",
+      "revision": "718f9b65e0d9051b15489b073c85b4f9e4c35685",
+      "n": 35
+    }
+  },
+  "annotation": {
+    "method": "AI-assisted annotation, not human-verified",
+    "human_verified": 0,
+    "with_alternatives": 79,
+    "guidelines": "docs/annotation.md"
+  },
+  "chars": {
+    "p5": 480.0,
+    "p50": 1596.0,
+    "p95": 3077.0
+  }
+}

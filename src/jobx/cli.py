@@ -203,6 +203,23 @@ def verify_cmd(
     verify(draft, out, verifier=verifier)
 
 
+@app.command("real-build")
+def real_build() -> None:
+    """Build data/real/test_real.jsonl from the fetched pools and data/real/annotations.jsonl."""
+    from jobx.data.real_build import build_real
+
+    typer.echo(json.dumps(build_real("."), indent=2))
+
+
+@app.command("verify-real")
+def verify_real(verifier: str = "human") -> None:
+    """Human pass over the AI-assisted real-posting annotations (accept / edit / reject), then rebuild."""
+    from jobx.data.real_build import build_real, verify_annotations
+
+    typer.echo(json.dumps(verify_annotations(".", verifier=verifier)))
+    typer.echo(json.dumps(build_real("."), indent=2))
+
+
 @app.command("pull")
 def pull(dest: Path = Path(".")) -> None:
     """Download notebook outputs (predictions, metrics, logs) from the HF artifacts dataset repo."""

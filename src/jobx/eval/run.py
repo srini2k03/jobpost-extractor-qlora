@@ -58,7 +58,7 @@ def score_file(pred_path: str | Path, root: str | Path = ".") -> tuple[list[Exam
         if g is None:
             missing += 1
             continue
-        scores.append(score_example(p["id"], g["label"], p.get("output") or ""))
+        scores.append(score_example(p["id"], g["label"], p.get("output") or "", g.get("label_alternatives")))
     lat = [float(p["latency_s"]) for p in preds if p.get("latency_s") is not None]
     info = {
         "split": split,

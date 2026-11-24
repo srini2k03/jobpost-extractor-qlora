@@ -1,0 +1,26 @@
+[
+  {
+    "id": "real-ats-004",
+    "reason": "near-duplicate of real-ats-002 (same boilerplate, title differs only in 'SSB')"
+  },
+  {
+    "id": "real-ats-009",
+    "reason": "near-duplicate of real-ats-002/008 (Rippling boilerplate, only the title differs)"
+  },
+  {
+    "id": "real-ats-016",
+    "reason": "near-duplicate of real-ats-002/008 (Rippling boilerplate)"
+  },
+  {
+    "id": "real-ats-028",
+    "reason": "near-duplicate of real-ats-002/008 (Rippling boilerplate)"
+  },
+  {
+    "id": "real-ats-037",
+    "reason": "near-duplicate of real-ats-002/008 (Rippling boilerplate)"
+  },
+  {
+    "id": "real-ats-039",
+    "reason": "near-duplicate of real-ats-002/008 (Rippling boilerplate)"
+  }
+]

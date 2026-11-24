@@ -52,11 +52,11 @@ resamples of examples).
 <!-- RESULTS:START -->
 #### Real postings (`test_real`, headline)
 
-_The real test set is pending: it needs real postings fetched, draft labels and a human pass with `jobx verify` (see `docs/real_dataset.md`)._
+_109 real Indian job postings from 3 licence-checked public sources (cc-by-4.0, cc0-1.0); see `data/real/real_meta.json`. Labels: AI-assisted annotation, not human-verified (0 of 109 human-verified); 79 rows list acceptable alternatives for ambiguous fields (`docs/annotation.md`)._
 
 | Approach | Hardware | n | JSON valid % | Schema valid % | Field EM % | Micro F1 % [95% CI] | Macro F1 % | Hallucination % [95% CI] | Status |
 |---|---|---|---|---|---|---|---|---|---|
-| Regex baseline (rules + alias tables) | CPU | - | - | - | - | - | - | - | pending (needs this split) |
+| Regex baseline (rules + alias tables) | CPU | 109 | 100.0 | 100.0 | 76.8 | 60.5 [57.3, 63.3] | 74.9 | 3.0 [1.6, 4.6] | measured 2026-11-24 @5095739 |
 | Qwen2.5-0.5B-Instruct zero-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
 | Qwen2.5-0.5B-Instruct zero-shot + guided JSON | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
 | Qwen2.5-0.5B-Instruct 3-shot | CPU (GitHub Actions) | - | - | - | - | - | - | - | pending CPU run |
@@ -87,6 +87,12 @@ _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus
 | GPT-OSS-120B via Groq (API, few-shot) | Groq API (free tier) | 200 | 100.0 | 100.0 | 96.9 | 97.9 [97.4, 98.4] | 97.7 | 1.0 [0.3, 1.8] | measured 2026-11-06 @dd40a42 |
 
 _15 optional GPU-route rows (1.5B/7B baselines, 1.5B QLoRA, AWQ; need a GPU plus Hugging Face and W&B accounts) were not run; see `docs/gpu_route.md`._
+
+#### Per-field exact match % (`test_real`)
+
+| Approach | company | role | seniority | skills | min_experience_years | max_experience_years | salary | locations | work_mode | employment_type | education |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Regex baseline (rules + alias tables) | 41.3 | 56.9 | 95.4 | 5.5 | 87.2 | 93.6 | 99.1 | 95.4 | 98.2 | 94.5 | 78.0 |
 
 #### Per-field exact match % (`test_synth`)
 

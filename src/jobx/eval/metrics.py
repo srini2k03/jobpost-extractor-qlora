@@ -73,12 +73,30 @@ def score_field(name: str, gold: Any, pred: Any) -> FieldScore:
     return FieldScore(correct, tp, fp, fn, gn, pn)
 
 
-def score_example(ex_id: str, gold: dict[str, Any], output: str) -> ExampleScore:
+def best_field_score(name: str, golds: Sequence[Any], pred: Any) -> tuple[FieldScore, Any]:
+    """Score against each acceptable gold value; keep the most favourable (correct first, then
+    tp - fp - fn). Used for real postings whose annotation lists acceptable alternatives."""
+    best: tuple[tuple[int, int], FieldScore, Any] | None = None
+    for g in golds:
+        fs = score_field(name, g, pred)
+        key = (int(fs.correct), fs.tp - fs.fp - fs.fn)
+        if best is None or key > best[0]:
+            best = (key, fs, g)
+    assert best is not None
+    return best[1], best[2]
+
+
+def score_example(
+    ex_id: str, gold: dict[str, Any], output: str, alternatives: dict[str, list[Any]] | None = None
+) -> ExampleScore:
+    """``alternatives``: extra acceptable gold values per field (annotated ambiguity, real postings)."""
     pr = parse_output(output)
     s = ExampleScore(ex_id, pr.json_ok, pr.schema_ok, pr.truncated, pred=pr.data, gold=gold)
+    alts = alternatives or {}
     for f in FIELD_ORDER:
-        s.fields[f] = score_field(f, gold.get(f), pr.data.get(f))
-        s.gold_norm[f] = normalise_field(f, gold.get(f))
+        fs, g = best_field_score(f, [gold.get(f), *alts.get(f, [])], pr.data.get(f))
+        s.fields[f] = fs
+        s.gold_norm[f] = normalise_field(f, g)
         s.pred_norm[f] = normalise_field(f, pr.data.get(f))
     return s
 
