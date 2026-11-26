@@ -1,0 +1,27 @@
+{
+  "date": "2026-11-26",
+  "browser": "headless Chromium (Playwright), GitHub Actions ubuntu-24.04",
+  "load_s": 5.7,
+  "extract_s": 77.3,
+  "metrics": {
+    "Latency": "77.1 s",
+    "Prompt tokens": "246",
+    "Output tokens": "76",
+    "Generation": "2.9 tok/s",
+    "Prompt reading": "5 tok/s"
+  },
+  "valid": true,
+  "field_check": [
+    "weak",
+    "supported",
+    "null",
+    "null",
+    "null",
+    "null",
+    "null",
+    "supported",
+    "null",
+    "null",
+    "null"
+  ]
+}

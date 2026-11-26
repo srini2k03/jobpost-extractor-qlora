@@ -1,0 +1,15 @@
+{
+  "file": "jobx-q4km.gguf",
+  "parts": [
+    "model/jobx-q4km.gguf.part000",
+    "model/jobx-q4km.gguf.part001",
+    "model/jobx-q4km.gguf.part002",
+    "model/jobx-q4km.gguf.part003",
+    "model/jobx-q4km.gguf.part004",
+    "model/jobx-q4km.gguf.part005",
+    "model/jobx-q4km.gguf.part006",
+    "model/jobx-q4km.gguf.part007"
+  ],
+  "size_mb": 398,
+  "wllama": "3.8.1"
+}

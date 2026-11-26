@@ -1,0 +1,32 @@
+[
+  {
+    "id": "real-joa-069",
+    "text": "(MAA) ASSISTANT MANAGER - SALES\nmorrisonexpress · Chennai, Tamil Nadu\n\nResponsibilities:\n\n• To hit sales quota set by Management.\n\n• To ensure sales personnel are knowledgeable in their field of assignments.\n\n• To build a productive sales team in order to boost sales performance and achieve sales target.\n\n• To assist sales personnel as and when are required i.e., Debtor’s collection, problematic customers, etc.\n\n• To develop new business and maintain close relationship with customers.\n\n• To follow up with overseas agents for rate enquired and shipment arrangement.\n\n• To establish, maintain and build up good relationship with carriers, co-loaders and other vendors to obtain the lowest cost and better service.\n\n• To settle and handle customers’ complaints and specific requirements.\n\n• To formulate, plan and execute Target Accounts List and monitoring its progress.",
+    "label": "Real posting 1",
+    "split": "test_real"
+  },
+  {
+    "id": "real-ats-003",
+    "text": "Intern - HIC - Pune (Only for Selected Students - Others PLZ DO NOT APPLY)\nPhilips · Pune\n\nJob Title\nIntern - HIC - Pune (Only for Selected Students - Others PLZ DO NOT APPLY)\n\nJob Description\n\nJob Posting Description\n\n📌 10-Month Internship Program (BTech / MTech)\n\nEligibility:\nThis internship is open only to students from Philips-selected colleges .\n\nDuration:\n🗓️ 10 months\n\nDisciplines We Hire From:\n\nMechanical Engineering\n\nElectrical Engineering\n\nE&TC (Electronics & Telecommunication)\n\nProject Management\n\nDesign Engineering\n\nConversion Opportunity:\nUpon successful completion of the internship, high-performing interns may be considered for full-time roles , subject to performance and position availability at that time.\n\n#LI-DNI",
+    "label": "Real posting 2",
+    "split": "test_real"
+  },
+  {
+    "id": "syn-02411",
+    "text": "Hello sabko 👋\nReact Developer II ki requirement hai ek company mein.\nExperience chahiye 4 - 6 Yrs.\nSkills: React JS / Javascript / Figma / TS / Tailwind / AngularJS / HTML5 aana chahiye.\nContact: hr92@careers.example.in\nPackage ₹ 13.5L-15.5L PA tak hai.\nLocation Hyd hai.\nJob type Part Time hai.\nQualification Master of Computer Applications honi chahiye.\nKaam seekhne ka accha mauka hai.",
+    "label": "Synthetic test 1",
+    "split": "test_synth"
+  },
+  {
+    "id": "syn-01890",
+    "text": "📢 📢 Off Campus / Experienced Hiring\nOffice: 7th floor, Cyber City, PIN 251640\nCompany: Yatra Health Pvt. Ltd.\nRole: SEO Specialist (Managerial)\nQualification: MBA/PGDM\n📞 Experience: 10-12 yrs\n👉 Salary: up to INR 25,00,000 p.a.\nLocation: BLR\nType: Contract role\nApply before 23/9/2025\nSkills: SEO, Google AdWords, WordPress\nApply Link: https://careers.example.in/jobs/18302",
+    "label": "Synthetic test 2",
+    "split": "test_synth"
+  },
+  {
+    "id": "handwritten-1",
+    "text": "🔥 Hiring!! Sr. Python Developer @ Kaveri Analytics Pvt Ltd\nExp: 4-7 yrs | CTC 18-24 LPA\nLoc: Bangalore / Pune (Hybrid)\nMust know Django, AWS, PostgreSQL, Docker\nB.Tech/B.E. preferred. Immediate joiners ko preference.\nCall HR 9876543210. Joining kit worth ₹500!",
+    "label": "Handwritten",
+    "split": "handwritten"
+  }
+]

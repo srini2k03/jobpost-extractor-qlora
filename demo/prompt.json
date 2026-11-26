@@ -1,0 +1,4 @@
+{
+  "system": "Extract the Indian job posting into one JSON object with keys company, role, seniority, skills, min_experience_years, max_experience_years, salary, locations, work_mode, employment_type, education. Use null or [] for anything not stated.",
+  "user_template": "Extract the fields from this job posting.\n\n<posting>\n{text}\n</posting>"
+}
